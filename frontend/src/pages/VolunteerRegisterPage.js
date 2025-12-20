@@ -233,19 +233,19 @@ export default function VolunteerRegisterPage() {
             <div className="space-y-4 sm:space-y-6 animate-fade-in">
               <h2 className="text-xl sm:text-2xl font-heading font-bold text-textPrimary mb-4 sm:mb-6 flex items-center gap-2">
                 <User size={24} className="text-primary sm:w-7 sm:h-7" />
-                Informações Pessoais
+                {t('personalInfo')}
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                 <div>
                   <Label className="text-sm sm:text-base font-bold mb-2 flex items-center gap-2">
                     <span className="text-red-500">*</span>
-                    Nome Completo
+                    {t('fullName')}
                   </Label>
                   <Input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Seu nome completo"
+                    placeholder={t('yourFullName')}
                     className="rounded-xl h-11 sm:h-12 text-sm sm:text-base"
                   />
                 </div>
@@ -253,13 +253,13 @@ export default function VolunteerRegisterPage() {
                 <div>
                   <Label className="text-sm sm:text-base font-bold mb-2 flex items-center gap-2">
                     <span className="text-red-500">*</span>
-                    Email
+                    {t('email')}
                   </Label>
                   <Input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="seu@email.com"
+                    placeholder={t('yourEmail')}
                     className="rounded-xl h-11 sm:h-12 text-sm sm:text-base"
                   />
                 </div>
@@ -267,20 +267,20 @@ export default function VolunteerRegisterPage() {
                 <div>
                   <Label className="text-sm sm:text-base font-bold mb-2 flex items-center gap-2">
                     <span className="text-red-500">*</span>
-                    Senha
+                    {t('password')}
                   </Label>
                   <Input
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Mínimo 6 caracteres"
+                    placeholder={t('minCharacters')}
                     className="rounded-xl h-11 sm:h-12 text-sm sm:text-base"
                   />
                 </div>
 
                 <div>
                   <Label className="text-sm sm:text-base font-bold mb-2">
-                    Telefone (Opcional)
+                    {t('phoneOptional')}
                   </Label>
                   <Input
                     value={phone}
@@ -292,7 +292,7 @@ export default function VolunteerRegisterPage() {
               </div>
 
               <div>
-                <Label className="text-base font-bold mb-2">Idiomas que Fala</Label>
+                <Label className="text-base font-bold mb-2">{t('languagesSpoken')}</Label>
                 <div className="flex gap-2 flex-wrap">
                   {['pt', 'fr', 'en', 'es', 'ar', 'ru'].map(lang => (
                     <button
