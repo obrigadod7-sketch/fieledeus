@@ -583,28 +583,74 @@ export default function HomePage() {
               tabIndex={0}
             >
               <div className="space-y-6 pr-2">
-                {/* Categoria */}
+                {/* Categoria - Múltipla Seleção */}
                 <div className="bg-gray-50 p-5 rounded-2xl">
-                  <Label className="text-base font-bold mb-3 block">📂 Selecione a Categoria</Label>
+                  <Label className="text-base font-bold mb-2 block">📂 Selecione as Categorias (até 3)</Label>
+                  <p className="text-sm text-textSecondary mb-3">
+                    Na França, muitos serviços trabalham com várias áreas juntas (ex: moradia + emprego + educação)
+                  </p>
                   <div className="grid grid-cols-2 gap-3">
-                    {categories.map(cat => (
-                      <button
-                        key={cat.value}
-                        type="button"
-                        onClick={() => setNewPost({...newPost, category: cat.value})}
-                        className={`p-4 rounded-xl border-2 transition-all text-left ${
-                          newPost.category === cat.value
-                            ? 'bg-primary text-white border-primary shadow-lg scale-105'
-                            : 'bg-white border-gray-200 hover:border-primary hover:shadow-md'
-                        }`}
-                      >
-                        <div className="text-2xl mb-2">{cat.icon}</div>
-                        <div className={`font-bold text-sm ${newPost.category === cat.value ? 'text-white' : 'text-textPrimary'}`}>
-                          {cat.label}
-                        </div>
-                      </button>
-                    ))}
+                    {categories.map(cat => {
+                      const isSelected = newPost.categories.includes(cat.value);
+                      const canSelect = newPost.categories.length < 3 || isSelected;
+                      
+                      return (
+                        <button
+                          key={cat.value}
+                          type="button"
+                          onClick={() => {
+                            if (isSelected) {
+                              // Remover categoria (manter pelo menos 1)
+                              if (newPost.categories.length > 1) {
+                                setNewPost({
+                                  ...newPost, 
+                                  categories: newPost.categories.filter(c => c !== cat.value)
+                                });
+                              }
+                            } else if (canSelect) {
+                              // Adicionar categoria
+                              setNewPost({
+                                ...newPost, 
+                                categories: [...newPost.categories, cat.value]
+                              });
+                            } else {
+                              toast.error('Máximo 3 categorias');
+                            }
+                          }}
+                          disabled={!canSelect && !isSelected}
+                          className={`p-4 rounded-xl border-2 transition-all text-left ${
+                            isSelected
+                              ? 'bg-primary text-white border-primary shadow-lg scale-105'
+                              : canSelect
+                                ? 'bg-white border-gray-200 hover:border-primary hover:shadow-md'
+                                : 'bg-gray-100 border-gray-200 opacity-50 cursor-not-allowed'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="text-2xl mb-2">{cat.icon}</div>
+                            {isSelected && (
+                              <span className="text-xs font-bold bg-white/20 px-2 py-1 rounded-full">
+                                ✓
+                              </span>
+                            )}
+                          </div>
+                          <div className={`font-bold text-sm ${isSelected ? 'text-white' : 'text-textPrimary'}`}>
+                            {cat.label}
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
+                  {newPost.categories.length > 0 && (
+                    <div className="mt-4 p-3 bg-blue-50 rounded-xl border border-blue-200">
+                      <p className="text-sm text-blue-800 font-medium">
+                        ✓ {newPost.categories.length} categoria{newPost.categories.length > 1 ? 's' : ''} selecionada{newPost.categories.length > 1 ? 's' : ''}:
+                        <span className="ml-2">
+                          {newPost.categories.map(c => categories.find(cat => cat.value === c)?.icon).join(' ')}
+                        </span>
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Título */}
