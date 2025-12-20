@@ -8,18 +8,17 @@ import { Search, User, MessageCircle, Star, Briefcase, Clock, Languages, Graduat
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-// Professional areas with translation keys
-const PROFESSIONAL_AREAS_KEYS = [
-  { value: 'legal', labelKey: 'volunteerAreaLegal', icon: '⚖️', descKey: 'volunteerAreaLegalDesc' },
-  { value: 'health', labelKey: 'volunteerAreaHealth', icon: '🏥', descKey: 'volunteerAreaHealthDesc' },
-  { value: 'education', labelKey: 'volunteerAreaEducation', icon: '📚', descKey: 'volunteerAreaEducationDesc' },
-  { value: 'translation', labelKey: 'volunteerAreaTranslation', icon: '🌍', descKey: 'volunteerAreaTranslationDesc' },
-  { value: 'family', labelKey: 'volunteerAreaFamily', icon: '👨‍👩‍👧', descKey: 'volunteerAreaFamilyDesc' },
-  { value: 'employment', labelKey: 'volunteerAreaEmployment', icon: '💼', descKey: 'volunteerAreaEmploymentDesc' },
-  { value: 'housing', labelKey: 'volunteerAreaHousing', icon: '🏠', descKey: 'volunteerAreaHousingDesc' },
-  { value: 'administration', labelKey: 'volunteerAreaAdmin', icon: '📋', descKey: 'volunteerAreaAdminDesc' },
-  { value: 'finance', labelKey: 'volunteerAreaFinance', icon: '💰', descKey: 'volunteerAreaFinanceDesc' },
-  { value: 'technology', labelKey: 'volunteerAreaTech', icon: '💻', descKey: 'volunteerAreaTechDesc' }
+const PROFESSIONAL_AREAS = [
+  { value: 'legal', label: 'Jurídico', icon: '⚖️', desc: 'Advogados, assistentes jurídicos' },
+  { value: 'health', label: 'Saúde', icon: '🏥', desc: 'Médicos, enfermeiros, psicólogos' },
+  { value: 'education', label: 'Educação', icon: '📚', desc: 'Professores, tutores' },
+  { value: 'translation', label: 'Tradução', icon: '🌍', desc: 'Tradutores, intérpretes' },
+  { value: 'family', label: 'Família e Social', icon: '👨‍👩‍👧', desc: 'Assistentes sociais, mediadores' },
+  { value: 'employment', label: 'Orientação Profissional', icon: '💼', desc: 'RH, orientadores de carreira' },
+  { value: 'housing', label: 'Habitação', icon: '🏠', desc: 'Assistentes imobiliários' },
+  { value: 'administration', label: 'Administração', icon: '📋', desc: 'Ajuda com documentos' },
+  { value: 'finance', label: 'Finanças', icon: '💰', desc: 'Contadores, consultores financeiros' },
+  { value: 'technology', label: 'Tecnologia', icon: '💻', desc: 'TI, suporte técnico' }
 ];
 
 export default function VolunteersPage() {
@@ -31,13 +30,6 @@ export default function VolunteersPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [areaFilter, setAreaFilter] = useState('all');
-
-  // Get translated professional areas
-  const PROFESSIONAL_AREAS = PROFESSIONAL_AREAS_KEYS.map(area => ({
-    ...area,
-    label: t(area.labelKey),
-    desc: t(area.descKey)
-  }));
 
   useEffect(() => {
     fetchVolunteers();
@@ -88,8 +80,8 @@ export default function VolunteersPage() {
     <div className="min-h-screen bg-background pb-20" data-testid="volunteers-page">
       <div className="bg-gradient-to-br from-primary to-secondary text-white py-6 sm:py-8 px-4">
         <div className="container mx-auto max-w-4xl">
-          <h1 className="text-2xl sm:text-3xl font-heading font-bold mb-2">🤝 {t('professionalVolunteers')}</h1>
-          <p className="text-sm sm:text-base text-white/90 mb-4 sm:mb-6">{t('connectWithProfessionals')}</p>
+          <h1 className="text-2xl sm:text-3xl font-heading font-bold mb-2">🤝 Profissionais Voluntários</h1>
+          <p className="text-sm sm:text-base text-white/90 mb-4 sm:mb-6">Conecte-se com profissionais que oferecem ajuda gratuita</p>
           
           <div className="flex gap-2 sm:gap-3 flex-col sm:flex-row">
             <div className="flex-1 relative">
@@ -98,16 +90,16 @@ export default function VolunteersPage() {
                 data-testid="search-volunteers"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder={t('searchByNameOrSpecialty')}
+                placeholder="Buscar por nome ou especialidade..."
                 className="pl-10 rounded-xl bg-white"
               />
             </div>
             <Select value={areaFilter} onValueChange={setAreaFilter}>
               <SelectTrigger className="w-full sm:w-64 rounded-xl bg-white">
-                <SelectValue placeholder={t('allAreas')} />
+                <SelectValue placeholder="Todas as áreas" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">{t('allAreas')}</SelectItem>
+                <SelectItem value="all">Todas as áreas</SelectItem>
                 {PROFESSIONAL_AREAS.map(area => (
                   <SelectItem key={area.value} value={area.value}>
                     <span className="mr-2">{area.icon}</span>
@@ -129,7 +121,7 @@ export default function VolunteersPage() {
             size="sm"
             className={`rounded-full whitespace-nowrap ${areaFilter === 'all' ? 'bg-primary text-white' : ''}`}
           >
-            {t('all')}
+            Todos
           </Button>
           {PROFESSIONAL_AREAS.slice(0, 5).map(area => (
             <Button
@@ -148,14 +140,14 @@ export default function VolunteersPage() {
 
       <div className="container mx-auto px-4 py-6 max-w-4xl">
         {loading ? (
-          <div className="text-center py-12 text-textMuted">{t('loadingVolunteers')}</div>
+          <div className="text-center py-12 text-textMuted">Carregando voluntários...</div>
         ) : filteredVolunteers.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">🔍</div>
             <p className="text-textMuted text-lg">
               {volunteers.length === 0 
-                ? t('noVolunteersYet')
-                : t('noVolunteersFilter')}
+                ? 'Nenhum voluntário cadastrado ainda' 
+                : 'Nenhum voluntário encontrado com esses filtros'}
             </p>
           </div>
         ) : (
@@ -189,7 +181,7 @@ export default function VolunteersPage() {
                     <div className="mb-4">
                       <p className="text-sm font-bold text-textPrimary mb-2 flex items-center gap-1">
                         <Star size={16} />
-                        {t('specialties')}:
+                        Especialidades:
                       </p>
                       <div className="flex flex-wrap gap-2">
                         {volunteer.professional_specialties.map((spec, idx) => (
@@ -208,7 +200,7 @@ export default function VolunteersPage() {
                     <div className="mb-3 p-3 bg-blue-50 rounded-xl">
                       <p className="text-sm font-bold text-primary mb-1 flex items-center gap-1">
                         <GraduationCap size={16} />
-                        {t('formation')}:
+                        Formação:
                       </p>
                       <p className="text-sm text-textSecondary whitespace-pre-line">{volunteer.education}</p>
                     </div>
@@ -218,7 +210,7 @@ export default function VolunteersPage() {
                     <div className="mb-3">
                       <p className="text-sm font-bold text-textPrimary mb-2 flex items-center gap-1">
                         <Shield size={16} />
-                        {t('certifications')}:
+                        Certificações:
                       </p>
                       <div className="flex flex-wrap gap-2">
                         {volunteer.certifications.map((cert, idx) => (
@@ -243,7 +235,7 @@ export default function VolunteersPage() {
                   {volunteer.years_experience && (
                     <div className="mb-3 flex items-center gap-2 text-sm text-textSecondary">
                       <Clock size={16} />
-                      <span>{volunteer.years_experience} {t('ofExperience')}</span>
+                      <span>{volunteer.years_experience} de experiência</span>
                     </div>
                   )}
 
@@ -251,7 +243,7 @@ export default function VolunteersPage() {
                     <div className="mb-3 p-2 bg-green-50 rounded-lg flex items-center gap-2">
                       <Shield size={16} className="text-green-600" />
                       <span className="text-xs font-medium text-green-700">
-                        {t('registration')}: {volunteer.professional_id}
+                        Registro: {volunteer.professional_id}
                       </span>
                     </div>
                   )}
@@ -277,7 +269,7 @@ export default function VolunteersPage() {
                     className="w-full rounded-full bg-primary hover:bg-primary-hover text-white font-bold"
                   >
                     <MessageCircle size={18} className="mr-2" />
-                    {t('contactVolunteer')}
+                    Entrar em Contato
                   </Button>
                 </div>
               );
@@ -288,17 +280,18 @@ export default function VolunteersPage() {
         {/* Call to Action */}
         <div className="mt-8 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl p-8 text-center border-2 border-primary/20">
           <h3 className="text-2xl font-heading font-bold text-textPrimary mb-3">
-            {t('areYouProfessional')}
+            Você é um profissional?
           </h3>
           <p className="text-textSecondary mb-6 max-w-2xl mx-auto">
-            {t('registerAsVolunteerDesc')}
+            Cadastre-se como voluntário e ajude migrantes com sua expertise profissional. 
+            Faça a diferença na vida de quem precisa!
           </p>
           <Button
             onClick={() => navigate('/volunteer-register')}
             size="lg"
             className="rounded-full px-8 py-6 text-lg font-bold bg-primary hover:bg-primary-hover"
           >
-            🌟 {t('registerAsVolunteer')}
+            🌟 Cadastrar como Voluntário
           </Button>
         </div>
       </div>
