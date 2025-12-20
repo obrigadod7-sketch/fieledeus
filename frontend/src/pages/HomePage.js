@@ -357,7 +357,36 @@ export default function HomePage() {
     <div className="min-h-screen bg-background pb-16 overflow-x-hidden" data-testid="home-page">
       <div className="bg-white border-b border-gray-100 sticky top-0 z-10 glassmorphism">
         <div className="px-3 sm:px-4 py-2 sm:py-4">
-          <h1 className="text-lg sm:text-2xl font-heading font-bold text-textPrimary mb-2 sm:mb-4">Feed</h1>
+          {/* Header com título e botões de emergência */}
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
+            <h1 className="text-lg sm:text-2xl font-heading font-bold text-textPrimary">Feed</h1>
+            
+            {/* Botões de Emergência */}
+            <div className="flex gap-2">
+              {/* Botão SOS - Emergência França */}
+              <a
+                href="tel:112"
+                className="flex items-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-full text-xs sm:text-sm shadow-lg animate-pulse hover:animate-none transition-all"
+                title="Ligar para Emergência - 112"
+              >
+                <span className="text-sm sm:text-base">🆘</span>
+                <span className="hidden sm:inline">SOS</span>
+                <span className="sm:hidden">112</span>
+              </a>
+              
+              {/* Botão Falar com Pessoa Real - WhatsApp */}
+              <a
+                href="https://wa.me/5514996078465?text=Olá! Preciso de ajuda."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-full text-xs sm:text-sm shadow-lg transition-all"
+                title="Falar com uma pessoa real"
+              >
+                <span className="text-sm sm:text-base">💬</span>
+                <span className="hidden sm:inline">Ajuda</span>
+              </a>
+            </div>
+          </div>
           
           {/* Filtros de Categoria - com scroll horizontal no mobile */}
           <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-2 scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
