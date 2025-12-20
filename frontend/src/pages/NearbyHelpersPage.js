@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useEffect, useContext, useRef, useMemo } from 'react';
 import { AuthContext } from '../App';
 import { Button } from '../components/ui/button';
 import BottomNav from '../components/BottomNav';
-import { MapPin, Navigation, User, Phone, MessageCircle, Loader2, Filter, X, RefreshCw, Building2, Clock, ExternalLink } from 'lucide-react';
+import { MapPin, Navigation, User, Phone, MessageCircle, Loader2, Filter, X, RefreshCw, Building2, Clock, ExternalLink, Sun, Moon, Target } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -22,6 +22,19 @@ const HELP_CATEGORIES = [
 ];
 
 const CATEGORY_COLORS = {
+  food: 'bg-green-500',
+  health: 'bg-red-500',
+  legal: 'bg-blue-500',
+  housing: 'bg-purple-500',
+  clothes: 'bg-orange-500',
+  social: 'bg-pink-500',
+  education: 'bg-indigo-500',
+  work: 'bg-yellow-500',
+  furniture: 'bg-teal-500',
+  transport: 'bg-cyan-500'
+};
+
+const CATEGORY_HEX = {
   food: '#22c55e',
   health: '#ef4444',
   legal: '#3b82f6',
@@ -29,7 +42,15 @@ const CATEGORY_COLORS = {
   clothes: '#f97316',
   social: '#ec4899',
   education: '#6366f1',
-  work: '#eab308'
+  work: '#eab308',
+  furniture: '#14b8a6',
+  transport: '#06b6d4'
+};
+
+// Função para verificar se é noite (entre 18h e 6h)
+const isNightTime = () => {
+  const hour = new Date().getHours();
+  return hour >= 18 || hour < 6;
 };
 
 export default function NearbyHelpersPage() {
@@ -49,7 +70,32 @@ export default function NearbyHelpersPage() {
   const [selectedHelper, setSelectedHelper] = useState(null);
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [radius, setRadius] = useState(10);
-  const [viewMode, setViewMode] = useState('all'); // 'all', 'helpers', 'locations'
+  const [viewMode, setViewMode] = useState('all');
+  const [isNight, setIsNight] = useState(isNightTime());
+  const [useLeaflet, setUseLeaflet] = useState(false);
+
+  // Atualizar modo dia/noite a cada minuto
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIsNight(isNightTime());
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Cores do tema baseadas no modo dia/noite
+  const themeColors = useMemo(() => ({
+    background: isNight ? 'bg-slate-900' : 'bg-gray-50',
+    header: isNight ? 'from-blue-900 to-indigo-900' : 'from-blue-600 to-blue-700',
+    card: isNight ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200',
+    cardHover: isNight ? 'hover:border-blue-500' : 'hover:border-blue-400',
+    text: isNight ? 'text-white' : 'text-gray-800',
+    textMuted: isNight ? 'text-gray-400' : 'text-gray-600',
+    mapBg: isNight 
+      ? 'from-slate-900 via-slate-800 to-indigo-900' 
+      : 'from-blue-50 via-sky-100 to-blue-200',
+    userMarker: isNight ? 'bg-cyan-400' : 'bg-blue-500',
+    userPulse: isNight ? 'bg-cyan-400/30' : 'bg-blue-400/30',
+  }), [isNight]);
 
   useEffect(() => {
     // Load Leaflet CSS
@@ -66,10 +112,12 @@ export default function NearbyHelpersPage() {
       const script = document.createElement('script');
       script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
       script.onload = () => {
+        setUseLeaflet(true);
         getMyLocation();
       };
       document.body.appendChild(script);
     } else {
+      setUseLeaflet(true);
       getMyLocation();
     }
   }, []);
@@ -82,15 +130,15 @@ export default function NearbyHelpersPage() {
   }, [myLocation, selectedCategory, radius]);
 
   useEffect(() => {
-    if (myLocation && window.L && mapRef.current) {
+    if (myLocation && useLeaflet && window.L && mapRef.current) {
       initMap();
     }
-  }, [myLocation, nearbyHelpers, helpLocations, viewMode]);
+  }, [myLocation, nearbyHelpers, helpLocations, viewMode, isNight, useLeaflet]);
 
   const getMyLocation = () => {
     if (!navigator.geolocation) {
       toast.error('Seu navegador não suporta geolocalização');
-      setMyLocation({ lat: 48.8566, lng: 2.3522 }); // Paris center
+      setMyLocation({ lat: 48.8566, lng: 2.3522 });
       return;
     }
 
@@ -121,16 +169,9 @@ export default function NearbyHelpersPage() {
 
         if (error.code === 1) {
           errorMessage = '🔒 Permissão de localização negada';
-          errorDescription = 'Usando Paris como localização padrão. Ative a permissão nas configurações para ver ajudantes próximos a você.';
-        } else if (error.code === 2) {
-          errorMessage = '📡 Localização indisponível';
-          errorDescription = 'Usando Paris como localização padrão. Verifique se o GPS está ativado.';
-        } else if (error.code === 3) {
-          errorMessage = '⏱️ Tempo esgotado';
           errorDescription = 'Usando Paris como localização padrão.';
         }
 
-        // Default to Paris center
         setMyLocation({ lat: 48.8566, lng: 2.3522 });
         
         toast.warning(errorMessage, {
@@ -183,7 +224,6 @@ export default function NearbyHelpersPage() {
       
       if (response.ok) {
         const data = await response.json();
-        // Filter by radius
         const filtered = data.locations.filter(loc => loc.distance <= radius);
         setHelpLocations(filtered);
       }
@@ -195,44 +235,56 @@ export default function NearbyHelpersPage() {
   const initMap = () => {
     if (!window.L || !mapRef.current) return;
 
-    // Clear existing map
     if (mapInstanceRef.current) {
       mapInstanceRef.current.remove();
     }
 
-    // Clear markers
     markersRef.current = [];
 
-    // Create map
     const map = window.L.map(mapRef.current).setView([myLocation.lat, myLocation.lng], 13);
     mapInstanceRef.current = map;
 
-    // Add tile layer
-    window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
+    // Tile layer baseado no modo dia/noite
+    const tileUrl = isNight 
+      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+      : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+
+    window.L.tileLayer(tileUrl, {
+      attribution: '© OpenStreetMap contributors © CARTO'
     }).addTo(map);
 
-    // Add my location marker
+    // Marcador da localização do usuário
     const myIcon = window.L.divIcon({
       className: 'custom-marker',
-      html: `<div style="background: #3b82f6; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"></div>`,
+      html: `
+        <div style="position: relative;">
+          <div style="position: absolute; width: 40px; height: 40px; background: ${isNight ? 'rgba(34, 211, 238, 0.3)' : 'rgba(59, 130, 246, 0.3)'}; border-radius: 50%; animation: ping 2s infinite; left: -8px; top: -8px;"></div>
+          <div style="background: ${isNight ? '#22d3ee' : '#3b82f6'}; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><circle cx="12" cy="12" r="3"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2"/></svg>
+          </div>
+        </div>
+      `,
       iconSize: [24, 24],
       iconAnchor: [12, 12]
     });
 
     window.L.marker([myLocation.lat, myLocation.lng], { icon: myIcon })
       .addTo(map)
-      .bindPopup('<strong>Você está aqui</strong>');
+      .bindPopup(`<strong style="color: ${isNight ? '#22d3ee' : '#3b82f6'}">📍 Você está aqui</strong>`);
 
-    // Add helper markers (if viewMode includes helpers)
+    // Marcadores dos voluntários
     if (viewMode === 'all' || viewMode === 'helpers') {
       nearbyHelpers.forEach((helper, index) => {
         if (helper.location && helper.location.lat && helper.location.lng) {
           const helperIcon = window.L.divIcon({
             className: 'custom-marker',
-            html: `<div style="background: #f97316; width: 32px; height: 32px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; font-size: 14px;">🤝</div>`,
-            iconSize: [32, 32],
-            iconAnchor: [16, 16]
+            html: `
+              <div style="background: linear-gradient(135deg, #f97316, #ea580c); width: 36px; height: 36px; border-radius: 50%; border: 3px solid ${isNight ? '#1e293b' : 'white'}; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.4); display: flex; align-items: center; justify-content: center; font-size: 16px;">
+                🤝
+              </div>
+            `,
+            iconSize: [36, 36],
+            iconAnchor: [18, 18]
           });
 
           const marker = window.L.marker([helper.location.lat, helper.location.lng], { icon: helperIcon })
@@ -244,11 +296,13 @@ export default function NearbyHelpersPage() {
           }).join(' ') || '';
 
           marker.bindPopup(`
-            <div style="text-align: center; min-width: 150px;">
-              <strong>${helper.name}</strong><br/>
-              <span style="color: #666; font-size: 12px;">${helper.role === 'volunteer' ? 'Voluntário Profissional' : 'Ajudante'}</span><br/>
-              <span style="font-size: 16px;">${categories}</span><br/>
-              <span style="color: #22c55e; font-size: 12px;">${helper.distance} km</span>
+            <div style="text-align: center; min-width: 160px; padding: 8px; background: ${isNight ? '#1e293b' : 'white'}; color: ${isNight ? 'white' : '#1f2937'};">
+              <strong style="font-size: 14px;">${helper.name}</strong><br/>
+              <span style="color: ${isNight ? '#94a3b8' : '#6b7280'}; font-size: 11px;">
+                ${helper.role === 'volunteer' ? '🤝 Voluntário Profissional' : '🤝 Ajudante'}
+              </span><br/>
+              <span style="font-size: 14px; margin: 4px 0; display: block;">${categories}</span>
+              <span style="color: #22c55e; font-size: 12px; font-weight: bold;">📍 ${helper.distance} km</span>
             </div>
           `);
 
@@ -262,27 +316,33 @@ export default function NearbyHelpersPage() {
       });
     }
 
-    // Add help location markers (if viewMode includes locations)
+    // Marcadores dos locais de ajuda
     if (viewMode === 'all' || viewMode === 'locations') {
       helpLocations.forEach((location, index) => {
-        const color = CATEGORY_COLORS[location.category] || '#6b7280';
+        const colorClass = CATEGORY_COLORS[location.category] || 'bg-gray-500';
+        const colorHex = CATEGORY_HEX[location.category] || '#6b7280';
+        
         const locationIcon = window.L.divIcon({
           className: 'custom-marker',
-          html: `<div style="background: ${color}; width: 32px; height: 32px; border-radius: 8px; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; font-size: 14px;">${location.icon || '📍'}</div>`,
-          iconSize: [32, 32],
-          iconAnchor: [16, 16]
+          html: `
+            <div style="background: ${colorHex}; width: 36px; height: 36px; border-radius: 10px; border: 3px solid ${isNight ? '#1e293b' : 'white'}; box-shadow: 0 4px 12px ${colorHex}66; display: flex; align-items: center; justify-content: center; font-size: 16px;">
+              ${location.icon || '📍'}
+            </div>
+          `,
+          iconSize: [36, 36],
+          iconAnchor: [18, 18]
         });
 
         const marker = window.L.marker([location.lat, location.lng], { icon: locationIcon })
           .addTo(map);
 
         marker.bindPopup(`
-          <div style="text-align: center; min-width: 180px;">
+          <div style="text-align: center; min-width: 200px; padding: 8px; background: ${isNight ? '#1e293b' : 'white'}; color: ${isNight ? 'white' : '#1f2937'};">
             <strong style="font-size: 13px;">${location.name}</strong><br/>
-            <span style="color: #666; font-size: 11px;">📍 ${location.address}</span><br/>
-            ${location.phone ? `<span style="color: #666; font-size: 11px;">📞 ${location.phone}</span><br/>` : ''}
-            ${location.hours ? `<span style="color: #666; font-size: 11px;">🕐 ${location.hours}</span><br/>` : ''}
-            <span style="color: #22c55e; font-size: 12px; font-weight: bold;">${location.distance} km</span>
+            <span style="color: ${isNight ? '#94a3b8' : '#6b7280'}; font-size: 11px;">📍 ${location.address}</span><br/>
+            ${location.phone ? `<span style="color: ${isNight ? '#94a3b8' : '#6b7280'}; font-size: 11px;">📞 ${location.phone}</span><br/>` : ''}
+            ${location.hours ? `<span style="color: ${isNight ? '#94a3b8' : '#6b7280'}; font-size: 11px;">🕐 ${location.hours}</span><br/>` : ''}
+            <span style="color: #22c55e; font-size: 12px; font-weight: bold;">📍 ${location.distance} km</span>
           </div>
         `);
 
@@ -295,11 +355,13 @@ export default function NearbyHelpersPage() {
       });
     }
 
-    // Add radius circle
+    // Círculo de raio
     window.L.circle([myLocation.lat, myLocation.lng], {
-      color: '#3b82f6',
-      fillColor: '#3b82f6',
+      color: isNight ? '#22d3ee' : '#3b82f6',
+      fillColor: isNight ? '#22d3ee' : '#3b82f6',
       fillOpacity: 0.1,
+      weight: 2,
+      dashArray: '5, 10',
       radius: radius * 1000
     }).addTo(map);
   };
@@ -312,26 +374,61 @@ export default function NearbyHelpersPage() {
     window.open(`https://www.google.com/maps/dir/?api=1&destination=${location.lat},${location.lng}`, '_blank');
   };
 
+  const openStreetView = (location) => {
+    window.open(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${location.lat},${location.lng}`, '_blank');
+  };
+
   const totalResults = (viewMode === 'all' ? nearbyHelpers.length + helpLocations.length : 
                        viewMode === 'helpers' ? nearbyHelpers.length : helpLocations.length);
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className={`min-h-screen pb-20 transition-colors duration-500 ${themeColors.background}`}>
       {/* Header */}
-      <div className="bg-gradient-to-r from-primary to-secondary text-white py-6 px-4">
+      <div className={`bg-gradient-to-r ${themeColors.header} text-white py-6 px-4 transition-colors duration-500`}>
         <div className="container mx-auto max-w-4xl">
-          <h1 className="text-2xl font-heading font-bold flex items-center gap-2">
-            <MapPin size={28} />
-            {t('nearbyHelp')}
-          </h1>
-          <p className="text-white/80 text-sm mt-1">
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-2xl font-heading font-bold flex items-center gap-2">
+              <MapPin size={28} />
+              {t('nearbyHelp')}
+            </h1>
+            {/* Indicador Dia/Noite */}
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${isNight ? 'bg-indigo-800' : 'bg-blue-500'}`}>
+              {isNight ? <Moon size={16} /> : <Sun size={16} />}
+              <span className="text-xs font-medium">{isNight ? 'Noturno' : 'Diurno'}</span>
+            </div>
+          </div>
+          <p className="text-white/80 text-sm">
             {t('findVolunteersNearby')}
           </p>
+          
+          {/* Botão de localização */}
+          <div className="flex items-center gap-2 mt-3">
+            <Button
+              onClick={getMyLocation}
+              disabled={loadingLocation}
+              variant="outline"
+              size="sm"
+              className="bg-white/20 border-white/30 text-white hover:bg-white/30"
+            >
+              {loadingLocation ? (
+                <Loader2 size={14} className="mr-2 animate-spin" />
+              ) : (
+                <Target size={14} className="mr-2" />
+              )}
+              {myLocation ? 'Atualizar Localização' : 'Ativar Localização'}
+            </Button>
+            {myLocation && (
+              <div className="text-xs text-white/80 flex items-center gap-1">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                Localização ativa
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white border-b px-4 py-3 sticky top-0 z-10">
+      <div className={`${isNight ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} border-b px-4 py-3 sticky top-0 z-10 transition-colors duration-500`}>
         <div className="container mx-auto max-w-4xl">
           {/* View Mode Toggle */}
           <div className="flex gap-2 mb-3 overflow-x-auto pb-2">
@@ -339,8 +436,8 @@ export default function NearbyHelpersPage() {
               onClick={() => setViewMode('all')}
               className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
                 viewMode === 'all' 
-                  ? 'bg-primary text-white' 
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-blue-600 text-white' 
+                  : isNight ? 'bg-slate-700 text-gray-300 hover:bg-slate-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               🌐 {t('all')}
@@ -350,7 +447,7 @@ export default function NearbyHelpersPage() {
               className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
                 viewMode === 'helpers' 
                   ? 'bg-orange-500 text-white' 
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  : isNight ? 'bg-slate-700 text-gray-300 hover:bg-slate-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               🤝 Voluntários ({nearbyHelpers.length})
@@ -360,10 +457,10 @@ export default function NearbyHelpersPage() {
               className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
                 viewMode === 'locations' 
                   ? 'bg-blue-500 text-white' 
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  : isNight ? 'bg-slate-700 text-gray-300 hover:bg-slate-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              🏢 Locais de Ajuda ({helpLocations.length})
+              🏢 Locais ({helpLocations.length})
             </button>
           </div>
 
@@ -372,7 +469,7 @@ export default function NearbyHelpersPage() {
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full p-2 border rounded-xl bg-white text-sm"
+                className={`w-full p-2 border rounded-xl text-sm ${isNight ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-gray-300'}`}
               >
                 {HELP_CATEGORIES.map(cat => (
                   <option key={cat.value} value={cat.value}>
@@ -382,11 +479,11 @@ export default function NearbyHelpersPage() {
               </select>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">Raio:</span>
+              <span className={`text-sm ${themeColors.textMuted}`}>Raio:</span>
               <select
                 value={radius}
                 onChange={(e) => setRadius(Number(e.target.value))}
-                className="p-2 border rounded-xl bg-white text-sm"
+                className={`p-2 border rounded-xl text-sm ${isNight ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-gray-300'}`}
               >
                 <option value={5}>5 km</option>
                 <option value={10}>10 km</option>
@@ -401,7 +498,7 @@ export default function NearbyHelpersPage() {
               }}
               variant="outline"
               size="sm"
-              className="rounded-xl"
+              className={`rounded-xl ${isNight ? 'border-slate-600 text-gray-300 hover:bg-slate-700' : ''}`}
             >
               <RefreshCw size={16} className="mr-1" />
               Atualizar
@@ -411,33 +508,37 @@ export default function NearbyHelpersPage() {
       </div>
 
       <div className="container mx-auto max-w-4xl px-2 sm:px-4 py-4">
-        {/* Map - Sempre visível no topo */}
-        <div className="bg-white rounded-2xl shadow-sm border overflow-hidden mb-4">
+        {/* Map */}
+        <div className={`${themeColors.card} rounded-2xl shadow-lg border overflow-hidden mb-4 transition-colors duration-500`}>
           {loadingLocation ? (
-            <div className="h-[300px] sm:h-[350px] flex items-center justify-center bg-gray-100">
+            <div className={`h-[350px] sm:h-[400px] flex items-center justify-center ${isNight ? 'bg-slate-800' : 'bg-gray-100'}`}>
               <div className="text-center">
-                <Loader2 size={32} className="animate-spin text-primary mx-auto mb-2" />
-                <p className="text-gray-600">Obtendo sua localização...</p>
+                <Loader2 size={32} className="animate-spin text-blue-500 mx-auto mb-2" />
+                <p className={themeColors.textMuted}>Obtendo sua localização...</p>
               </div>
             </div>
           ) : (
-            <div ref={mapRef} className="h-[300px] sm:h-[350px] w-full" style={{ minHeight: '300px' }} />
+            <div ref={mapRef} className="h-[350px] sm:h-[400px] w-full" style={{ minHeight: '350px' }} />
           )}
           
           {/* Map Legend */}
-          <div className="p-3 bg-gray-50 border-t">
-            <div className="flex flex-wrap gap-3 text-xs">
-              <div className="flex items-center gap-1">
-                <div className="w-4 h-4 rounded-full bg-blue-500 border-2 border-white shadow"></div>
-                <span>Você</span>
+          <div className={`p-3 ${isNight ? 'bg-slate-700' : 'bg-gray-50'} border-t ${isNight ? 'border-slate-600' : 'border-gray-200'} transition-colors duration-500`}>
+            <div className="flex flex-wrap gap-4 text-xs">
+              <div className="flex items-center gap-2">
+                <div className={`w-5 h-5 rounded-full ${isNight ? 'bg-cyan-400' : 'bg-blue-500'} border-2 border-white shadow`}></div>
+                <span className={themeColors.textMuted}>Você</span>
               </div>
-              <div className="flex items-center gap-1">
-                <div className="w-4 h-4 rounded-full bg-orange-500 border-2 border-white shadow"></div>
-                <span>Voluntários</span>
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 border-2 border-white shadow"></div>
+                <span className={themeColors.textMuted}>Voluntários</span>
               </div>
-              <div className="flex items-center gap-1">
-                <div className="w-4 h-4 rounded bg-green-500 border-2 border-white shadow"></div>
-                <span>Locais de Ajuda</span>
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded-lg bg-green-500 border-2 border-white shadow"></div>
+                <span className={themeColors.textMuted}>Locais de Ajuda</span>
+              </div>
+              <div className="flex items-center gap-2 ml-auto">
+                {isNight ? <Moon size={14} className="text-cyan-400" /> : <Sun size={14} className="text-yellow-500" />}
+                <span className={themeColors.textMuted}>{isNight ? 'Modo Noturno' : 'Modo Diurno'}</span>
               </div>
             </div>
           </div>
@@ -445,169 +546,195 @@ export default function NearbyHelpersPage() {
 
         {/* List */}
         <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="font-bold text-textPrimary">
-                {loading ? 'Buscando...' : `${totalResults} resultado${totalResults !== 1 ? 's' : ''} encontrado${totalResults !== 1 ? 's' : ''}`}
-              </h2>
-            </div>
+          <div className="flex items-center justify-between">
+            <h2 className={`font-bold ${themeColors.text}`}>
+              {loading ? 'Buscando...' : `${totalResults} resultado${totalResults !== 1 ? 's' : ''} encontrado${totalResults !== 1 ? 's' : ''}`}
+            </h2>
+          </div>
 
-            {loading ? (
-              <div className="text-center py-8">
-                <Loader2 size={32} className="animate-spin text-primary mx-auto" />
-              </div>
-            ) : totalResults === 0 ? (
-              <div className="bg-white rounded-2xl p-6 text-center border">
-                <MapPin size={48} className="text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-600">Nenhum resultado encontrado nesta área</p>
-                <p className="text-sm text-gray-400 mt-1">Tente aumentar o raio de busca</p>
-              </div>
-            ) : (
-              <div className="space-y-3 max-h-[500px] overflow-y-auto">
-                {/* Help Locations */}
-                {(viewMode === 'all' || viewMode === 'locations') && helpLocations.map(location => (
-                  <div
-                    key={location.id}
-                    className={`bg-white rounded-2xl p-4 border-2 transition-all cursor-pointer ${
-                      selectedLocation?.id === location.id ? 'border-blue-500 shadow-lg' : 'border-transparent hover:border-gray-200'
-                    }`}
-                    onClick={() => {
-                      setSelectedLocation(location);
-                      setSelectedHelper(null);
-                    }}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div 
-                        className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 text-2xl"
-                        style={{ backgroundColor: CATEGORY_COLORS[location.category] + '20' }}
-                      >
-                        {location.icon || '📍'}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-bold text-textPrimary text-sm truncate">{location.name}</h3>
-                          <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded-full whitespace-nowrap">
-                            {location.distance} km
-                          </span>
-                        </div>
-                        <p className="text-xs text-textSecondary mt-1 truncate">
-                          📍 {location.address}
-                        </p>
-                        {location.hours && (
-                          <p className="text-xs text-textSecondary mt-0.5 truncate">
-                            🕐 {location.hours}
-                          </p>
-                        )}
-                        <span 
-                          className="inline-block text-xs px-2 py-0.5 rounded-full mt-2"
-                          style={{ 
-                            backgroundColor: CATEGORY_COLORS[location.category] + '20',
-                            color: CATEGORY_COLORS[location.category]
-                          }}
-                        >
-                          {getCategoryInfo(location.category).icon} {getCategoryInfo(location.category).label}
+          {loading ? (
+            <div className="text-center py-8">
+              <Loader2 size={32} className="animate-spin text-blue-500 mx-auto" />
+            </div>
+          ) : totalResults === 0 ? (
+            <div className={`${themeColors.card} rounded-2xl p-6 text-center border transition-colors duration-500`}>
+              <MapPin size={48} className={`mx-auto mb-3 ${isNight ? 'text-gray-600' : 'text-gray-300'}`} />
+              <p className={themeColors.textMuted}>Nenhum resultado encontrado nesta área</p>
+              <p className={`text-sm mt-1 ${isNight ? 'text-gray-500' : 'text-gray-400'}`}>Tente aumentar o raio de busca</p>
+            </div>
+          ) : (
+            <div className="space-y-3 max-h-[500px] overflow-y-auto">
+              {/* Help Locations */}
+              {(viewMode === 'all' || viewMode === 'locations') && helpLocations.map(location => (
+                <div
+                  key={location.id}
+                  className={`${themeColors.card} rounded-2xl p-4 border-2 transition-all cursor-pointer ${
+                    selectedLocation?.id === location.id 
+                      ? 'border-blue-500 shadow-lg' 
+                      : `border-transparent ${themeColors.cardHover}`
+                  }`}
+                  onClick={() => {
+                    setSelectedLocation(location);
+                    setSelectedHelper(null);
+                  }}
+                >
+                  <div className="flex items-start gap-3">
+                    <div 
+                      className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 text-2xl ${CATEGORY_COLORS[location.category] || 'bg-gray-500'} bg-opacity-20`}
+                    >
+                      {location.icon || '📍'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className={`font-bold text-sm truncate ${themeColors.text}`}>{location.name}</h3>
+                        <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded-full whitespace-nowrap">
+                          {location.distance} km
                         </span>
                       </div>
+                      <p className={`text-xs mt-1 truncate ${themeColors.textMuted}`}>
+                        📍 {location.address}
+                      </p>
+                      {location.hours && (
+                        <p className={`text-xs mt-0.5 truncate ${themeColors.textMuted}`}>
+                          🕐 {location.hours}
+                        </p>
+                      )}
+                      <span 
+                        className={`inline-block text-xs px-2 py-0.5 rounded-full mt-2 ${CATEGORY_COLORS[location.category]} bg-opacity-20`}
+                        style={{ color: CATEGORY_HEX[location.category] }}
+                      >
+                        {getCategoryInfo(location.category).icon} {getCategoryInfo(location.category).label}
+                      </span>
                     </div>
-                    
-                    {selectedLocation?.id === location.id && (
-                      <div className="mt-3 pt-3 border-t flex gap-2">
+                  </div>
+                  
+                  {selectedLocation?.id === location.id && (
+                    <div className="mt-3 pt-3 border-t border-opacity-20 flex gap-2">
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openGoogleMaps(location);
+                        }}
+                        size="sm"
+                        className="flex-1 rounded-xl bg-blue-600 hover:bg-blue-700"
+                      >
+                        <Navigation size={16} className="mr-1" />
+                        Como Chegar
+                      </Button>
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openStreetView(location);
+                        }}
+                        size="sm"
+                        variant="outline"
+                        className={`rounded-xl ${isNight ? 'border-blue-500 text-blue-400' : 'border-blue-500 text-blue-600'}`}
+                      >
+                        <ExternalLink size={16} className="mr-1" />
+                        Street View
+                      </Button>
+                      {location.phone && (
                         <Button
                           onClick={(e) => {
                             e.stopPropagation();
-                            openGoogleMaps(location);
+                            window.open(`tel:${location.phone}`);
                           }}
                           size="sm"
-                          className="flex-1 rounded-xl bg-blue-500 hover:bg-blue-600"
+                          variant="outline"
+                          className={`rounded-xl ${isNight ? 'border-slate-600' : ''}`}
                         >
-                          <Navigation size={16} className="mr-1" />
-                          Como Chegar
+                          <Phone size={16} />
                         </Button>
-                        {location.phone && (
-                          <Button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              window.open(`tel:${location.phone}`);
-                            }}
-                            size="sm"
-                            variant="outline"
-                            className="rounded-xl"
-                          >
-                            <Phone size={16} />
-                          </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {/* Helpers */}
+              {(viewMode === 'all' || viewMode === 'helpers') && nearbyHelpers.map(helper => (
+                <div
+                  key={helper.id}
+                  className={`${themeColors.card} rounded-2xl p-4 border-2 transition-all cursor-pointer ${
+                    selectedHelper?.id === helper.id 
+                      ? 'border-orange-500 shadow-lg' 
+                      : `border-transparent ${themeColors.cardHover}`
+                  }`}
+                  onClick={() => {
+                    setSelectedHelper(helper);
+                    setSelectedLocation(null);
+                  }}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center flex-shrink-0">
+                      <span className="text-white font-bold text-lg">{helper.name?.charAt(0)}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className={`font-bold truncate ${themeColors.text}`}>{helper.name}</h3>
+                        <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded-full">
+                          {helper.distance} km
+                        </span>
+                      </div>
+                      <p className={`text-sm ${themeColors.textMuted}`}>
+                        {helper.role === 'volunteer' ? '🤝 Voluntário Profissional' : '🤝 Ajudante'}
+                      </p>
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {helper.help_categories?.slice(0, 4).map(cat => {
+                          const catInfo = getCategoryInfo(cat);
+                          return (
+                            <span
+                              key={cat}
+                              className={`text-xs px-2 py-1 rounded-full ${isNight ? 'bg-slate-700' : 'bg-gray-100'}`}
+                              title={catInfo.label}
+                            >
+                              {catInfo.icon} {catInfo.label}
+                            </span>
+                          );
+                        })}
+                        {helper.help_categories?.length > 4 && (
+                          <span className={`text-xs px-2 py-1 rounded-full ${isNight ? 'bg-slate-700' : 'bg-gray-100'}`}>
+                            +{helper.help_categories.length - 4}
+                          </span>
                         )}
                       </div>
-                    )}
-                  </div>
-                ))}
-
-                {/* Helpers */}
-                {(viewMode === 'all' || viewMode === 'helpers') && nearbyHelpers.map(helper => (
-                  <div
-                    key={helper.id}
-                    className={`bg-white rounded-2xl p-4 border-2 transition-all cursor-pointer ${
-                      selectedHelper?.id === helper.id ? 'border-orange-500 shadow-lg' : 'border-transparent hover:border-gray-200'
-                    }`}
-                    onClick={() => {
-                      setSelectedHelper(helper);
-                      setSelectedLocation(null);
-                    }}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center flex-shrink-0">
-                        <span className="text-white font-bold text-lg">{helper.name?.charAt(0)}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-bold text-textPrimary truncate">{helper.name}</h3>
-                          <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded-full">
-                            {helper.distance} km
-                          </span>
-                        </div>
-                        <p className="text-sm text-textSecondary">
-                          {helper.role === 'volunteer' ? '🤝 Voluntário Profissional' : '🤝 Ajudante'}
-                        </p>
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {helper.help_categories?.slice(0, 4).map(cat => {
-                            const catInfo = getCategoryInfo(cat);
-                            return (
-                              <span
-                                key={cat}
-                                className="text-xs px-2 py-1 bg-gray-100 rounded-full"
-                                title={catInfo.label}
-                              >
-                                {catInfo.icon} {catInfo.label}
-                              </span>
-                            );
-                          })}
-                          {helper.help_categories?.length > 4 && (
-                            <span className="text-xs px-2 py-1 bg-gray-100 rounded-full">
-                              +{helper.help_categories.length - 4}
-                            </span>
-                          )}
-                        </div>
-                      </div>
                     </div>
-                    
-                    {selectedHelper?.id === helper.id && (
-                      <div className="mt-3 pt-3 border-t flex gap-2">
+                  </div>
+                  
+                  {selectedHelper?.id === helper.id && (
+                    <div className="mt-3 pt-3 border-t border-opacity-20 flex gap-2">
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/direct-chat/${helper.id}`);
+                        }}
+                        size="sm"
+                        className="flex-1 rounded-xl bg-orange-500 hover:bg-orange-600"
+                      >
+                        <MessageCircle size={16} className="mr-1" />
+                        Conversar
+                      </Button>
+                      {helper.location && (
                         <Button
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate(`/direct-chat/${helper.id}`);
+                            openStreetView(helper.location);
                           }}
                           size="sm"
-                          className="flex-1 rounded-xl bg-orange-500 hover:bg-orange-600"
+                          variant="outline"
+                          className={`rounded-xl ${isNight ? 'border-orange-500 text-orange-400' : 'border-orange-500 text-orange-600'}`}
                         >
-                          <MessageCircle size={16} className="mr-1" />
-                          Conversar
+                          <ExternalLink size={16} className="mr-1" />
+                          Street View
                         </Button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <BottomNav />

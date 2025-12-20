@@ -71,19 +71,19 @@ code {
         --card-foreground: 210 17% 13%;
         --popover: 0 0% 100%;
         --popover-foreground: 210 17% 13%;
-        --primary: 225 86% 35%;
+        --primary: 217 91% 50%;
         --primary-foreground: 0 0% 100%;
-        --secondary: 225 82% 21%;
+        --secondary: 217 85% 35%;
         --secondary-foreground: 0 0% 100%;
         --muted: 0 0% 96.1%;
         --muted-foreground: 207 16% 39%;
-        --accent: 225 81% 43%;
+        --accent: 217 91% 60%;
         --accent-foreground: 0 0% 100%;
         --destructive: 0 84.2% 60.2%;
         --destructive-foreground: 0 0% 98%;
         --border: 0 0% 89.8%;
         --input: 0 0% 89.8%;
-        --ring: 21 100% 63%;
+        --ring: 217 91% 50%;
         --radius: 1rem;
     }
 }

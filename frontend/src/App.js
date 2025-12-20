@@ -15,6 +15,7 @@ import DirectChatPage from './pages/DirectChatPage';
 import VolunteersPage from './pages/VolunteersPage';
 import VolunteerRegisterPage from './pages/VolunteerRegisterPage';
 import NearbyHelpersPage from './pages/NearbyHelpersPage';
+import MapPage from './pages/MapPage';
 
 export const AuthContext = React.createContext();
 
@@ -89,6 +90,7 @@ function App() {
           <Route path="/direct-chat/:userId" element={user ? <DirectChatPage /> : <Navigate to="/" />} />
           <Route path="/volunteers" element={user ? <VolunteersPage /> : <Navigate to="/" />} />
           <Route path="/nearby" element={user ? <NearbyHelpersPage /> : <Navigate to="/" />} />
+          <Route path="/map" element={user ? <MapPage /> : <Navigate to="/" />} />
           <Route path="/volunteer-register" element={<VolunteerRegisterPage />} />
         </Routes>
       </BrowserRouter>

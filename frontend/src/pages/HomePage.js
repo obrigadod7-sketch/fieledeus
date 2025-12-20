@@ -122,7 +122,7 @@ export default function HomePage() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [newPost, setNewPost] = useState({
     type: user?.role === 'migrant' ? 'need' : 'offer',
-    category: 'food',
+    categories: ['food'], // Agora é array - múltiplas categorias
     title: '',
     description: '',
     images: [],
@@ -133,6 +133,7 @@ export default function HomePage() {
   const [newComment, setNewComment] = useState('');
   const [commentingOn, setCommentingOn] = useState(null);
   const [advertisements, setAdvertisements] = useState([]);
+  const [showOfferForm, setShowOfferForm] = useState(false);
 
   const categories = [
     { value: 'food', label: t('food'), color: 'bg-green-100 text-green-700 border-green-200', icon: '🍽️' },
@@ -182,7 +183,11 @@ export default function HomePage() {
     let filtered = posts;
     
     if (categoryFilter !== 'all') {
-      filtered = filtered.filter(p => p.category === categoryFilter);
+      // Filtrar posts que contenham a categoria (pode ter múltiplas)
+      filtered = filtered.filter(p => 
+        p.category === categoryFilter || 
+        (p.categories && p.categories.includes(categoryFilter))
+      );
     }
     
     if (typeFilter !== 'all') {
@@ -213,6 +218,11 @@ export default function HomePage() {
       toast.error('Preencha todos os campos');
       return;
     }
+    
+    if (newPost.categories.length === 0) {
+      toast.error('Selecione pelo menos uma categoria');
+      return;
+    }
 
     try {
       const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/posts`, {
@@ -221,7 +231,11 @@ export default function HomePage() {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(newPost)
+        body: JSON.stringify({
+          ...newPost,
+          category: newPost.categories[0], // categoria principal para compatibilidade
+          categories: newPost.categories // todas as categorias
+        })
       });
 
       if (response.ok) {
@@ -230,7 +244,7 @@ export default function HomePage() {
           toast.info('📩 Verifique suas mensagens para recursos úteis!', { duration: 5000 });
         }
         setShowCreatePost(false);
-        setNewPost({ type: user?.role === 'migrant' ? 'need' : 'offer', category: 'food', title: '', description: '', images: [], location: null });
+        setNewPost({ type: user?.role === 'migrant' ? 'need' : 'offer', categories: ['food'], title: '', description: '', images: [], location: null });
         fetchPosts();
       }
     } catch (error) {
@@ -560,7 +574,10 @@ export default function HomePage() {
                 {newPost.type === 'need' ? `🆘 ${t("needHelp")}` : `🤝 ${t("wantToHelp")}`}
               </DialogTitle>
               <DialogDescription>
-                {t('fillInfoToPublish') || 'Preencha as informações abaixo para publicar'}
+                {newPost.type === 'offer' 
+                  ? 'Selecione as categorias em que você pode ajudar e veja as solicitações disponíveis'
+                  : t('fillInfoToPublish') || 'Preencha as informações abaixo para publicar'
+                }
               </DialogDescription>
             </DialogHeader>
             <div 
@@ -574,143 +591,306 @@ export default function HomePage() {
               tabIndex={0}
             >
               <div className="space-y-6 pr-2">
-                {/* Categoria */}
+                {/* Categoria - Múltipla Seleção */}
                 <div className="bg-gray-50 p-5 rounded-2xl">
-                  <Label className="text-base font-bold mb-3 block">📂 Selecione a Categoria</Label>
+                  <Label className="text-base font-bold mb-2 block">
+                    📂 {newPost.type === 'offer' ? 'Em quais categorias você pode ajudar?' : 'Selecione as Categorias (até 3)'}
+                  </Label>
+                  <p className="text-sm text-textSecondary mb-3">
+                    {newPost.type === 'offer' 
+                      ? 'Selecione as áreas em que você tem conhecimento ou recursos para oferecer ajuda'
+                      : 'Na França, muitos serviços trabalham com várias áreas juntas (ex: moradia + emprego + educação)'
+                    }
+                  </p>
                   <div className="grid grid-cols-2 gap-3">
-                    {categories.map(cat => (
-                      <button
-                        key={cat.value}
-                        type="button"
-                        onClick={() => setNewPost({...newPost, category: cat.value})}
-                        className={`p-4 rounded-xl border-2 transition-all text-left ${
-                          newPost.category === cat.value
-                            ? 'bg-primary text-white border-primary shadow-lg scale-105'
-                            : 'bg-white border-gray-200 hover:border-primary hover:shadow-md'
-                        }`}
-                      >
-                        <div className="text-2xl mb-2">{cat.icon}</div>
-                        <div className={`font-bold text-sm ${newPost.category === cat.value ? 'text-white' : 'text-textPrimary'}`}>
-                          {cat.label}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Título */}
-                <div className="bg-white border-2 border-gray-200 p-5 rounded-2xl">
-                  <Label className="text-base font-bold mb-3 block flex items-center gap-2">
-                    <span className="text-2xl">✏️</span>
-                    <span>Título do Pedido</span>
-                  </Label>
-                  <Input
-                    data-testid="post-title-input"
-                    value={newPost.title}
-                    onChange={(e) => setNewPost({...newPost, title: e.target.value})}
-                    placeholder="Ex: Preciso de roupas de inverno"
-                    className="rounded-xl h-12 text-base"
-                  />
-                  <p className="text-xs text-textMuted mt-2">Seja claro e específico</p>
-                </div>
-                
-                {/* Descrição */}
-                <div className="bg-white border-2 border-gray-200 p-5 rounded-2xl">
-                  <Label className="text-base font-bold mb-3 block flex items-center gap-2">
-                    <span className="text-2xl">📝</span>
-                    <span>Detalhes</span>
-                  </Label>
-                  <Textarea
-                    data-testid="post-description-input"
-                    value={newPost.description}
-                    onChange={(e) => setNewPost({...newPost, description: e.target.value})}
-                    rows={5}
-                    placeholder="Descreva em detalhes: tamanhos, quantidades, quando precisa, etc..."
-                    className="rounded-xl text-base"
-                  />
-                  <p className="text-xs text-textMuted mt-2">Quanto mais detalhes, melhor!</p>
-                </div>
-
-                {/* Mídia e Localização */}
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 p-5 rounded-2xl space-y-4">
-                  <Label className="text-base font-bold block flex items-center gap-2">
-                    <span className="text-2xl">📎</span>
-                    <span>Adicionar Mais Informações (Opcional)</span>
-                  </Label>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <Button
-                      type="button"
-                      data-testid="add-image-button"
-                      onClick={() => fileInputRef.current?.click()}
-                      variant="outline"
-                      className="h-14 rounded-xl border-2 bg-white hover:bg-blue-50 hover:border-primary"
-                    >
-                      <ImageIcon size={20} className="mr-2" />
-                      <span className="font-bold">Adicionar Fotos</span>
-                    </Button>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                    />
-                    <Button
-                      type="button"
-                      data-testid="add-location-button"
-                      onClick={getLocation}
-                      variant="outline"
-                      className="h-14 rounded-xl border-2 bg-white hover:bg-blue-50 hover:border-primary"
-                    >
-                      <MapPin size={20} className="mr-2" />
-                      <span className="font-bold">Localização</span>
-                    </Button>
-                  </div>
-
-                  {newPost.images && newPost.images.length > 0 && (
-                    <div className="bg-white p-3 rounded-xl">
-                      <p className="text-sm font-bold text-textPrimary mb-3">Fotos adicionadas:</p>
-                      <div className="flex gap-2 flex-wrap">
-                        {newPost.images.map((img, idx) => (
-                          <div key={idx} className="relative w-24 h-24 rounded-xl overflow-hidden border-2 border-gray-200 group">
-                            <img src={img} alt="" className="w-full h-full object-cover" />
-                            <button
-                              onClick={() => removeImage(idx)}
-                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
-                            >
-                              <X size={16} />
-                            </button>
+                    {categories.map(cat => {
+                      const isSelected = newPost.categories.includes(cat.value);
+                      const canSelect = newPost.categories.length < 3 || isSelected;
+                      
+                      return (
+                        <button
+                          key={cat.value}
+                          type="button"
+                          onClick={() => {
+                            if (isSelected) {
+                              // Remover categoria (manter pelo menos 1)
+                              if (newPost.categories.length > 1) {
+                                setNewPost({
+                                  ...newPost, 
+                                  categories: newPost.categories.filter(c => c !== cat.value)
+                                });
+                              }
+                            } else if (canSelect) {
+                              // Adicionar categoria
+                              setNewPost({
+                                ...newPost, 
+                                categories: [...newPost.categories, cat.value]
+                              });
+                            } else {
+                              toast.error('Máximo 3 categorias');
+                            }
+                          }}
+                          disabled={!canSelect && !isSelected}
+                          className={`p-4 rounded-xl border-2 transition-all text-left ${
+                            isSelected
+                              ? 'bg-primary text-white border-primary shadow-lg scale-105'
+                              : canSelect
+                                ? 'bg-white border-gray-200 hover:border-primary hover:shadow-md'
+                                : 'bg-gray-100 border-gray-200 opacity-50 cursor-not-allowed'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="text-2xl mb-2">{cat.icon}</div>
+                            {isSelected && (
+                              <span className="text-xs font-bold bg-white/20 px-2 py-1 rounded-full">
+                                ✓
+                              </span>
+                            )}
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {newPost.location && (
-                    <div className="p-4 bg-green-100 rounded-xl flex items-center gap-3 border-2 border-green-300">
-                      <div className="bg-green-500 p-2 rounded-full">
-                        <MapPin size={20} className="text-white" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-green-800">Localização adicionada</p>
-                        <p className="text-xs text-green-700">Sua localização será compartilhada</p>
-                      </div>
+                          <div className={`font-bold text-sm ${isSelected ? 'text-white' : 'text-textPrimary'}`}>
+                            {cat.label}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {newPost.categories.length > 0 && (
+                    <div className="mt-4 p-3 bg-blue-50 rounded-xl border border-blue-200">
+                      <p className="text-sm text-blue-800 font-medium">
+                        ✓ {newPost.categories.length} categoria{newPost.categories.length > 1 ? 's' : ''} selecionada{newPost.categories.length > 1 ? 's' : ''}:
+                        <span className="ml-2">
+                          {newPost.categories.map(c => categories.find(cat => cat.value === c)?.icon).join(' ')}
+                        </span>
+                      </p>
                     </div>
                   )}
                 </div>
+
+                {/* SEÇÃO: Solicitações de Ajuda (para quem quer ajudar) */}
+                {newPost.type === 'offer' && newPost.categories.length > 0 && (
+                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-5 rounded-2xl border-2 border-green-200">
+                    <Label className="text-base font-bold mb-3 block flex items-center gap-2">
+                      <span className="text-2xl">📋</span>
+                      <span>Solicitações de Ajuda Disponíveis</span>
+                    </Label>
+                    <p className="text-sm text-green-700 mb-4">
+                      Pessoas que precisam de ajuda nas categorias que você selecionou:
+                    </p>
+                    
+                    {/* Lista de solicitações filtradas */}
+                    <div className="space-y-3 max-h-64 overflow-y-auto">
+                      {posts
+                        .filter(post => 
+                          post.type === 'need' && 
+                          post.user_id !== user.id &&
+                          (post.categories?.some(cat => newPost.categories.includes(cat)) || 
+                           newPost.categories.includes(post.category))
+                        )
+                        .slice(0, 5)
+                        .map(post => (
+                          <div 
+                            key={post.id} 
+                            className="bg-white p-4 rounded-xl border-2 border-green-100 hover:border-green-300 transition-all cursor-pointer"
+                            onClick={() => {
+                              setShowCreatePost(false);
+                              navigate(`/direct-chat/${post.user_id}`);
+                            }}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center flex-shrink-0">
+                                <User size={20} className="text-white" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-bold text-sm text-gray-800">{post.user?.name}</span>
+                                  <span className="text-xs text-green-600">• Precisa de ajuda</span>
+                                </div>
+                                <h4 className="font-bold text-gray-800 text-sm">{post.title}</h4>
+                                <p className="text-xs text-gray-600 line-clamp-2 mt-1">{post.description}</p>
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                  {(post.categories || [post.category]).map(cat => {
+                                    const catInfo = categories.find(c => c.value === cat);
+                                    return catInfo ? (
+                                      <span 
+                                        key={cat}
+                                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${catInfo.color}`}
+                                      >
+                                        {catInfo.icon} {catInfo.label}
+                                      </span>
+                                    ) : null;
+                                  })}
+                                </div>
+                              </div>
+                              <MessageCircle size={20} className="text-green-500 flex-shrink-0" />
+                            </div>
+                          </div>
+                        ))
+                      }
+                      
+                      {posts.filter(post => 
+                        post.type === 'need' && 
+                        post.user_id !== user.id &&
+                        (post.categories?.some(cat => newPost.categories.includes(cat)) || 
+                         newPost.categories.includes(post.category))
+                      ).length === 0 && (
+                        <div className="text-center py-6 text-gray-500">
+                          <p className="text-sm">Nenhuma solicitação encontrada para estas categorias.</p>
+                          <p className="text-xs mt-1">Você pode criar uma oferta de ajuda para ser visível!</p>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <p className="text-xs text-green-600 mt-3 text-center">
+                      Clique em uma solicitação para iniciar uma conversa e oferecer ajuda
+                    </p>
+                    
+                    {/* Botão para mostrar formulário de oferta */}
+                    {!showOfferForm && (
+                      <div className="mt-4 pt-4 border-t border-green-200">
+                        <Button
+                          type="button"
+                          onClick={() => setShowOfferForm(true)}
+                          variant="outline"
+                          className="w-full rounded-xl border-2 border-dashed border-blue-300 text-blue-600 hover:bg-blue-50"
+                        >
+                          <Plus size={18} className="mr-2" />
+                          Prefiro criar uma oferta de ajuda pública
+                        </Button>
+                        <p className="text-xs text-gray-500 mt-2 text-center">
+                          Uma oferta fica visível para todos que precisam de ajuda
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Título e Detalhes - Apenas para 'need' OU quando ajudador quer criar oferta */}
+                {(newPost.type === 'need' || showOfferForm) && (
+                  <>
+                    {/* Título */}
+                    <div className="bg-white border-2 border-gray-200 p-5 rounded-2xl">
+                      <Label className="text-base font-bold mb-3 block flex items-center gap-2">
+                        <span className="text-2xl">✏️</span>
+                        <span>{newPost.type === 'offer' ? 'Título da sua Oferta' : 'Título do Pedido'}</span>
+                      </Label>
+                      <Input
+                        data-testid="post-title-input"
+                        value={newPost.title}
+                        onChange={(e) => setNewPost({...newPost, title: e.target.value})}
+                        placeholder={newPost.type === 'offer' 
+                          ? "Ex: Posso ajudar com orientação jurídica" 
+                          : "Ex: Preciso de roupas de inverno"
+                        }
+                        className="rounded-xl h-12 text-base"
+                      />
+                      <p className="text-xs text-textMuted mt-2">Seja claro e específico</p>
+                    </div>
+                    
+                    {/* Descrição */}
+                    <div className="bg-white border-2 border-gray-200 p-5 rounded-2xl">
+                      <Label className="text-base font-bold mb-3 block flex items-center gap-2">
+                        <span className="text-2xl">📝</span>
+                        <span>Detalhes</span>
+                      </Label>
+                      <Textarea
+                        data-testid="post-description-input"
+                        value={newPost.description}
+                        onChange={(e) => setNewPost({...newPost, description: e.target.value})}
+                        rows={5}
+                        placeholder={newPost.type === 'offer'
+                          ? "Descreva como você pode ajudar: sua experiência, disponibilidade, idiomas que fala..."
+                          : "Descreva em detalhes: tamanhos, quantidades, quando precisa, etc..."
+                        }
+                        className="rounded-xl text-base"
+                      />
+                      <p className="text-xs text-textMuted mt-2">Quanto mais detalhes, melhor!</p>
+                    </div>
+
+                    {/* Mídia e Localização */}
+                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 p-5 rounded-2xl space-y-4">
+                      <Label className="text-base font-bold block flex items-center gap-2">
+                        <span className="text-2xl">📎</span>
+                        <span>Adicionar Mais Informações (Opcional)</span>
+                      </Label>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <Button
+                          type="button"
+                          data-testid="add-image-button"
+                          onClick={() => fileInputRef.current?.click()}
+                          variant="outline"
+                          className="h-14 rounded-xl border-2 bg-white hover:bg-blue-50 hover:border-primary"
+                        >
+                          <ImageIcon size={20} className="mr-2" />
+                          <span className="font-bold">Adicionar Fotos</span>
+                        </Button>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFileUpload}
+                          className="hidden"
+                        />
+                        <Button
+                          type="button"
+                          data-testid="add-location-button"
+                          onClick={getLocation}
+                          variant="outline"
+                          className="h-14 rounded-xl border-2 bg-white hover:bg-blue-50 hover:border-primary"
+                        >
+                          <MapPin size={20} className="mr-2" />
+                          <span className="font-bold">Localização</span>
+                        </Button>
+                      </div>
+
+                      {newPost.images && newPost.images.length > 0 && (
+                        <div className="bg-white p-3 rounded-xl">
+                          <p className="text-sm font-bold text-textPrimary mb-3">Fotos adicionadas:</p>
+                          <div className="flex gap-2 flex-wrap">
+                            {newPost.images.map((img, idx) => (
+                              <div key={idx} className="relative w-24 h-24 rounded-xl overflow-hidden border-2 border-gray-200 group">
+                                <img src={img} alt="" className="w-full h-full object-cover" />
+                                <button
+                                  onClick={() => removeImage(idx)}
+                                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                                >
+                                  <X size={16} />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {newPost.location && (
+                        <div className="p-4 bg-green-100 rounded-xl flex items-center gap-3 border-2 border-green-300">
+                          <div className="bg-green-500 p-2 rounded-full">
+                            <MapPin size={20} className="text-white" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-green-800">Localização adicionada</p>
+                            <p className="text-xs text-green-700">Sua localização será compartilhada</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
-            <div className="border-t pt-4 pb-4 px-6 flex-shrink-0 bg-white mt-auto">
-              <Button 
-                data-testid="submit-post-button"
-                onClick={createPost} 
-                className="w-full rounded-full py-6 text-lg font-bold bg-primary hover:bg-primary-hover shadow-lg"
-              >
-                📢 {t('publishNow')}
-              </Button>
-            </div>
+            {/* Botão de publicar - apenas para 'need' ou quando showOfferForm */}
+            {(newPost.type === 'need' || showOfferForm) && (
+              <div className="border-t pt-4 pb-4 px-6 flex-shrink-0 bg-white mt-auto">
+                <Button 
+                  data-testid="submit-post-button"
+                  onClick={createPost} 
+                  className="w-full rounded-full py-6 text-lg font-bold bg-primary hover:bg-primary-hover shadow-lg"
+                >
+                  📢 {t('publishNow')}
+                </Button>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
 
@@ -791,10 +971,18 @@ export default function HomePage() {
                       <p className="text-sm text-textMuted capitalize">{post.user?.role}</p>
                     </div>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getCategoryStyle(post.category)} flex items-center gap-1`}>
-                    <span>{getCategoryIcon(post.category)}</span>
-                    {categories.find(c => c.value === post.category)?.label}
-                  </span>
+                  {/* Mostrar múltiplas categorias se existirem */}
+                  <div className="flex flex-wrap gap-1 justify-end max-w-[50%]">
+                    {(post.categories && post.categories.length > 0 ? post.categories : [post.category]).map((cat, idx) => (
+                      <span 
+                        key={idx}
+                        className={`px-2 py-1 rounded-full text-xs font-medium border ${getCategoryStyle(cat)} flex items-center gap-1`}
+                      >
+                        <span>{getCategoryIcon(cat)}</span>
+                        <span className="hidden sm:inline">{categories.find(c => c.value === cat)?.label}</span>
+                      </span>
+                    ))}
+                  </div>
                 </div>
                 <h3 className="text-base sm:text-lg font-bold text-textPrimary mb-2 break-words">{post.title}</h3>
                 <p className="text-sm sm:text-base text-textSecondary mb-3 leading-relaxed break-words">{post.description}</p>

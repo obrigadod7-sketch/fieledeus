@@ -4,11 +4,11 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/dialog';
 import BottomNav from '../components/BottomNav';
-import { 
-  Users, FileText, Link, MessageCircle, UserCheck, UserX, 
+import {
+  Users, FileText, Link, MessageCircle, UserCheck, UserX,
   Trash2, Search, Filter, BarChart3, PieChart, TrendingUp,
   Shield, AlertTriangle, CheckCircle, XCircle, Edit, Eye,
-  RefreshCw, Download, Settings, Home, ChevronRight, Megaphone, Plus, Image as ImageIcon
+  RefreshCw, Download, Settings, Home, ChevronRight, Megaphone, Plus, Image as ImageIcon, UserPlus
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -51,6 +51,17 @@ export default function AdminDashboard() {
     is_active: true,
     priority: 5
   });
+  
+  // Estado para adicionar novo administrador
+  const [showAddAdminDialog, setShowAddAdminDialog] = useState(false);
+  const [newAdmin, setNewAdmin] = useState({
+    email: 'admin@watizat.com',
+    password: 'admin123',
+    name: 'Administrador',
+    role: 'admin',
+    languages: ['pt', 'en', 'fr']
+  });
+  const [addingAdmin, setAddingAdmin] = useState(false);
 
   useEffect(() => {
     fetchStats();
@@ -117,14 +128,62 @@ export default function AdminDashboard() {
     }
   };
 
+  // Função para adicionar novo administrador
+  const handleAddAdmin = async () => {
+    if (!newAdmin.email || !newAdmin.password || !newAdmin.name) {
+      toast.error('Preencha todos os campos obrigatórios');
+      return;
+    }
+
+    if (newAdmin.password.length < 6) {
+      toast.error('A senha deve ter no mínimo 6 caracteres');
+      return;
+    }
+
+    setAddingAdmin(true);
+
+    try {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(newAdmin)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success('Administrador criado com sucesso!');
+        setShowAddAdminDialog(false);
+        setNewAdmin({
+          email: 'admin@watizat.com',
+          password: 'admin123',
+          name: 'Administrador',
+          role: 'admin',
+          languages: ['pt', 'en', 'fr']
+        });
+        fetchUsers();
+        fetchStats();
+      } else {
+        toast.error(data.detail || 'Erro ao criar administrador');
+      }
+    } catch (error) {
+      console.error('Error creating admin:', error);
+      toast.error('Erro de conexão ao criar administrador');
+    } finally {
+      setAddingAdmin(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!itemToDelete) return;
 
     try {
-      const endpoint = deleteType === 'user' 
+      const endpoint = deleteType === 'user'
         ? `/api/admin/users/${itemToDelete.id}`
         : `/api/admin/posts/${itemToDelete.id}`;
-      
+
       const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}${endpoint}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -153,7 +212,7 @@ export default function AdminDashboard() {
     try {
       const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/admin/users/${userId}/role`, {
         method: 'PUT',
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
@@ -178,13 +237,13 @@ export default function AdminDashboard() {
     }
 
     try {
-      const url = editingAd 
+      const url = editingAd
         ? `${process.env.REACT_APP_BACKEND_URL}/api/admin/advertisements/${editingAd.id}`
         : `${process.env.REACT_APP_BACKEND_URL}/api/admin/advertisements`;
-      
+
       const response = await fetch(url, {
         method: editingAd ? 'PUT' : 'POST',
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
@@ -251,7 +310,7 @@ export default function AdminDashboard() {
     try {
       const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/admin/advertisements/${ad.id}`, {
         method: 'PUT',
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
@@ -347,8 +406,8 @@ export default function AdminDashboard() {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-2 px-4 py-3 rounded-xl font-medium transition-all whitespace-nowrap ${
-                    activeTab === tab.id 
-                      ? 'bg-primary text-white' 
+                    activeTab === tab.id
+                      ? 'bg-primary text-white'
                       : 'text-gray-600 hover:bg-gray-100'
                   }`}
                 >
@@ -374,7 +433,7 @@ export default function AdminDashboard() {
                 <p className="text-2xl font-bold text-gray-800">{stats?.total_users || 0}</p>
                 <p className="text-sm text-gray-500">Total Usuários</p>
               </div>
-              
+
               <div className="bg-white rounded-2xl p-4 shadow-sm border">
                 <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center mb-3">
                   <UserCheck size={20} className="text-green-600" />
@@ -382,7 +441,7 @@ export default function AdminDashboard() {
                 <p className="text-2xl font-bold text-gray-800">{stats?.total_volunteers || 0}</p>
                 <p className="text-sm text-gray-500">Voluntários</p>
               </div>
-              
+
               <div className="bg-white rounded-2xl p-4 shadow-sm border">
                 <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center mb-3">
                   <UserX size={20} className="text-purple-600" />
@@ -390,7 +449,7 @@ export default function AdminDashboard() {
                 <p className="text-2xl font-bold text-gray-800">{stats?.total_migrants || 0}</p>
                 <p className="text-sm text-gray-500">Migrantes</p>
               </div>
-              
+
               <div className="bg-white rounded-2xl p-4 shadow-sm border">
                 <div className="w-10 h-10 rounded-xl bg-yellow-100 flex items-center justify-center mb-3">
                   <FileText size={20} className="text-yellow-600" />
@@ -398,7 +457,7 @@ export default function AdminDashboard() {
                 <p className="text-2xl font-bold text-gray-800">{stats?.total_posts || 0}</p>
                 <p className="text-sm text-gray-500">Publicações</p>
               </div>
-              
+
               <div className="bg-white rounded-2xl p-4 shadow-sm border">
                 <div className="w-10 h-10 rounded-xl bg-pink-100 flex items-center justify-center mb-3">
                   <MessageCircle size={20} className="text-pink-600" />
@@ -406,7 +465,7 @@ export default function AdminDashboard() {
                 <p className="text-2xl font-bold text-gray-800">{stats?.total_messages || 0}</p>
                 <p className="text-sm text-gray-500">Mensagens</p>
               </div>
-              
+
               <div className="bg-white rounded-2xl p-4 shadow-sm border">
                 <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center mb-3">
                   <Link size={20} className="text-indigo-600" />
@@ -449,15 +508,15 @@ export default function AdminDashboard() {
                 <div className="space-y-3">
                   {CATEGORIES.map(cat => {
                     const count = stats?.posts_by_category?.[cat.value] || 0;
-                    const maxCount = Math.max(...Object.values(stats?.posts_by_category || {1: 1}), 1);
+                    const maxCount = Math.max(...Object.values(stats?.posts_by_category || { 1: 1 }), 1);
                     const percentage = (count / maxCount) * 100;
-                    
+
                     return (
                       <div key={cat.value} className="flex items-center gap-3">
                         <span className="text-xl w-8">{cat.icon}</span>
                         <span className="text-sm text-gray-600 w-24">{cat.label}</span>
                         <div className="flex-1 bg-gray-100 rounded-full h-3">
-                          <div 
+                          <div
                             className={`h-3 rounded-full ${cat.color.split(' ')[0]}`}
                             style={{ width: `${percentage}%` }}
                           />
@@ -544,6 +603,14 @@ export default function AdminDashboard() {
                 <Button onClick={() => { fetchUsers(); fetchStats(); }} variant="outline" className="rounded-xl">
                   <RefreshCw size={18} className="mr-2" />
                   Atualizar
+                </Button>
+                <Button 
+                  onClick={() => setShowAddAdminDialog(true)} 
+                  className="rounded-xl bg-red-600 hover:bg-red-700 text-white"
+                  data-testid="add-admin-btn"
+                >
+                  <UserPlus size={18} className="mr-2" />
+                  Adicionar Admin
                 </Button>
               </div>
             </div>
@@ -708,7 +775,7 @@ export default function AdminDashboard() {
                 <h2 className="text-lg font-bold text-textPrimary">Divulgações & Anúncios</h2>
                 <p className="text-sm text-textSecondary">Gerencie mensagens motivacionais e campanhas de doação</p>
               </div>
-              <Button 
+              <Button
                 onClick={() => {
                   setEditingAd(null);
                   setNewAd({
@@ -733,8 +800,8 @@ export default function AdminDashboard() {
             {/* Ads List */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {advertisements.map(ad => (
-                <div 
-                  key={ad.id} 
+                <div
+                  key={ad.id}
                   className={`bg-white rounded-2xl shadow-sm border overflow-hidden ${!ad.is_active ? 'opacity-60' : ''}`}
                 >
                   {ad.image_url && (
@@ -743,12 +810,12 @@ export default function AdminDashboard() {
                   <div className="p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <span className={`text-xs font-bold px-2 py-1 rounded-full ${
-                        ad.type === 'donation' ? 'bg-orange-100 text-orange-700' : 
-                        ad.type === 'motivation' ? 'bg-blue-100 text-blue-700' : 
+                        ad.type === 'donation' ? 'bg-orange-100 text-orange-700' :
+                        ad.type === 'motivation' ? 'bg-blue-100 text-blue-700' :
                         'bg-purple-100 text-purple-700'
                       }`}>
-                        {ad.type === 'donation' ? '💰 Doação' : 
-                         ad.type === 'motivation' ? '💪 Motivação' : 
+                        {ad.type === 'donation' ? '💰 Doação' :
+                         ad.type === 'motivation' ? '💪 Motivação' :
                          '📢 Patrocinado'}
                       </span>
                       <span className={`text-xs px-2 py-1 rounded-full ${ad.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
@@ -796,7 +863,7 @@ export default function AdminDashboard() {
               <div className="text-center py-12 bg-white rounded-2xl">
                 <Megaphone size={48} className="mx-auto text-gray-300 mb-4" />
                 <p className="text-gray-500">Nenhuma divulgação cadastrada</p>
-                <Button 
+                <Button
                   onClick={() => setShowAdDialog(true)}
                   className="mt-4 rounded-xl"
                 >
@@ -807,6 +874,96 @@ export default function AdminDashboard() {
           </div>
         )}
       </div>
+
+      {/* Add Admin Dialog */}
+      <Dialog open={showAddAdminDialog} onOpenChange={setShowAddAdminDialog}>
+        <DialogContent className="rounded-2xl max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Shield size={24} className="text-red-600" />
+              Adicionar Administrador
+            </DialogTitle>
+            <DialogDescription>
+              Crie um novo usuário com privilégios de administrador
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div>
+              <label className="text-sm font-medium mb-1 block">Nome *</label>
+              <Input
+                value={newAdmin.name}
+                onChange={(e) => setNewAdmin({...newAdmin, name: e.target.value})}
+                placeholder="Nome do administrador"
+                className="rounded-xl"
+                data-testid="admin-name-input"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Email *</label>
+              <Input
+                type="email"
+                value={newAdmin.email}
+                onChange={(e) => setNewAdmin({...newAdmin, email: e.target.value})}
+                placeholder="email@exemplo.com"
+                className="rounded-xl"
+                data-testid="admin-email-input"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Senha * (mínimo 6 caracteres)</label>
+              <Input
+                type="password"
+                value={newAdmin.password}
+                onChange={(e) => setNewAdmin({...newAdmin, password: e.target.value})}
+                placeholder="Senha do administrador"
+                className="rounded-xl"
+                data-testid="admin-password-input"
+              />
+            </div>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3">
+              <p className="text-sm text-yellow-800">
+                <strong>⚠️ Atenção:</strong> Administradores têm acesso total ao sistema. 
+                Use credenciais seguras em ambiente de produção.
+              </p>
+            </div>
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
+              <p className="text-sm text-blue-800">
+                <strong>📝 Credenciais padrão:</strong><br/>
+                Email: admin@watizat.com<br/>
+                Senha: admin123
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-3 justify-end mt-6">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowAddAdminDialog(false)} 
+              className="rounded-xl"
+              disabled={addingAdmin}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleAddAdmin} 
+              className="rounded-xl bg-red-600 hover:bg-red-700 text-white"
+              disabled={addingAdmin}
+              data-testid="confirm-add-admin-btn"
+            >
+              {addingAdmin ? (
+                <>
+                  <RefreshCw size={16} className="mr-2 animate-spin" />
+                  Criando...
+                </>
+              ) : (
+                <>
+                  <UserPlus size={16} className="mr-2" />
+                  Criar Administrador
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Ad Create/Edit Dialog */}
       <Dialog open={showAdDialog} onOpenChange={setShowAdDialog}>
@@ -925,7 +1082,7 @@ export default function AdminDashboard() {
               Confirmar Exclusão
             </DialogTitle>
             <DialogDescription>
-              {deleteType === 'user' 
+              {deleteType === 'user'
                 ? `Tem certeza que deseja excluir o usuário "${itemToDelete?.name}"? Esta ação também excluirá todos os posts e mensagens deste usuário.`
                 : `Tem certeza que deseja excluir a publicação "${itemToDelete?.title}"?`
               }
