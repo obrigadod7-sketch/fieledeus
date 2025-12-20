@@ -119,8 +119,7 @@ class Post(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     user_id: str
     type: str
-    category: str  # Categoria principal
-    categories: List[str] = Field(default_factory=list)  # Múltiplas categorias
+    category: str
     title: str
     description: str
     location: Optional[dict] = None
@@ -128,8 +127,7 @@ class Post(BaseModel):
 
 class PostCreate(BaseModel):
     type: str
-    category: str  # Categoria principal
-    categories: Optional[List[str]] = Field(default_factory=list)  # Múltiplas categorias (até 3)
+    category: str
     title: str
     description: str
     location: Optional[dict] = None
@@ -305,14 +303,10 @@ async def update_profile(updates: dict, current_user: User = Depends(get_current
 
 @api_router.post("/posts", response_model=Post)
 async def create_post(post_data: PostCreate, current_user: User = Depends(get_current_user)):
-    # Se não há categorias múltiplas, usar a categoria principal
-    categories_list = post_data.categories if post_data.categories else [post_data.category]
-    
     post = Post(
         user_id=current_user.id,
         type=post_data.type,
         category=post_data.category,
-        categories=categories_list,
         title=post_data.title,
         description=post_data.description,
         location=post_data.location
@@ -324,20 +318,18 @@ async def create_post(post_data: PostCreate, current_user: User = Depends(get_cu
     
     await db.posts.insert_one(post_dict)
     
-    # Enviar resposta automática para cada categoria selecionada
     if post_data.type == 'need':
-        for cat in categories_list:
-            auto_response = get_auto_response(cat)
-            if auto_response:
-                message_data = {
-                    'id': str(uuid.uuid4()),
-                    'from_user_id': 'system',
-                    'to_user_id': current_user.id,
-                    'message': f"{auto_response['title']}\n\n{auto_response['content']}",
-                    'created_at': datetime.now(timezone.utc).isoformat(),
-                    'is_auto_response': True
-                }
-                await db.messages.insert_one(message_data)
+        auto_response = get_auto_response(post_data.category)
+        if auto_response:
+            message_data = {
+                'id': str(uuid.uuid4()),
+                'from_user_id': 'system',
+                'to_user_id': current_user.id,
+                'message': f"{auto_response['title']}\n\n{auto_response['content']}",
+                'created_at': datetime.now(timezone.utc).isoformat(),
+                'is_auto_response': True
+            }
+            await db.messages.insert_one(message_data)
     
     return post
 
@@ -375,15 +367,11 @@ async def get_posts(type: Optional[str] = None, category: Optional[str] = None, 
     if type:
         query['type'] = type
     if category:
-        # Buscar posts que tenham a categoria (principal ou nas múltiplas)
-        query['$or'] = [
-            {'category': category},
-            {'categories': category}
-        ]
+        query['category'] = category
     
     posts = await db.posts.find(query, {'_id': 0}).sort('created_at', -1).to_list(100)
     
-    # Se o usuário é voluntário, marcar posts que ele pode ajudar baseado nas categorias
+    # Se o usuário é voluntário, filtrar posts baseado nas categorias que ele pode ajudar
     user_data = await db.users.find_one({'id': current_user.id}, {'_id': 0})
     user_help_categories = user_data.get('help_categories', []) if user_data else []
     
@@ -408,17 +396,12 @@ async def get_posts(type: Optional[str] = None, category: Optional[str] = None, 
                 display_name = user.get('display_name') if user.get('use_display_name') else user['name']
                 post['user'] = {'name': display_name, 'role': user['role']}
         
-        # Garantir que posts tenham campo categories
-        if 'categories' not in post or not post['categories']:
-            post['categories'] = [post['category']] if post.get('category') else []
-        
         # Se é voluntário ou helper e o post é do tipo "need" (precisa de ajuda)
-        # só mostrar se alguma categoria do post está nas categorias que ele pode ajudar
+        # só mostrar se a categoria do post está nas categorias que ele pode ajudar
         if current_user.role in ['volunteer', 'helper']:
             if post['type'] == 'need':
-                post_categories = post.get('categories', [post.get('category')])
-                # Se não tem categorias definidas ou alguma categoria do post está nas dele
-                if not user_help_categories or any(cat in user_help_categories for cat in post_categories):
+                # Se não tem categorias definidas ou a categoria do post está nas dele
+                if not user_help_categories or post['category'] in user_help_categories:
                     post['can_help'] = True
                     filtered_posts.append(post)
             else:
@@ -444,44 +427,6 @@ async def get_services(category: Optional[str] = None):
 @api_router.post("/ai/chat")
 async def ai_chat(message_data: AIMessage, current_user: User = Depends(get_current_user)):
     try:
-        # Verificar se a chave OpenAI está configurada
-        openai_key = os.environ.get('OPENAI_API_KEY')
-        
-        if not openai_key:
-            # Retornar resposta baseada no guia Watizat sem IA
-            pdf_processor.load_index()
-            relevant_chunks = pdf_processor.search(message_data.message, k=3)
-            
-            if relevant_chunks:
-                context_response = f"""Encontrei as seguintes informações no Guia Watizat que podem ajudar:
-
-{chr(10).join([f"• {chunk[:300]}..." if len(chunk) > 300 else f"• {chunk}" for chunk in relevant_chunks[:3]])}
-
-Para mais informações, consulte o Guia Watizat completo ou entre em contato com um voluntário."""
-            else:
-                context_response = """Não encontrei informações específicas sobre sua pergunta no guia.
-
-Você pode:
-• Criar um post na seção "Preciso de Ajuda"
-• Entrar em contato com voluntários disponíveis
-• Consultar os locais de ajuda no mapa
-
-Estamos aqui para ajudar!"""
-            
-            chat_record = {
-                'id': str(uuid.uuid4()),
-                'user_id': current_user.id,
-                'message': message_data.message,
-                'response': context_response,
-                'language': message_data.language,
-                'ai_enabled': False,
-                'created_at': datetime.now(timezone.utc).isoformat()
-            }
-            await db.ai_chats.insert_one(chat_record)
-            
-            return {'response': context_response, 'sources': relevant_chunks[:2] if relevant_chunks else [], 'ai_enabled': False}
-        
-        # Com chave OpenAI - usar IA
         pdf_processor.load_index()
         relevant_chunks = pdf_processor.search(message_data.message, k=3)
         
@@ -497,7 +442,7 @@ Estamos aqui para ajudar!"""
         
         # Usar OpenAI diretamente
         openai_client = AsyncOpenAI(
-            api_key=openai_key
+            api_key=os.environ.get('OPENAI_API_KEY')
         )
         
         response = await openai_client.chat.completions.create(
@@ -518,12 +463,11 @@ Estamos aqui para ajudar!"""
             'message': message_data.message,
             'response': ai_response,
             'language': message_data.language,
-            'ai_enabled': True,
             'created_at': datetime.now(timezone.utc).isoformat()
         }
         await db.ai_chats.insert_one(chat_record)
         
-        return {'response': ai_response, 'sources': relevant_chunks[:2] if relevant_chunks else [], 'ai_enabled': True}
+        return {'response': ai_response, 'sources': relevant_chunks[:2] if relevant_chunks else []}
     
     except Exception as e:
         logging.error(f"AI Chat error: {str(e)}")
