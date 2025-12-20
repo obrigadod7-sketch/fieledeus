@@ -375,11 +375,15 @@ async def get_posts(type: Optional[str] = None, category: Optional[str] = None, 
     if type:
         query['type'] = type
     if category:
-        query['category'] = category
+        # Buscar posts que tenham a categoria (principal ou nas múltiplas)
+        query['$or'] = [
+            {'category': category},
+            {'categories': category}
+        ]
     
     posts = await db.posts.find(query, {'_id': 0}).sort('created_at', -1).to_list(100)
     
-    # Se o usuário é voluntário, filtrar posts baseado nas categorias que ele pode ajudar
+    # Se o usuário é voluntário, marcar posts que ele pode ajudar baseado nas categorias
     user_data = await db.users.find_one({'id': current_user.id}, {'_id': 0})
     user_help_categories = user_data.get('help_categories', []) if user_data else []
     
