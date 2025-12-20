@@ -21,6 +21,16 @@ code {
     font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
+/* Esconder scrollbar mas manter scroll funcional */
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
 /* Custom Scrollbar Styles */
 .scroll-container::-webkit-scrollbar {
     width: 10px;
