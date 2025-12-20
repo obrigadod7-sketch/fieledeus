@@ -122,7 +122,7 @@ export default function HomePage() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [newPost, setNewPost] = useState({
     type: user?.role === 'migrant' ? 'need' : 'offer',
-    category: 'food',
+    categories: ['food'], // Agora é array - múltiplas categorias
     title: '',
     description: '',
     images: [],
