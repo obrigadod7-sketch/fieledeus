@@ -48,6 +48,21 @@ code {
     scrollbar-color: #1CA9C9 #e5e7eb;
 }
 
+/* Garantir scroll em modais/dialogs */
+[role="dialog"] [data-radix-scroll-area-viewport],
+[role="dialog"] .overflow-y-auto,
+[role="dialog"] .overflow-auto {
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+}
+
+/* Garantir que o conteúdo do modal seja scrollável */
+[data-testid="create-post-dialog"] > div:nth-child(2) {
+    overflow-y: auto !important;
+    max-height: calc(90vh - 220px);
+}
+
 @layer base {
     :root {
         --background: 0 0% 100%;

@@ -349,19 +349,19 @@ export default function DirectChatPage() {
                 onKeyPress={handleKeyPress}
                 placeholder="Digite sua mensagem..."
                 rows={1}
-              className="rounded-2xl resize-none"
-            />
-            <Button
-              data-testid="send-message-button"
-              onClick={() => sendMessage()}
-              disabled={sending || !input.trim()}
-              className="rounded-full w-12 h-12 p-0 bg-primary hover:bg-primary-hover flex-shrink-0"
-            >
-              <Send size={20} />
-            </Button>
+                className="rounded-2xl resize-none"
+              />
+              <Button
+                data-testid="send-message-button"
+                onClick={() => sendMessage()}
+                disabled={sending || !input.trim()}
+                className="rounded-full w-12 h-12 p-0 bg-primary hover:bg-primary-hover flex-shrink-0"
+              >
+                <Send size={20} />
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
       )}
     </div>
   );

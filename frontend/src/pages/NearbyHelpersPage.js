@@ -5,6 +5,7 @@ import BottomNav from '../components/BottomNav';
 import { MapPin, Navigation, User, Phone, MessageCircle, Loader2, Filter, X, RefreshCw, Building2, Clock, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const HELP_CATEGORIES = [
   { value: 'all', label: 'Todas as categorias', icon: '🌐' },
@@ -34,6 +35,7 @@ const CATEGORY_COLORS = {
 export default function NearbyHelpersPage() {
   const { token, user } = useContext(AuthContext);
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
@@ -86,29 +88,62 @@ export default function NearbyHelpersPage() {
   }, [myLocation, nearbyHelpers, helpLocations, viewMode]);
 
   const getMyLocation = () => {
-    setLoadingLocation(true);
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setMyLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          });
-          setLoadingLocation(false);
-        },
-        (error) => {
-          console.error('Geolocation error:', error);
-          // Default to Paris center
-          setMyLocation({ lat: 48.8566, lng: 2.3522 });
-          setLoadingLocation(false);
-          toast.error('Não foi possível obter sua localização. Usando Paris como padrão.');
-        },
-        { enableHighAccuracy: true, timeout: 10000 }
-      );
-    } else {
-      setMyLocation({ lat: 48.8566, lng: 2.3522 });
-      setLoadingLocation(false);
+    if (!navigator.geolocation) {
+      toast.error('Seu navegador não suporta geolocalização');
+      setMyLocation({ lat: 48.8566, lng: 2.3522 }); // Paris center
+      return;
     }
+
+    setLoadingLocation(true);
+    
+    toast.info('📍 Obtendo sua localização...', {
+      description: 'Por favor, permita o acesso quando solicitado',
+      duration: 4000
+    });
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setMyLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        });
+        setLoadingLocation(false);
+        toast.success('✅ Localização obtida!', {
+          description: 'Buscando ajudantes próximos a você...'
+        });
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
+        setLoadingLocation(false);
+        
+        let errorMessage = 'Erro ao obter localização';
+        let errorDescription = 'Usando Paris como localização padrão.';
+
+        if (error.code === 1) {
+          errorMessage = '🔒 Permissão de localização negada';
+          errorDescription = 'Usando Paris como localização padrão. Ative a permissão nas configurações para ver ajudantes próximos a você.';
+        } else if (error.code === 2) {
+          errorMessage = '📡 Localização indisponível';
+          errorDescription = 'Usando Paris como localização padrão. Verifique se o GPS está ativado.';
+        } else if (error.code === 3) {
+          errorMessage = '⏱️ Tempo esgotado';
+          errorDescription = 'Usando Paris como localização padrão.';
+        }
+
+        // Default to Paris center
+        setMyLocation({ lat: 48.8566, lng: 2.3522 });
+        
+        toast.warning(errorMessage, {
+          description: errorDescription,
+          duration: 6000
+        });
+      },
+      { 
+        enableHighAccuracy: true, 
+        timeout: 15000,
+        maximumAge: 0
+      }
+    );
   };
 
   const fetchNearbyHelpers = async () => {
@@ -287,10 +322,10 @@ export default function NearbyHelpersPage() {
         <div className="container mx-auto max-w-4xl">
           <h1 className="text-2xl font-heading font-bold flex items-center gap-2">
             <MapPin size={28} />
-            Ajuda Próxima
+            {t('nearbyHelp')}
           </h1>
           <p className="text-white/80 text-sm mt-1">
-            Encontre voluntários e locais de ajuda perto de você
+            {t('findVolunteersNearby')}
           </p>
         </div>
       </div>
@@ -308,7 +343,7 @@ export default function NearbyHelpersPage() {
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              🌐 Todos
+              🌐 {t('all')}
             </button>
             <button
               onClick={() => setViewMode('helpers')}

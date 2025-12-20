@@ -50,7 +50,7 @@ export default function LandingPage() {
           </h1>
           
           <p className="text-xl md:text-2xl text-textSecondary mb-12 max-w-2xl mx-auto leading-relaxed">
-            Conectando migrantes e ajudantes em Paris. Encontre apoio, ofereça ajuda, construa comunidade.
+            {t('tagline')}
           </p>
 
           <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
@@ -68,7 +68,7 @@ export default function LandingPage() {
                 {t('needHelp')}
               </h2>
               <p className="text-textSecondary">
-                Encontre ajuda com trabalho, moradia, alimentação, serviços jurídicos e mais.
+                {t('needHelpDesc')}
               </p>
             </div>
 
@@ -86,13 +86,13 @@ export default function LandingPage() {
                 {t('wantToHelp')}
               </h2>
               <p className="text-textSecondary">
-                Ofereça seu apoio, compartilhe recursos e faça a diferença na vida de alguém.
+                {t('wantToHelpDesc')}
               </p>
             </div>
           </div>
 
           <div className="mt-12">
-            <p className="text-textMuted mb-4">Já tem uma conta?</p>
+            <p className="text-textMuted mb-4">{t('alreadyAccount')}</p>
             <Button 
               data-testid="login-button"
               onClick={() => navigate('/auth')}
@@ -112,14 +112,13 @@ export default function LandingPage() {
             <div className="text-center mb-10">
               <div className="inline-flex items-center gap-2 bg-primary/20 px-4 py-2 rounded-full mb-4">
                 <Shield size={20} className="text-primary" />
-                <span className="text-primary font-medium">Para Profissionais</span>
+                <span className="text-primary font-medium">{t('forProfessionals')}</span>
               </div>
               <h2 className="text-3xl md:text-4xl font-heading font-bold text-textPrimary mb-4">
-                Seja um Voluntário Profissional
+                {t('volunteerTitle')}
               </h2>
               <p className="text-lg text-textSecondary max-w-2xl mx-auto">
-                Advogados, médicos, psicólogos, assistentes sociais e outros profissionais podem 
-                oferecer seus serviços de forma voluntária e fazer a diferença.
+                {t('volunteerDesc')}
               </p>
             </div>
 
@@ -128,9 +127,9 @@ export default function LandingPage() {
                 <div className="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-4">
                   <Award size={28} className="text-blue-600" />
                 </div>
-                <h3 className="font-bold text-textPrimary mb-2">Cadastro Verificado</h3>
+                <h3 className="font-bold text-textPrimary mb-2">{t('verifiedProfile')}</h3>
                 <p className="text-sm text-textSecondary">
-                  Perfil profissional com áreas de especialização e credenciais
+                  {t('verifiedDesc')}
                 </p>
               </div>
 
@@ -138,9 +137,9 @@ export default function LandingPage() {
                 <div className="w-14 h-14 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-4">
                   <Users size={28} className="text-green-600" />
                 </div>
-                <h3 className="font-bold text-textPrimary mb-2">Conexões Direcionadas</h3>
+                <h3 className="font-bold text-textPrimary mb-2">{t('targetedConnections')}</h3>
                 <p className="text-sm text-textSecondary">
-                  Receba pedidos de ajuda apenas nas suas áreas de expertise
+                  {t('targetedDesc')}
                 </p>
               </div>
 
@@ -148,9 +147,9 @@ export default function LandingPage() {
                 <div className="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-4">
                   <HeartHandshake size={28} className="text-purple-600" />
                 </div>
-                <h3 className="font-bold text-textPrimary mb-2">Impacto Real</h3>
+                <h3 className="font-bold text-textPrimary mb-2">{t('impactMeasure')}</h3>
                 <p className="text-sm text-textSecondary">
-                  Ajude quem realmente precisa com suas habilidades profissionais
+                  {t('impactDesc')}
                 </p>
               </div>
             </div>
@@ -162,7 +161,7 @@ export default function LandingPage() {
                 className="rounded-full px-10 py-6 text-lg font-bold bg-primary hover:bg-primary-hover shadow-lg"
               >
                 <Shield size={24} className="mr-2" />
-                Cadastrar como Voluntário Profissional
+                {t('registerVolunteer')}
               </Button>
               <p className="text-sm text-textMuted mt-4">
                 Cadastro completo com validação de credenciais profissionais

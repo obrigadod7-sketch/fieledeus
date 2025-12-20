@@ -38,13 +38,6 @@ const resources = {
       map: 'Mapa',
       volunteers: 'Voluntários',
       services: 'Serviços',
-      nearbyHelp: 'Ajuda Próxima',
-      all: 'Todos',
-      needsHelp: 'Precisa de Ajuda',
-      offersHelp: 'Oferece Ajuda',
-      findVolunteersNearby: 'Encontre voluntários e locais de ajuda perto de você',
-      volunteersCount: 'Voluntários',
-      helpLocationsCount: 'Locais de Ajuda',
       
       // Actions
       search: 'Buscar',
@@ -58,9 +51,6 @@ const resources = {
       showMap: 'Mostrar Mapa',
       hideMap: 'Ocultar Mapa',
       filter: 'Filtrar',
-      next: 'Próximo',
-      previous: 'Anterior',
-      nearestLocation: 'Local Mais Próximo',
       
       // Roles & Users
       migrant: 'Migrante',
@@ -197,13 +187,6 @@ const resources = {
       map: 'Carte',
       volunteers: 'Bénévoles',
       services: 'Services',
-      nearbyHelp: 'Aide à Proximité',
-      all: 'Tous',
-      needsHelp: 'Besoin d\'Aide',
-      offersHelp: 'Offre d\'Aide',
-      findVolunteersNearby: 'Trouvez des bénévoles et des lieux d\'aide près de chez vous',
-      volunteersCount: 'Bénévoles',
-      helpLocationsCount: 'Lieux d\'Aide',
       
       // Actions
       search: 'Rechercher',
@@ -217,9 +200,6 @@ const resources = {
       showMap: 'Afficher la carte',
       hideMap: 'Masquer la carte',
       filter: 'Filtrer',
-      next: 'Suivant',
-      previous: 'Précédent',
-      nearestLocation: 'Lieu le Plus Proche',
       
       // Roles & Users
       migrant: 'Migrant',
@@ -356,13 +336,6 @@ const resources = {
       map: 'Map',
       volunteers: 'Volunteers',
       services: 'Services',
-      nearbyHelp: 'Nearby Help',
-      all: 'All',
-      needsHelp: 'Needs Help',
-      offersHelp: 'Offers Help',
-      findVolunteersNearby: 'Find volunteers and help locations near you',
-      volunteersCount: 'Volunteers',
-      helpLocationsCount: 'Help Locations',
       
       // Actions
       search: 'Search',
@@ -376,9 +349,6 @@ const resources = {
       showMap: 'Show Map',
       hideMap: 'Hide Map',
       filter: 'Filter',
-      next: 'Next',
-      previous: 'Previous',
-      nearestLocation: 'Nearest Location',
       
       // Roles & Users
       migrant: 'Migrant',
@@ -515,13 +485,6 @@ const resources = {
       map: 'Mapa',
       volunteers: 'Voluntarios',
       services: 'Servicios',
-      nearbyHelp: 'Ayuda Cercana',
-      all: 'Todos',
-      needsHelp: 'Necesita Ayuda',
-      offersHelp: 'Ofrece Ayuda',
-      findVolunteersNearby: 'Encuentra voluntarios y lugares de ayuda cerca de ti',
-      volunteersCount: 'Voluntarios',
-      helpLocationsCount: 'Lugares de Ayuda',
       
       // Actions
       search: 'Buscar',
@@ -535,9 +498,6 @@ const resources = {
       showMap: 'Mostrar Mapa',
       hideMap: 'Ocultar Mapa',
       filter: 'Filtrar',
-      next: 'Siguiente',
-      previous: 'Anterior',
-      nearestLocation: 'Ubicación Más Cercana',
       
       // Roles & Users
       migrant: 'Migrante',

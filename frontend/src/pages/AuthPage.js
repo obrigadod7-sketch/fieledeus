@@ -74,40 +74,76 @@ export default function AuthPage() {
   };
 
   const getLocation = () => {
-    setLoadingLocation(true);
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords;
-          setLocation({ lat: latitude, lng: longitude });
-          
-          // Tentar obter endereço via Nominatim (OpenStreetMap)
-          try {
-            const response = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
-            );
-            const data = await response.json();
-            if (data.display_name) {
-              setLocationAddress(data.display_name);
-            }
-          } catch (error) {
-            console.error('Error getting address:', error);
-          }
-          
-          setLoadingLocation(false);
-          toast.success('Localização obtida com sucesso!');
-        },
-        (error) => {
-          setLoadingLocation(false);
-          toast.error('Não foi possível obter sua localização');
-          console.error('Geolocation error:', error);
-        },
-        { enableHighAccuracy: true, timeout: 10000 }
-      );
-    } else {
-      setLoadingLocation(false);
-      toast.error('Geolocalização não suportada pelo navegador');
+    if (!navigator.geolocation) {
+      toast.error('Seu navegador não suporta geolocalização');
+      return;
     }
+
+    setLoadingLocation(true);
+    
+    toast.info('📍 Solicitando permissão de localização...', {
+      description: 'Por favor, permita o acesso à sua localização quando solicitado pelo navegador',
+      duration: 5000
+    });
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        setLocation({ lat: latitude, lng: longitude });
+        
+        // Tentar obter endereço via Nominatim (OpenStreetMap)
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
+            {
+              headers: {
+                'User-Agent': 'Watizat-App'
+              }
+            }
+          );
+          const data = await response.json();
+          if (data.display_name) {
+            setLocationAddress(data.display_name);
+          }
+        } catch (error) {
+          console.error('Error getting address:', error);
+          setLocationAddress('Endereço não disponível');
+        }
+        
+        setLoadingLocation(false);
+        toast.success('✅ Localização obtida com sucesso!', {
+          description: 'Sua localização foi capturada e será salva no seu perfil'
+        });
+      },
+      (error) => {
+        setLoadingLocation(false);
+        console.error('Geolocation error:', error);
+        
+        let errorMessage = 'Erro ao obter localização';
+        let errorDescription = '';
+
+        if (error.code === 1) {
+          errorMessage = '🔒 Permissão de localização negada';
+          errorDescription = 'Você negou o acesso à localização. Ative nas configurações do navegador/celular para usar este recurso.';
+        } else if (error.code === 2) {
+          errorMessage = '📡 Localização indisponível';
+          errorDescription = 'Não foi possível obter sua localização. Verifique se o GPS está ativado.';
+        } else if (error.code === 3) {
+          errorMessage = '⏱️ Tempo esgotado';
+          errorDescription = 'A solicitação demorou muito. Tente novamente.';
+        }
+
+        toast.error(errorMessage, {
+          description: errorDescription,
+          duration: 6000
+        });
+      },
+      { 
+        enableHighAccuracy: true, 
+        timeout: 15000,
+        maximumAge: 0
+      }
+    );
   };
 
   const handleSubmit = async (e) => {
@@ -317,7 +353,7 @@ export default function AuthPage() {
                       }`}
                     >
                       <User size={24} />
-                      <span>Preciso de Ajuda</span>
+                      <span>{t('needHelp')}</span>
                     </button>
                     <button
                       type="button"
@@ -330,7 +366,7 @@ export default function AuthPage() {
                       }`}
                     >
                       <Heart size={24} />
-                      <span>Quero Ajudar</span>
+                      <span>{t('wantToHelp')}</span>
                     </button>
                   </div>
                 </div>
@@ -535,7 +571,7 @@ export default function AuthPage() {
           >
             {loading ? 'Carregando...' : (
               isLogin ? t('login') : (
-                (step < getTotalSteps()) ? 'Próximo' : t('register')
+                (step < getTotalSteps()) ? t('next') : t('register')
               )
             )}
           </Button>
@@ -553,7 +589,7 @@ export default function AuthPage() {
             }}
             className="text-textSecondary hover:text-primary transition-colors"
           >
-            {isLogin ? 'Não tem conta? Cadastre-se' : 'Já tem conta? Entre'}
+            {isLogin ? t('noAccount') : t('hasAccount')}
           </button>
         </div>
       </div>

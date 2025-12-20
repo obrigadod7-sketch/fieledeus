@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import BottomNav from '../components/BottomNav';
 import { Search, User, MessageCircle, Star, Briefcase, Clock, Languages, GraduationCap, Shield, Building } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const PROFESSIONAL_AREAS = [
   { value: 'legal', label: 'Jurídico', icon: '⚖️', desc: 'Advogados, assistentes jurídicos' },
@@ -23,6 +24,7 @@ const PROFESSIONAL_AREAS = [
 export default function VolunteersPage() {
   const { token } = useContext(AuthContext);
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [volunteers, setVolunteers] = useState([]);
   const [filteredVolunteers, setFilteredVolunteers] = useState([]);
   const [loading, setLoading] = useState(true);

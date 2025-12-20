@@ -7,10 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '../components/ui/dialog';
 import { Input } from '../components/ui/input';
 import BottomNav from '../components/BottomNav';
+import MapPreview from '../components/MapPreview';
 import { Plus, MapPin, User, Clock, MessageCircle, Image as ImageIcon, MessageSquare, Send, X, Filter, Info, ExternalLink, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { requestLocationPermission, showLocationInstructions } from '../utils/geolocation';
 
 const RESOURCES_INFO = {
   work: {
@@ -258,41 +260,23 @@ export default function HomePage() {
     setNewPost({...newPost, images: newImages});
   };
 
-  const getLocation = () => {
-    if (navigator.geolocation) {
-      toast.info('Obtendo localização...');
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
+  const getLocation = async () => {
+    try {
+      const location = await requestLocationPermission({
+        showToast: true,
+        onSuccess: (loc) => {
           setNewPost({
             ...newPost,
             location: {
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
-              address: 'Localização atual'
+              lat: loc.lat,
+              lng: loc.lng,
+              address: loc.address || 'Localização atual'
             }
           });
-          toast.success('Localização adicionada!');
-        },
-        (error) => {
-          console.error('Geolocation error:', error);
-          if (error.code === 1) {
-            toast.error('Permissão de localização negada. Ative nas configurações do navegador.');
-          } else if (error.code === 2) {
-            toast.error('Localização indisponível. Verifique sua conexão.');
-          } else if (error.code === 3) {
-            toast.error('Tempo esgotado ao obter localização. Tente novamente.');
-          } else {
-            toast.error('Erro ao obter localização. Tente novamente.');
-          }
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 15000,
-          maximumAge: 0
         }
-      );
-    } else {
-      toast.error('Seu navegador não suporta geolocalização');
+      });
+    } catch (error) {
+      console.error('Failed to get location:', error);
     }
   };
 
@@ -369,7 +353,7 @@ export default function HomePage() {
               className={`rounded-full whitespace-nowrap ${categoryFilter === 'all' ? 'bg-primary text-white' : ''}`}
             >
               <Filter size={16} className="mr-1" />
-              Todos
+              {t('all')}
             </Button>
             {categories.map(cat => (
               <Button
@@ -392,7 +376,7 @@ export default function HomePage() {
               size="sm"
               className={`rounded-full ${typeFilter === 'all' ? 'bg-primary text-white' : ''}`}
             >
-              Todos
+              {t('all')}
             </Button>
             <Button
               onClick={() => setTypeFilter('need')}
@@ -400,7 +384,7 @@ export default function HomePage() {
               size="sm"
               className={`rounded-full ${typeFilter === 'need' ? 'bg-green-600 text-white' : ''}`}
             >
-              Precisa de Ajuda
+              {t('needsHelp')}
             </Button>
             <Button
               onClick={() => setTypeFilter('offer')}
@@ -408,7 +392,7 @@ export default function HomePage() {
               size="sm"
               className={`rounded-full ${typeFilter === 'offer' ? 'bg-primary text-white' : ''}`}
             >
-              Oferece Ajuda
+              {t('offersHelp')}
             </Button>
           </div>
         </div>
@@ -564,25 +548,30 @@ export default function HomePage() {
               className="w-full rounded-full py-6 mb-6 bg-primary hover:bg-primary-hover text-white font-bold shadow-lg"
             >
               <Plus size={20} className="mr-2" />
-              {user?.role === 'migrant' ? 'Preciso de Ajuda' : 'Oferecer Ajuda'}
+              {user?.role === 'migrant' ? t('needHelp') : t('wantToHelp')}
             </Button>
           </DialogTrigger>
-          <DialogContent className="rounded-3xl max-w-2xl max-h-[85vh] flex flex-col" data-testid="create-post-dialog">
-            <DialogHeader className="pb-4 border-b flex-shrink-0">
+          <DialogContent 
+            className="rounded-3xl max-w-2xl max-h-[90vh] flex flex-col p-0" 
+            data-testid="create-post-dialog"
+          >
+            <DialogHeader className="pb-4 pt-6 px-6 border-b flex-shrink-0 bg-white sticky top-0 z-10">
               <DialogTitle className="text-2xl font-heading">
-                {newPost.type === 'need' ? '🆘 Preciso de Ajuda' : '🤝 Quero Ajudar'}
+                {newPost.type === 'need' ? `🆘 ${t("needHelp")}` : `🤝 ${t("wantToHelp")}`}
               </DialogTitle>
               <DialogDescription>
-                Preencha as informações abaixo para publicar
+                {t('fillInfoToPublish') || 'Preencha as informações abaixo para publicar'}
               </DialogDescription>
             </DialogHeader>
             <div 
-              className="flex-1 overflow-y-scroll px-2 py-2 scroll-container" 
+              className="flex-1 overflow-y-auto overflow-x-hidden px-6 py-4" 
               style={{ 
-                maxHeight: 'calc(85vh - 200px)',
-                scrollbarWidth: 'thin',
-                scrollbarColor: '#1CA9C9 #f1f1f1'
+                maxHeight: 'calc(90vh - 220px)',
+                WebkitOverflowScrolling: 'touch',
+                overflowY: 'scroll',
+                scrollBehavior: 'smooth'
               }}
+              tabIndex={0}
             >
               <div className="space-y-6 pr-2">
                 {/* Categoria */}
@@ -713,13 +702,13 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="border-t pt-4 px-1 flex-shrink-0 bg-white">
+            <div className="border-t pt-4 pb-4 px-6 flex-shrink-0 bg-white mt-auto">
               <Button 
                 data-testid="submit-post-button"
                 onClick={createPost} 
                 className="w-full rounded-full py-6 text-lg font-bold bg-primary hover:bg-primary-hover shadow-lg"
               >
-                📢 Publicar Agora
+                📢 {t('publishNow')}
               </Button>
             </div>
           </DialogContent>
@@ -827,10 +816,7 @@ export default function HomePage() {
                 )}
 
                 {post.location && (
-                  <div className="flex items-center gap-2 text-sm text-textMuted mb-3 p-2 bg-blue-50 rounded-lg">
-                    <MapPin size={16} className="text-primary" />
-                    <span>{post.location.address || 'Localização disponível'}</span>
-                  </div>
+                  <MapPreview location={post.location} size="medium" />
                 )}
 
                 {/* Info do Post - Mobile Friendly */}

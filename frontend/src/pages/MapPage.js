@@ -4,11 +4,14 @@ import { Button } from '../components/ui/button';
 import BottomNav from '../components/BottomNav';
 import { MapPin, Filter, Phone, Clock, ExternalLink, Navigation, Info, Target, Loader2, AlertCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 export default function MapPage() {
   const { token } = useContext(AuthContext);
+  const { t } = useTranslation();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedService, setSelectedService] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
@@ -103,31 +106,58 @@ export default function MapPage() {
 
   // Obter localização do usuário
   const getUserLocation = () => {
-    setLoadingLocation(true);
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          });
-          setLoadingLocation(false);
-        },
-        (error) => {
-          console.log('Localização negada:', error);
-          setLoadingLocation(false);
-          alert('Não foi possível obter sua localização. Por favor, permita o acesso à localização.');
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0
-        }
-      );
-    } else {
-      setLoadingLocation(false);
-      alert('Seu navegador não suporta geolocalização');
+    if (!navigator.geolocation) {
+      toast.error('Seu navegador não suporta geolocalização');
+      return;
     }
+
+    setLoadingLocation(true);
+    
+    toast.info('📍 Obtendo sua localização...', {
+      description: 'Por favor, permita o acesso à localização quando solicitado',
+      duration: 4000
+    });
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        });
+        setLoadingLocation(false);
+        toast.success('✅ Localização obtida!', {
+          description: 'Agora você pode ver locais de ajuda próximos a você'
+        });
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
+        setLoadingLocation(false);
+        
+        let errorMessage = 'Erro ao obter localização';
+        let errorDescription = '';
+
+        if (error.code === 1) {
+          errorMessage = '🔒 Permissão de localização negada';
+          errorDescription = 'Ative a permissão de localização nas configurações do navegador para ver locais próximos.';
+        } else if (error.code === 2) {
+          errorMessage = '📡 Localização indisponível';
+          errorDescription = 'Não foi possível obter sua localização. Verifique se o GPS está ativado.';
+        } else if (error.code === 3) {
+          errorMessage = '⏱️ Tempo esgotado';
+          errorDescription = 'A solicitação demorou muito. Tente novamente.';
+        }
+
+        toast.error(errorMessage, {
+          description: errorDescription,
+          duration: 6000
+        });
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0
+      }
+    );
   };
 
   useEffect(() => {
@@ -210,7 +240,7 @@ export default function MapPage() {
                 ) : (
                   <Navigation size={14} className="mr-2" />
                 )}
-                Local Mais Próximo
+                {t('nearestLocation')}
               </Button>
             )}
           </div>
@@ -525,7 +555,7 @@ export default function MapPage() {
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-3">
                   <Target className="text-green-500" size={24} />
-                  <span>Local Mais Próximo</span>
+                  <span>{t('nearestLocation')}</span>
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
