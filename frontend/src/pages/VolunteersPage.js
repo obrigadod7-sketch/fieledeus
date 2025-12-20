@@ -189,7 +189,7 @@ export default function VolunteersPage() {
                     <div className="mb-4">
                       <p className="text-sm font-bold text-textPrimary mb-2 flex items-center gap-1">
                         <Star size={16} />
-                        Especialidades:
+                        {t('specialties')}:
                       </p>
                       <div className="flex flex-wrap gap-2">
                         {volunteer.professional_specialties.map((spec, idx) => (
@@ -208,7 +208,7 @@ export default function VolunteersPage() {
                     <div className="mb-3 p-3 bg-blue-50 rounded-xl">
                       <p className="text-sm font-bold text-primary mb-1 flex items-center gap-1">
                         <GraduationCap size={16} />
-                        Formação:
+                        {t('formation')}:
                       </p>
                       <p className="text-sm text-textSecondary whitespace-pre-line">{volunteer.education}</p>
                     </div>
@@ -218,7 +218,7 @@ export default function VolunteersPage() {
                     <div className="mb-3">
                       <p className="text-sm font-bold text-textPrimary mb-2 flex items-center gap-1">
                         <Shield size={16} />
-                        Certificações:
+                        {t('certifications')}:
                       </p>
                       <div className="flex flex-wrap gap-2">
                         {volunteer.certifications.map((cert, idx) => (
