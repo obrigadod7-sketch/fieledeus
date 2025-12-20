@@ -746,6 +746,12 @@ const resources = {
       helpWithEducation: 'Help with education',
       helpWithSocial: 'Social support',
       
+      // Common
+      back: 'Back',
+      email: 'Email',
+      password: 'Password',
+      all: 'All',
+      
       // Volunteers Page
       professionalVolunteers: 'Professional Volunteers',
       connectWithProfessionals: 'Connect with professionals who offer free help',
