@@ -850,10 +850,18 @@ export default function HomePage() {
                       <p className="text-sm text-textMuted capitalize">{post.user?.role}</p>
                     </div>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getCategoryStyle(post.category)} flex items-center gap-1`}>
-                    <span>{getCategoryIcon(post.category)}</span>
-                    {categories.find(c => c.value === post.category)?.label}
-                  </span>
+                  {/* Mostrar múltiplas categorias se existirem */}
+                  <div className="flex flex-wrap gap-1 justify-end max-w-[50%]">
+                    {(post.categories && post.categories.length > 0 ? post.categories : [post.category]).map((cat, idx) => (
+                      <span 
+                        key={idx}
+                        className={`px-2 py-1 rounded-full text-xs font-medium border ${getCategoryStyle(cat)} flex items-center gap-1`}
+                      >
+                        <span>{getCategoryIcon(cat)}</span>
+                        <span className="hidden sm:inline">{categories.find(c => c.value === cat)?.label}</span>
+                      </span>
+                    ))}
+                  </div>
                 </div>
                 <h3 className="text-base sm:text-lg font-bold text-textPrimary mb-2 break-words">{post.title}</h3>
                 <p className="text-sm sm:text-base text-textSecondary mb-3 leading-relaxed break-words">{post.description}</p>
