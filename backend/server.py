@@ -305,10 +305,14 @@ async def update_profile(updates: dict, current_user: User = Depends(get_current
 
 @api_router.post("/posts", response_model=Post)
 async def create_post(post_data: PostCreate, current_user: User = Depends(get_current_user)):
+    # Se não há categorias múltiplas, usar a categoria principal
+    categories_list = post_data.categories if post_data.categories else [post_data.category]
+    
     post = Post(
         user_id=current_user.id,
         type=post_data.type,
         category=post_data.category,
+        categories=categories_list,
         title=post_data.title,
         description=post_data.description,
         location=post_data.location
@@ -320,18 +324,20 @@ async def create_post(post_data: PostCreate, current_user: User = Depends(get_cu
     
     await db.posts.insert_one(post_dict)
     
+    # Enviar resposta automática para cada categoria selecionada
     if post_data.type == 'need':
-        auto_response = get_auto_response(post_data.category)
-        if auto_response:
-            message_data = {
-                'id': str(uuid.uuid4()),
-                'from_user_id': 'system',
-                'to_user_id': current_user.id,
-                'message': f"{auto_response['title']}\n\n{auto_response['content']}",
-                'created_at': datetime.now(timezone.utc).isoformat(),
-                'is_auto_response': True
-            }
-            await db.messages.insert_one(message_data)
+        for cat in categories_list:
+            auto_response = get_auto_response(cat)
+            if auto_response:
+                message_data = {
+                    'id': str(uuid.uuid4()),
+                    'from_user_id': 'system',
+                    'to_user_id': current_user.id,
+                    'message': f"{auto_response['title']}\n\n{auto_response['content']}",
+                    'created_at': datetime.now(timezone.utc).isoformat(),
+                    'is_auto_response': True
+                }
+                await db.messages.insert_one(message_data)
     
     return post
 
