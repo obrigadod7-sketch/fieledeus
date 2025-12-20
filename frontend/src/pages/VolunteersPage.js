@@ -277,7 +277,7 @@ export default function VolunteersPage() {
                     className="w-full rounded-full bg-primary hover:bg-primary-hover text-white font-bold"
                   >
                     <MessageCircle size={18} className="mr-2" />
-                    Entrar em Contato
+                    {t('contactVolunteer')}
                   </Button>
                 </div>
               );
@@ -288,18 +288,17 @@ export default function VolunteersPage() {
         {/* Call to Action */}
         <div className="mt-8 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl p-8 text-center border-2 border-primary/20">
           <h3 className="text-2xl font-heading font-bold text-textPrimary mb-3">
-            Você é um profissional?
+            {t('areYouProfessional')}
           </h3>
           <p className="text-textSecondary mb-6 max-w-2xl mx-auto">
-            Cadastre-se como voluntário e ajude migrantes com sua expertise profissional. 
-            Faça a diferença na vida de quem precisa!
+            {t('registerAsVolunteerDesc')}
           </p>
           <Button
             onClick={() => navigate('/volunteer-register')}
             size="lg"
             className="rounded-full px-8 py-6 text-lg font-bold bg-primary hover:bg-primary-hover"
           >
-            🌟 Cadastrar como Voluntário
+            🌟 {t('registerAsVolunteer')}
           </Button>
         </div>
       </div>
