@@ -510,8 +510,12 @@ def main():
     tester = WatizatAPITester()
     
     try:
-        # Run basic tests as specified in review request
+        # Run basic tests first
         tester.run_basic_tests()
+        
+        # Run multiple categories specific tests
+        tester.run_multiple_categories_tests()
+        
         success = tester.print_summary()
         return 0 if success else 1
     except KeyboardInterrupt:
