@@ -379,11 +379,11 @@ export default function HomePage() {
                 href="https://wa.me/5514996078465?text=Olá! Preciso de ajuda."
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1 px-3 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-yellow-500 via-amber-400 to-yellow-500 hover:from-yellow-600 hover:via-amber-500 hover:to-yellow-600 text-black font-extrabold rounded-full text-xs sm:text-sm shadow-[0_0_15px_rgba(251,191,36,0.6)] hover:shadow-[0_0_25px_rgba(251,191,36,0.8)] border-2 border-yellow-300 transition-all transform hover:scale-105"
+                className="flex items-center gap-1 px-3 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-yellow-500 via-amber-400 to-yellow-500 hover:from-yellow-600 hover:via-amber-500 hover:to-yellow-600 text-black font-extrabold rounded-full text-[10px] sm:text-sm shadow-[0_0_15px_rgba(251,191,36,0.6)] hover:shadow-[0_0_25px_rgba(251,191,36,0.8)] border-2 border-yellow-300 transition-all transform hover:scale-105"
                 title="Falar com uma pessoa real via WhatsApp"
               >
                 <span className="text-base sm:text-lg">💬</span>
-                <span className="font-black tracking-wide hidden sm:inline">AJUDA</span>
+                <span className="font-black tracking-wide">Fale com uma pessoa real</span>
               </a>
             </div>
           </div>
