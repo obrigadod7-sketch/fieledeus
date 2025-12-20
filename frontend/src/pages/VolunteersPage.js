@@ -8,17 +8,18 @@ import { Search, User, MessageCircle, Star, Briefcase, Clock, Languages, Graduat
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-const PROFESSIONAL_AREAS = [
-  { value: 'legal', label: 'Jurídico', icon: '⚖️', desc: 'Advogados, assistentes jurídicos' },
-  { value: 'health', label: 'Saúde', icon: '🏥', desc: 'Médicos, enfermeiros, psicólogos' },
-  { value: 'education', label: 'Educação', icon: '📚', desc: 'Professores, tutores' },
-  { value: 'translation', label: 'Tradução', icon: '🌍', desc: 'Tradutores, intérpretes' },
-  { value: 'family', label: 'Família e Social', icon: '👨‍👩‍👧', desc: 'Assistentes sociais, mediadores' },
-  { value: 'employment', label: 'Orientação Profissional', icon: '💼', desc: 'RH, orientadores de carreira' },
-  { value: 'housing', label: 'Habitação', icon: '🏠', desc: 'Assistentes imobiliários' },
-  { value: 'administration', label: 'Administração', icon: '📋', desc: 'Ajuda com documentos' },
-  { value: 'finance', label: 'Finanças', icon: '💰', desc: 'Contadores, consultores financeiros' },
-  { value: 'technology', label: 'Tecnologia', icon: '💻', desc: 'TI, suporte técnico' }
+// Professional areas with translation keys
+const PROFESSIONAL_AREAS_KEYS = [
+  { value: 'legal', labelKey: 'volunteerAreaLegal', icon: '⚖️', descKey: 'volunteerAreaLegalDesc' },
+  { value: 'health', labelKey: 'volunteerAreaHealth', icon: '🏥', descKey: 'volunteerAreaHealthDesc' },
+  { value: 'education', labelKey: 'volunteerAreaEducation', icon: '📚', descKey: 'volunteerAreaEducationDesc' },
+  { value: 'translation', labelKey: 'volunteerAreaTranslation', icon: '🌍', descKey: 'volunteerAreaTranslationDesc' },
+  { value: 'family', labelKey: 'volunteerAreaFamily', icon: '👨‍👩‍👧', descKey: 'volunteerAreaFamilyDesc' },
+  { value: 'employment', labelKey: 'volunteerAreaEmployment', icon: '💼', descKey: 'volunteerAreaEmploymentDesc' },
+  { value: 'housing', labelKey: 'volunteerAreaHousing', icon: '🏠', descKey: 'volunteerAreaHousingDesc' },
+  { value: 'administration', labelKey: 'volunteerAreaAdmin', icon: '📋', descKey: 'volunteerAreaAdminDesc' },
+  { value: 'finance', labelKey: 'volunteerAreaFinance', icon: '💰', descKey: 'volunteerAreaFinanceDesc' },
+  { value: 'technology', labelKey: 'volunteerAreaTech', icon: '💻', descKey: 'volunteerAreaTechDesc' }
 ];
 
 export default function VolunteersPage() {
