@@ -229,6 +229,210 @@ class WatizatAPITester:
                 self.log_test("AI Chat Mocked Response", False, f"Unexpected response: {response_text[:100]}")
         return False
 
+    def test_create_post_multiple_categories(self):
+        """Test POST /api/posts - criar post com múltiplas categorias"""
+        if not self.token:
+            self.log_test("Create Post Multiple Categories - No Token", False, "No authentication token available")
+            return False
+            
+        # Test creating post with multiple categories (up to 3)
+        post_data = {
+            "type": "need",
+            "category": "housing",  # categoria principal
+            "categories": ["housing", "work", "education"],  # múltiplas categorias
+            "title": "Preciso de ajuda com moradia, trabalho e educação",
+            "description": "Sou novo na França e preciso de ajuda para encontrar moradia, trabalho e validar meus diplomas."
+        }
+        
+        success, response = self.run_test(
+            "Create Post with Multiple Categories",
+            "POST",
+            "posts",
+            200,
+            data=post_data
+        )
+        
+        if success and 'categories' in response:
+            # Verify the post has the correct categories
+            returned_categories = response['categories']
+            expected_categories = ["housing", "work", "education"]
+            
+            if set(returned_categories) == set(expected_categories):
+                self.log_test("Multiple Categories Validation", True, f"Post created with categories: {returned_categories}")
+                return True, response['id']
+            else:
+                self.log_test("Multiple Categories Validation", False, f"Expected {expected_categories}, got {returned_categories}")
+        
+        return False, None
+
+    def test_get_posts_with_categories(self):
+        """Test GET /api/posts - deve retornar posts com campo 'categories' array"""
+        if not self.token:
+            self.log_test("Get Posts with Categories - No Token", False, "No authentication token available")
+            return False
+            
+        success, response = self.run_test(
+            "Get Posts with Categories Array",
+            "GET",
+            "posts",
+            200
+        )
+        
+        if success and isinstance(response, list):
+            # Check if posts have categories field
+            posts_with_categories = 0
+            for post in response:
+                if 'categories' in post and isinstance(post['categories'], list):
+                    posts_with_categories += 1
+            
+            if posts_with_categories > 0:
+                self.log_test("Posts Categories Field Validation", True, f"Found {posts_with_categories} posts with categories array")
+                return True
+            else:
+                self.log_test("Posts Categories Field Validation", False, "No posts found with categories array field")
+        
+        return False
+
+    def test_category_filtering(self):
+        """Test filtro de posts por categoria deve funcionar com múltiplas categorias"""
+        if not self.token:
+            self.log_test("Category Filtering - No Token", False, "No authentication token available")
+            return False
+        
+        # First create a post with multiple categories
+        post_success, post_id = self.test_create_post_multiple_categories()
+        if not post_success:
+            self.log_test("Category Filtering Setup", False, "Failed to create test post")
+            return False
+        
+        # Test filtering by one of the categories
+        success, response = self.run_test(
+            "Filter Posts by Category (housing)",
+            "GET",
+            "posts?category=housing",
+            200
+        )
+        
+        if success and isinstance(response, list):
+            # Check if the created post appears in housing category filter
+            found_post = False
+            for post in response:
+                if post.get('id') == post_id:
+                    found_post = True
+                    break
+            
+            if found_post:
+                self.log_test("Category Filtering Validation", True, "Post found when filtering by housing category")
+            else:
+                self.log_test("Category Filtering Validation", False, "Post not found when filtering by housing category")
+                return False
+        
+        # Test filtering by another category (work)
+        success, response = self.run_test(
+            "Filter Posts by Category (work)",
+            "GET",
+            "posts?category=work",
+            200
+        )
+        
+        if success and isinstance(response, list):
+            # Check if the created post appears in work category filter
+            found_post = False
+            for post in response:
+                if post.get('id') == post_id:
+                    found_post = True
+                    break
+            
+            if found_post:
+                self.log_test("Multiple Category Filtering Validation", True, "Post found when filtering by work category (multiple categories working)")
+                return True
+            else:
+                self.log_test("Multiple Category Filtering Validation", False, "Post not found when filtering by work category")
+        
+        return False
+
+    def test_volunteer_category_matching(self):
+        """Test voluntários devem ver posts que contenham alguma das categorias que eles selecionaram"""
+        # Create a volunteer user with specific help categories
+        timestamp = datetime.now().strftime('%H%M%S')
+        volunteer_data = {
+            "email": f"test_volunteer_{timestamp}@example.com",
+            "password": "TestPass123!",
+            "name": f"Test Volunteer {timestamp}",
+            "role": "volunteer",
+            "languages": ["pt", "fr"],
+            "help_categories": ["housing", "legal"]  # Volunteer can help with housing and legal
+        }
+        
+        success, response = self.run_test(
+            "Register Volunteer with Help Categories",
+            "POST",
+            "auth/register",
+            200,
+            data=volunteer_data
+        )
+        
+        if not success or 'token' not in response:
+            self.log_test("Volunteer Registration", False, "Failed to register volunteer")
+            return False
+        
+        volunteer_token = response['token']
+        
+        # Create a post that matches volunteer's categories
+        post_data = {
+            "type": "need",
+            "category": "housing",
+            "categories": ["housing", "work"],  # housing matches volunteer's help_categories
+            "title": "Preciso de ajuda com moradia e trabalho",
+            "description": "Preciso encontrar um lugar para morar e um emprego."
+        }
+        
+        # Use original token to create post
+        success, post_response = self.run_test(
+            "Create Post for Volunteer Matching",
+            "POST",
+            "posts",
+            200,
+            data=post_data
+        )
+        
+        if not success:
+            self.log_test("Post Creation for Volunteer Test", False, "Failed to create test post")
+            return False
+        
+        post_id = post_response['id']
+        
+        # Now get posts as volunteer and check if the post appears
+        # Temporarily store original token
+        original_token = self.token
+        self.token = volunteer_token
+        
+        success, posts_response = self.run_test(
+            "Get Posts as Volunteer",
+            "GET",
+            "posts",
+            200
+        )
+        
+        # Restore original token
+        self.token = original_token
+        
+        if success and isinstance(posts_response, list):
+            # Check if volunteer can see the post
+            found_matching_post = False
+            for post in posts_response:
+                if post.get('id') == post_id and post.get('can_help'):
+                    found_matching_post = True
+                    break
+            
+            if found_matching_post:
+                self.log_test("Volunteer Category Matching", True, "Volunteer can see posts matching their help categories")
+                return True
+            else:
+                self.log_test("Volunteer Category Matching", False, "Volunteer cannot see posts matching their help categories")
+        
+        return False
+
     def run_basic_tests(self):
         """Run the basic tests as specified in the review request"""
         print("🚀 Starting Watizat Backend Tests...")
