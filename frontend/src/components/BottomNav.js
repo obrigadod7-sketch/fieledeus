@@ -12,7 +12,7 @@ export default function BottomNav() {
     { icon: Home, label: 'Home', path: '/home', testId: 'nav-home' },
     { icon: MapPin, label: 'Mapa', path: '/nearby', testId: 'nav-nearby' },
     { icon: Users, label: 'Voluntários', path: '/volunteers', testId: 'nav-volunteers' },
-    { icon: MessageCircle, label: 'Chat', path: '/chat', testId: 'nav-chat' },
+    { icon: MessageCircle, label: 'Chat AI', path: '/chat', testId: 'nav-chat' },
     { icon: User, label: 'Perfil', path: '/profile', testId: 'nav-profile' },
   ];
 
@@ -21,7 +21,7 @@ export default function BottomNav() {
   }
 
   return (
-    <div className="bottom-nav h-14 flex items-center justify-evenly px-0.5 safe-area-bottom" data-testid="bottom-navigation">
+    <div className="bottom-nav h-16 sm:h-18 flex items-center justify-around px-1 sm:px-4" data-testid="bottom-navigation">
       {navItems.map((item) => {
         const Icon = item.icon;
         const isActive = location.pathname === item.path;
@@ -30,16 +30,14 @@ export default function BottomNav() {
             key={item.path}
             data-testid={item.testId}
             onClick={() => navigate(item.path)}
-            className={`flex flex-col items-center justify-center py-1 px-0.5 rounded-lg transition-all flex-1 min-w-0 ${
+            className={`flex flex-col items-center justify-center gap-0.5 sm:gap-1 px-2 sm:px-4 py-2 rounded-xl transition-all min-w-0 ${
               isActive
                 ? 'text-primary'
-                : 'text-gray-400 active:text-gray-600'
+                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
             }`}
           >
-            <Icon size={18} className="flex-shrink-0" strokeWidth={isActive ? 2.5 : 2} />
-            <span className={`text-[8px] sm:text-[10px] font-medium text-center leading-tight mt-0.5 truncate w-full ${isActive ? 'text-primary' : ''}`}>
-              {item.label}
-            </span>
+            <Icon size={22} className="sm:w-6 sm:h-6" strokeWidth={isActive ? 2.5 : 2} />
+            <span className="text-[10px] sm:text-xs font-medium text-center leading-tight">{item.label}</span>
           </button>
         );
       })}
