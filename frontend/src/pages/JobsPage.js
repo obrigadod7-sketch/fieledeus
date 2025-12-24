@@ -42,8 +42,8 @@ export default function JobsPage() {
   const fetchJobs = async () => {
     setLoading(true);
     try {
-      // Buscar posts de trabalho
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/posts?type=all`, {
+      // Buscar todos os posts
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/posts`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
