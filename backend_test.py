@@ -465,9 +465,9 @@ class WatizatAPITester:
         print("\n📝 Step 6: Test user login")
         self.test_user_login()
         
-        # Test 7: POST /api/ai/chat (mocked)
-        print("\n📝 Step 7: Test AI chat (mocked)")
-        self.test_ai_chat_mocked()
+        # Test 7: POST /api/ai/chat (with OpenAI)
+        print("\n📝 Step 7: Test AI chat with OpenAI")
+        self.test_ai_chat_with_openai()
         
         return True
 
