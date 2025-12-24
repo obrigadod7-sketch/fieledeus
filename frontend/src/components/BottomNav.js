@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, MessageCircle, Search, User, Settings, Users, MapPin, Briefcase } from 'lucide-react';
+import { Home, MessageCircle, Search, User, Settings, Users, MapPin } from 'lucide-react';
 import { AuthContext } from '../App';
 
 export default function BottomNav() {
@@ -10,9 +10,9 @@ export default function BottomNav() {
 
   const navItems = [
     { icon: Home, label: 'Home', path: '/home', testId: 'nav-home' },
-    { icon: Briefcase, label: 'Trabalho', path: '/jobs', testId: 'nav-jobs' },
-    { icon: Users, label: 'Ajudar', path: '/volunteers', testId: 'nav-volunteers' },
     { icon: MapPin, label: 'Mapa', path: '/nearby', testId: 'nav-nearby' },
+    { icon: Users, label: 'Ajudar', path: '/volunteers', testId: 'nav-volunteers' },
+    { icon: MessageCircle, label: 'Chat', path: '/chat', testId: 'nav-chat' },
     { icon: User, label: 'Perfil', path: '/profile', testId: 'nav-profile' },
   ];
 
