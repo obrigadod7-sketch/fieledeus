@@ -1,6 +1,44 @@
 .App {
   min-height: 100vh;
   background: #FAFAFA;
+  transition: background-color 0.3s ease;
+}
+
+/* Modo Escuro Automático */
+.dark .App,
+.dark body {
+  background: #0f172a;
+}
+
+.dark .bg-background {
+  background: #0f172a !important;
+}
+
+.dark .bg-white {
+  background: #1e293b !important;
+}
+
+.dark .text-textPrimary {
+  color: #f1f5f9 !important;
+}
+
+.dark .text-textSecondary,
+.dark .text-textMuted {
+  color: #94a3b8 !important;
+}
+
+.dark .border-gray-100,
+.dark .border-gray-200 {
+  border-color: #334155 !important;
+}
+
+.dark .shadow-card {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark .glassmorphism {
+  background: rgba(30, 41, 59, 0.9) !important;
+  border-color: rgba(71, 85, 105, 0.4) !important;
 }
 
 .gradient-bg {
