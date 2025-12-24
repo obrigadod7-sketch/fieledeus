@@ -3,9 +3,8 @@ import { AuthContext } from '../App';
 import { Button } from '../components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import BottomNav from '../components/BottomNav';
-import { User, MessageCircle, X, Plus, Check } from 'lucide-react';
+import { MessageCircle, Plus, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 
 // Categorias de ajuda disponíveis
 const HELP_CATEGORIES = [
@@ -22,9 +21,8 @@ const HELP_CATEGORIES = [
 ];
 
 export default function VolunteersPage() {
-  const { token, user } = useContext(AuthContext);
+  const { token } = useContext(AuthContext);
   const navigate = useNavigate();
-  const { t } = useTranslation();
   const [showModal, setShowModal] = useState(true);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [helpRequests, setHelpRequests] = useState([]);
@@ -33,6 +31,8 @@ export default function VolunteersPage() {
   useEffect(() => {
     if (selectedCategories.length > 0) {
       fetchHelpRequests();
+    } else {
+      setHelpRequests([]);
     }
   }, [selectedCategories]);
 
@@ -92,13 +92,13 @@ export default function VolunteersPage() {
             </p>
           </DialogHeader>
 
-          {/* Grid de Categorias */}
-          <div className="grid grid-cols-2 gap-3 mb-6">
+          {/* Grid de Categorias Principais */}
+          <div className="grid grid-cols-2 gap-3 mb-4">
             {HELP_CATEGORIES.slice(0, 4).map(cat => (
               <button
                 key={cat.value}
                 onClick={() => toggleCategory(cat.value)}
-                className={`p-4 rounded-2xl border-2 transition-all text-left ${
+                className={`p-4 rounded-2xl border-2 transition-all text-left relative ${
                   selectedCategories.includes(cat.value)
                     ? 'bg-primary/10 border-primary shadow-md'
                     : 'bg-white border-gray-200 hover:border-primary/50'
@@ -115,8 +115,8 @@ export default function VolunteersPage() {
             ))}
           </div>
 
-          {/* Mais categorias */}
-          <div className="flex flex-wrap gap-2 mb-6">
+          {/* Mais categorias em chips */}
+          <div className="flex flex-wrap gap-2 mb-4">
             {HELP_CATEGORIES.slice(4).map(cat => (
               <button
                 key={cat.value}
@@ -148,10 +148,10 @@ export default function VolunteersPage() {
             </div>
           )}
 
-          {/* Solicitações de Ajuda Disponíveis */}
+          {/* Solicitações de Ajuda - Apenas mensagem e botão para conversar */}
           {selectedCategories.length > 0 && (
             <div className="bg-green-50 rounded-2xl p-4 border border-green-200">
-              <h3 className="font-bold text-green-800 mb-2 flex items-center gap-2">
+              <h3 className="font-bold text-green-800 mb-2">
                 📋 Solicitações de Ajuda Disponíveis
               </h3>
               <p className="text-xs text-green-700 mb-4">
@@ -162,42 +162,51 @@ export default function VolunteersPage() {
                 <div className="text-center py-4 text-textMuted">Carregando...</div>
               ) : helpRequests.length === 0 ? (
                 <div className="text-center py-4 text-textMuted">
-                  Nenhuma solicitação encontrada para essas categorias.
+                  Nenhuma solicitação encontrada.
                 </div>
               ) : (
-                <div className="space-y-3 max-h-48 overflow-y-auto">
-                  {helpRequests.slice(0, 5).map(request => (
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {helpRequests.map(request => (
                     <div 
                       key={request.id}
-                      className="bg-white rounded-xl p-3 border border-gray-100 hover:shadow-md transition-all cursor-pointer"
-                      onClick={() => {
-                        setShowModal(false);
-                        navigate(`/direct-chat/${request.user_id}`);
-                      }}
+                      className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm"
                     >
-                      <div className="flex items-start gap-3">
+                      {/* Nome e Avatar */}
+                      <div className="flex items-center gap-3 mb-3">
                         <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
-                          <span className="text-white font-bold text-sm">
+                          <span className="text-white font-bold">
                             {request.user?.name?.charAt(0) || 'U'}
                           </span>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <p className="font-bold text-sm text-textPrimary truncate">
-                              {request.user?.name || 'Usuário'}
-                            </p>
-                            <span className="text-xs text-green-600 font-medium">Precisa de ajuda</span>
-                          </div>
-                          <p className="text-xs text-textSecondary line-clamp-2">
-                            {request.description || request.title}
+                        <div>
+                          <p className="font-bold text-textPrimary">
+                            {request.user?.name || 'Usuário'}
                           </p>
-                          <div className="flex items-center gap-2 mt-2">
-                            <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full flex items-center gap-1">
-                              {getCategoryInfo(request.category).icon}
-                              {getCategoryInfo(request.category).label}
-                            </span>
-                          </div>
+                          <span className="text-xs text-green-600">Precisa de ajuda</span>
                         </div>
+                      </div>
+
+                      {/* Mensagem do pedido de ajuda */}
+                      <p className="text-sm text-textSecondary mb-3 leading-relaxed">
+                        {request.description || request.title}
+                      </p>
+
+                      {/* Categoria */}
+                      <div className="flex items-center justify-between">
+                        <span className="px-2 py-1 bg-gray-100 text-textSecondary text-xs rounded-full flex items-center gap-1">
+                          {getCategoryInfo(request.category).icon}
+                          {getCategoryInfo(request.category).label}
+                        </span>
+
+                        {/* Botão Conversar */}
+                        <Button
+                          onClick={() => navigate(`/direct-chat/${request.user_id}`)}
+                          size="sm"
+                          className="rounded-full bg-primary hover:bg-primary-hover text-white"
+                        >
+                          <MessageCircle size={16} className="mr-1" />
+                          Conversar
+                        </Button>
                       </div>
                     </div>
                   ))}
@@ -216,14 +225,14 @@ export default function VolunteersPage() {
           >
             <div className="flex items-center justify-center gap-2 text-primary">
               <Plus size={20} />
-              <span className="font-bold">Prefiro criar uma oferta de ajuda pública</span>
+              <span className="font-bold">Prefiro criar uma oferta pública</span>
             </div>
             <p className="text-xs text-textMuted mt-1">
               Uma oferta fica visível para todos que precisam de ajuda.
             </p>
           </div>
 
-          {/* Botão Fechar */}
+          {/* Botão Ver Todas */}
           <Button
             onClick={() => setShowModal(false)}
             variant="outline"
@@ -234,29 +243,23 @@ export default function VolunteersPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Conteúdo Principal - Lista de Solicitações */}
+      {/* Conteúdo Principal */}
       <div className="container mx-auto px-4 py-6 max-w-4xl">
         {/* Filtros de categoria */}
         <div className="flex gap-2 overflow-x-auto pb-4 mb-4">
           <Button
             onClick={() => setShowModal(true)}
-            className="rounded-full bg-primary text-white font-bold"
+            className="rounded-full bg-primary text-white font-bold flex-shrink-0"
           >
             🤝 Quero Ajudar
           </Button>
           {HELP_CATEGORIES.slice(0, 5).map(cat => (
             <Button
               key={cat.value}
-              onClick={() => {
-                if (selectedCategories.includes(cat.value)) {
-                  setSelectedCategories(selectedCategories.filter(c => c !== cat.value));
-                } else {
-                  setSelectedCategories([...selectedCategories, cat.value]);
-                }
-              }}
+              onClick={() => toggleCategory(cat.value)}
               variant={selectedCategories.includes(cat.value) ? 'default' : 'outline'}
               size="sm"
-              className={`rounded-full whitespace-nowrap ${
+              className={`rounded-full whitespace-nowrap flex-shrink-0 ${
                 selectedCategories.includes(cat.value) ? 'bg-primary text-white' : ''
               }`}
             >
@@ -272,7 +275,7 @@ export default function VolunteersPage() {
             <div className="text-6xl mb-4">🤝</div>
             <h3 className="text-xl font-bold text-textPrimary mb-2">Selecione categorias para ajudar</h3>
             <p className="text-textMuted mb-6">
-              Clique no botão "Quero Ajudar" para selecionar as categorias em que você pode oferecer ajuda.
+              Clique no botão "Quero Ajudar" para escolher como você pode ajudar.
             </p>
             <Button
               onClick={() => setShowModal(true)}
@@ -282,82 +285,77 @@ export default function VolunteersPage() {
             </Button>
           </div>
         ) : loading ? (
-          <div className="text-center py-12 text-textMuted">Carregando solicitações...</div>
+          <div className="text-center py-12 text-textMuted">Carregando...</div>
         ) : helpRequests.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">🔍</div>
             <p className="text-textMuted text-lg">
-              Nenhuma solicitação de ajuda encontrada para as categorias selecionadas.
+              Nenhuma solicitação encontrada para essas categorias.
             </p>
           </div>
         ) : (
           <div className="space-y-4">
-            <p className="text-sm text-textMuted mb-4">
+            <p className="text-sm text-textMuted">
               {helpRequests.length} {helpRequests.length === 1 ? 'pessoa precisa' : 'pessoas precisam'} de ajuda
             </p>
+            
             {helpRequests.map((request) => {
               const catInfo = getCategoryInfo(request.category);
               return (
                 <div 
                   key={request.id}
-                  data-testid="help-request-card"
-                  className="bg-white rounded-2xl p-5 shadow-card border-2 border-transparent hover:border-primary transition-all"
+                  className="bg-white rounded-2xl p-5 shadow-card border border-gray-100"
                 >
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center flex-shrink-0">
+                  {/* Cabeçalho com nome */}
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
                       <span className="text-white font-bold text-lg">
                         {request.user?.name?.charAt(0) || 'U'}
                       </span>
                     </div>
                     <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <h3 className="text-lg font-bold text-textPrimary">
-                          {request.user?.name || 'Usuário'}
-                        </h3>
-                        <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">
-                          Precisa de ajuda
-                        </span>
-                      </div>
-                      <p className="text-sm text-textSecondary line-clamp-3">
-                        {request.description || request.title}
+                      <p className="font-bold text-textPrimary">
+                        {request.user?.name || 'Usuário'}
                       </p>
+                      <span className="text-xs text-green-600 font-medium">Precisa de ajuda</span>
                     </div>
+                    <span className="px-3 py-1 bg-gray-100 text-textSecondary text-xs rounded-full flex items-center gap-1">
+                      {catInfo.icon} {catInfo.label}
+                    </span>
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="px-3 py-1 bg-gray-100 text-textSecondary text-sm rounded-full flex items-center gap-1">
-                        {catInfo.icon} {catInfo.label}
-                      </span>
-                    </div>
-                    <Button
-                      onClick={() => navigate(`/direct-chat/${request.user_id}`)}
-                      className="rounded-full bg-primary hover:bg-primary-hover text-white font-bold"
-                    >
-                      <MessageCircle size={18} className="mr-2" />
-                      Conversar
-                    </Button>
-                  </div>
+                  {/* Mensagem */}
+                  <p className="text-textSecondary mb-4 leading-relaxed">
+                    {request.description || request.title}
+                  </p>
+
+                  {/* Botão Conversar */}
+                  <Button
+                    onClick={() => navigate(`/direct-chat/${request.user_id}`)}
+                    className="w-full rounded-full bg-primary hover:bg-primary-hover text-white font-bold"
+                  >
+                    <MessageCircle size={18} className="mr-2" />
+                    Conversar pelo Chat
+                  </Button>
                 </div>
               );
             })}
           </div>
         )}
 
-        {/* Call to Action para voluntários */}
-        <div className="mt-8 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl p-8 text-center border-2 border-primary/20">
-          <h3 className="text-xl font-heading font-bold text-textPrimary mb-3">
+        {/* Call to Action */}
+        <div className="mt-8 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl p-6 text-center border-2 border-primary/20">
+          <h3 className="text-lg font-heading font-bold text-textPrimary mb-2">
             🌟 Você é um profissional?
           </h3>
-          <p className="text-textSecondary mb-6 max-w-2xl mx-auto text-sm">
-            Se você é advogado, médico, assistente social ou outro profissional, cadastre-se como voluntário para oferecer ajuda especializada.
+          <p className="text-textSecondary mb-4 text-sm">
+            Cadastre-se como voluntário para oferecer ajuda especializada.
           </p>
           <Button
             onClick={() => navigate('/volunteer-register')}
-            size="lg"
-            className="rounded-full px-8 py-4 font-bold bg-primary hover:bg-primary-hover"
+            className="rounded-full px-6 font-bold bg-primary hover:bg-primary-hover"
           >
-            🌟 Cadastrar como Voluntário
+            Cadastrar como Voluntário
           </Button>
         </div>
       </div>
