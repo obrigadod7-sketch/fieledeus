@@ -669,7 +669,7 @@ export default function HomePage() {
                 </div>
 
                 {/* Formulário Especial para Emprego */}
-                {newPost.category === 'work' && newPost.type === 'need' && (
+                {newPost.category === 'work' && (
                   <div className="bg-gradient-to-br from-yellow-50 to-amber-50 border-2 border-yellow-300 p-5 rounded-2xl space-y-4">
                     <Label className="text-base font-bold block flex items-center gap-2">
                       <span className="text-2xl">💼</span>
