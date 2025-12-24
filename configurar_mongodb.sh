@@ -213,7 +213,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 echo "📚 Próximos passos:"
 echo ""
-echo "  • Acessar aplicativo: https://fullstack-fix-8.preview.emergentagent.com"
+echo "  • Acessar aplicativo: https://refugee-helper-1.preview.emergentagent.com"
 echo "  • Verificar status: sudo supervisorctl status"
 echo "  • Ver logs backend: tail -f /var/log/supervisor/backend.out.log"
 echo "  • Testar MongoDB: python3 /app/check_mongodb.py"

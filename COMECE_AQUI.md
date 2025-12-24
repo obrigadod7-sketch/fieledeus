@@ -2,7 +2,7 @@
 
 ## ✅ Seu aplicativo está FUNCIONANDO!
 
-**URL:** https://fullstack-fix-8.preview.emergentagent.com
+**URL:** https://refugee-helper-1.preview.emergentagent.com
 
 Você já pode:
 - ✅ Acessar o aplicativo
