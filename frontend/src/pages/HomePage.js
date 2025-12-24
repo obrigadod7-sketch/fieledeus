@@ -387,55 +387,67 @@ export default function HomePage() {
             </div>
           </div>
           
+          {/* Categorias com ícones visuais - Estilo JobsPage */}
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            <Button
+            <button
               onClick={() => setCategoryFilter('all')}
-              variant={categoryFilter === 'all' ? 'default' : 'outline'}
-              size="sm"
-              className={`rounded-full whitespace-nowrap flex-shrink-0 text-xs px-2 ${categoryFilter === 'all' ? 'bg-primary text-white' : ''}`}
+              className={`flex flex-col items-center gap-1 min-w-[55px] p-2 rounded-xl transition-all flex-shrink-0 ${
+                categoryFilter === 'all'
+                  ? 'bg-primary text-white shadow-md'
+                  : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+              }`}
             >
-              <Filter size={14} className="mr-1" />
-              Todos
-            </Button>
+              <Filter size={18} />
+              <span className="text-[10px] font-medium">Todos</span>
+            </button>
             {categories.map(cat => (
-              <Button
+              <button
                 key={cat.value}
                 onClick={() => setCategoryFilter(cat.value)}
-                variant={categoryFilter === cat.value ? 'default' : 'outline'}
-                size="sm"
-                className={`rounded-full whitespace-nowrap flex-shrink-0 text-xs px-2 ${categoryFilter === cat.value ? 'bg-primary text-white' : ''}`}
+                className={`flex flex-col items-center gap-1 min-w-[55px] p-2 rounded-xl transition-all flex-shrink-0 ${
+                  categoryFilter === cat.value
+                    ? 'bg-primary text-white shadow-md'
+                    : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                }`}
               >
-                <span className="mr-1">{cat.icon}</span>
-                <span className="hidden sm:inline">{cat.label}</span>
-              </Button>
+                <span className="text-lg">{cat.icon}</span>
+                <span className="text-[10px] font-medium whitespace-nowrap">{cat.label}</span>
+              </button>
             ))}
           </div>
 
-          <div className="flex gap-1.5 mt-2 overflow-x-auto scrollbar-hide">
-            <Button
+          {/* Filtro de Tipo */}
+          <div className="flex gap-2 mt-2 overflow-x-auto scrollbar-hide">
+            <button
               onClick={() => setTypeFilter('all')}
-              variant={typeFilter === 'all' ? 'default' : 'outline'}
-              size="sm"
-              className={`rounded-full text-xs px-2 flex-shrink-0 ${typeFilter === 'all' ? 'bg-primary text-white' : ''}`}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all flex-shrink-0 ${
+                typeFilter === 'all'
+                  ? 'bg-gray-800 text-white'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
+              }`}
             >
               Todos
-            </Button>
-            <Button
+            </button>
+            <button
               onClick={() => setTypeFilter('need')}
-              variant={typeFilter === 'need' ? 'default' : 'outline'}
-              size="sm"
-              className={`rounded-full text-xs px-2 flex-shrink-0 whitespace-nowrap ${typeFilter === 'need' ? 'bg-green-600 text-white' : ''}`}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all flex-shrink-0 flex items-center gap-1 ${
+                typeFilter === 'need'
+                  ? 'bg-green-600 text-white'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-green-50'
+              }`}
             >
-              Precisa de Ajuda
-            </Button>
-            <Button
+              🆘 Precisa de Ajuda
+            </button>
+            <button
               onClick={() => setTypeFilter('offer')}
-              variant={typeFilter === 'offer' ? 'default' : 'outline'}
-              size="sm"
-              className={`rounded-full text-xs px-2 flex-shrink-0 whitespace-nowrap ${typeFilter === 'offer' ? 'bg-primary text-white' : ''}`}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all flex-shrink-0 flex items-center gap-1 ${
+                typeFilter === 'offer'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-blue-50'
+              }`}
             >
-              Oferece Ajuda
-            </Button>
+              🤝 Oferece Ajuda
+            </button>
           </div>
         </div>
       </div>
