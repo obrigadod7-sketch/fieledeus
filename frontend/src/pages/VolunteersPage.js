@@ -171,6 +171,20 @@ export default function VolunteersPage() {
       {/* Conteúdo Principal */}
       <div className="container mx-auto px-4 py-6 max-w-4xl">
         
+        {/* Botão para criar oferta pública */}
+        <div 
+          onClick={() => navigate('/home')}
+          className="mb-6 p-4 bg-gradient-to-r from-primary/10 to-secondary/10 border-2 border-dashed border-primary/30 rounded-2xl cursor-pointer hover:bg-primary/20 transition-all"
+        >
+          <div className="flex items-center justify-center gap-2 text-primary">
+            <Plus size={20} />
+            <span className="font-bold">Criar uma oferta de ajuda pública</span>
+          </div>
+          <p className="text-xs text-textMuted mt-1 text-center">
+            Publique uma oferta para que pessoas que precisam possam te encontrar
+          </p>
+        </div>
+
         {/* Lista de solicitações */}
         {loading ? (
           <div className="text-center py-12 text-textMuted">Carregando solicitações...</div>
