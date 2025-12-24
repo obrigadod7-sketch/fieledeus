@@ -11,7 +11,7 @@ export default function BottomNav() {
   const navItems = [
     { icon: Home, label: 'Home', path: '/home', testId: 'nav-home' },
     { icon: MapPin, label: 'Mapa', path: '/nearby', testId: 'nav-nearby' },
-    { icon: Users, label: 'Voluntários', path: '/volunteers', testId: 'nav-volunteers' },
+    { icon: Users, label: 'Ajudar', path: '/volunteers', testId: 'nav-volunteers' },
     { icon: MessageCircle, label: 'Chat AI', path: '/chat', testId: 'nav-chat' },
     { icon: User, label: 'Perfil', path: '/profile', testId: 'nav-profile' },
   ];
