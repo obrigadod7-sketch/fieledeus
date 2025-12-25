@@ -1608,6 +1608,72 @@ async def get_sidebar_content():
     # Buscar vagas de emprego (do cache ou externo)
     jobs_data = await get_external_jobs()
     jobs = jobs_data.get('jobs', [])
+    
+    # Intercalar conteúdo: motivação, vaga, doação, vaga, motivação...
+    sidebar_items = []
+    
+    motivation_ads = [a for a in ads if a.get('type') == 'motivation']
+    donation_ads = [a for a in ads if a.get('type') == 'donation']
+    
+    # Adicionar 2 motivações primeiro
+    for ad in motivation_ads[:2]:
+        sidebar_items.append({**ad, 'item_type': 'advertisement'})
+    
+    # Adicionar 3 vagas de emprego
+    for job in jobs[:3]:
+        sidebar_items.append({
+            'id': job.get('id', ''),
+            'item_type': 'job',
+            'type': 'job',
+            'title': f"💼 {job.get('title', 'Vaga')}",
+            'content': f"📍 {job.get('location', 'Europa')} • {job.get('date_posted', 'Recente')}",
+            'link_url': job.get('url', ''),
+            'link_text': 'Ver Vaga',
+            'image_url': 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=400',
+            'source': job.get('source', 'JSearch')
+        })
+    
+    # Adicionar doações
+    for ad in donation_ads[:2]:
+        sidebar_items.append({**ad, 'item_type': 'advertisement'})
+    
+    # Adicionar mais vagas
+    for job in jobs[3:6]:
+        sidebar_items.append({
+            'id': job.get('id', ''),
+            'item_type': 'job',
+            'type': 'job',
+            'title': f"💼 {job.get('title', 'Vaga')}",
+            'content': f"📍 {job.get('location', 'Europa')} • {job.get('date_posted', 'Recente')}",
+            'link_url': job.get('url', ''),
+            'link_text': 'Ver Vaga',
+            'image_url': 'https://images.unsplash.com/photo-1521791136064-7986c2920216?w=400',
+            'source': job.get('source', 'JSearch')
+        })
+    
+    # Adicionar mais motivações
+    for ad in motivation_ads[2:]:
+        sidebar_items.append({**ad, 'item_type': 'advertisement'})
+    
+    # Adicionar resto das vagas
+    for job in jobs[6:]:
+        sidebar_items.append({
+            'id': job.get('id', ''),
+            'item_type': 'job',
+            'type': 'job',
+            'title': f"💼 {job.get('title', 'Vaga')}",
+            'content': f"📍 {job.get('location', 'Europa')} • {job.get('date_posted', 'Recente')}",
+            'link_url': job.get('url', ''),
+            'link_text': 'Candidatar',
+            'image_url': 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400',
+            'source': job.get('source', 'JSearch')
+        })
+    
+    return {
+        'items': sidebar_items,
+        'total_ads': len(ads),
+        'total_jobs': len(jobs)
+    }
 
 # ==================== INTEGRAÇÃO: VAGAS NO MAPA E FEED ====================
 
