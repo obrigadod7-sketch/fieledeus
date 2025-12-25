@@ -624,7 +624,7 @@ export default function JobsPage() {
           </div>
         </div>
 
-            {/* Call to Action */}
+        {/* Call to Action */}}
             <div className="mt-4 bg-gradient-to-r from-primary to-secondary rounded-2xl p-6 text-white text-center">
               <h3 className="font-bold text-lg mb-2">
                 {viewMode === 'offers' ? '🔍 Procurando Trabalho?' : '🛠️ Oferece Algum Serviço?'}
