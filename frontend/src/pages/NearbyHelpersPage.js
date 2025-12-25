@@ -254,8 +254,8 @@ export default function NearbyHelpersPage() {
       className: 'custom-marker',
       html: `
         <div style="position: relative;">
-          <div style="position: absolute; width: 40px; height: 40px; background: ${isNight ? 'rgba(34, 211, 238, 0.3)' : 'rgba(59, 130, 246, 0.3)'}; border-radius: 50%; animation: ping 2s infinite; left: -8px; top: -8px;"></div>
-          <div style="background: ${isNight ? '#22d3ee' : '#3b82f6'}; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;">
+          <div style="position: absolute; width: 40px; height: 40px; background: rgba(59, 130, 246, 0.3); border-radius: 50%; animation: ping 2s infinite; left: -8px; top: -8px;"></div>
+          <div style="background: #3b82f6; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><circle cx="12" cy="12" r="3"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2"/></svg>
           </div>
         </div>
@@ -266,7 +266,7 @@ export default function NearbyHelpersPage() {
 
     window.L.marker([myLocation.lat, myLocation.lng], { icon: myIcon })
       .addTo(map)
-      .bindPopup(`<strong style="color: ${isNight ? '#22d3ee' : '#3b82f6'}">📍 Você está aqui</strong>`);
+      .bindPopup(`<strong style="color: #3b82f6">📍 Você está aqui</strong>`);
 
     // Marcadores dos voluntários
     if (viewMode === 'all' || viewMode === 'helpers') {
