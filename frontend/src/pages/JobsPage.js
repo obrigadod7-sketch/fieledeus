@@ -179,6 +179,58 @@ export default function JobsPage() {
     return `${diffDays} dias atrás`;
   };
 
+  // Gerar URL de busca para cada plataforma
+  const generateSearchUrl = (platform, query, location) => {
+    const searchTerm = query || (selectedCategory !== 'all' ? SEARCH_SUGGESTIONS[selectedCategory]?.[0] : 'emploi');
+    const loc = location || 'Paris';
+    
+    switch(platform.id) {
+      case 'indeed':
+        return `${platform.baseUrl}?q=${encodeURIComponent(searchTerm)}&l=${encodeURIComponent(loc)}`;
+      case 'pole_emploi':
+        return `${platform.baseUrl}?motsCles=${encodeURIComponent(searchTerm)}&offresPartenaires=true`;
+      case 'linkedin':
+        return `${platform.baseUrl}?keywords=${encodeURIComponent(searchTerm)}&location=${encodeURIComponent(loc)}&f_TPR=r86400`;
+      case 'leboncoin':
+        return `https://www.leboncoin.fr/offres_d_emploi/offres?text=${encodeURIComponent(searchTerm)}`;
+      case 'monster':
+        return `${platform.baseUrl}?q=${encodeURIComponent(searchTerm)}&where=${encodeURIComponent(loc)}`;
+      case 'hellowork':
+        return `${platform.baseUrl}?k=${encodeURIComponent(searchTerm)}&l=${encodeURIComponent(loc)}`;
+      case 'apec':
+        return `${platform.baseUrl}?motsCles=${encodeURIComponent(searchTerm)}`;
+      case 'welcometothejungle':
+        return `${platform.baseUrl}?query=${encodeURIComponent(searchTerm)}&aroundQuery=${encodeURIComponent(loc)}`;
+      default:
+        return platform.baseUrl;
+    }
+  };
+
+  // Abrir busca em todas as plataformas
+  const searchAllPlatforms = () => {
+    if (!searchQuery.trim()) {
+      toast.error('Digite algo para buscar');
+      return;
+    }
+    
+    // Abrir as 3 principais plataformas
+    const mainPlatforms = JOB_PLATFORMS.slice(0, 3);
+    mainPlatforms.forEach((platform, index) => {
+      setTimeout(() => {
+        window.open(generateSearchUrl(platform, searchQuery, locationQuery), '_blank');
+      }, index * 500);
+    });
+    
+    toast.success(`Buscando "${searchQuery}" em ${mainPlatforms.length} plataformas!`);
+  };
+
+  // Abrir busca em uma plataforma específica
+  const searchOnPlatform = (platform) => {
+    const url = generateSearchUrl(platform, searchQuery, locationQuery);
+    window.open(url, '_blank');
+    toast.success(`Abrindo ${platform.name}...`);
+  };
+
   const displayData = viewMode === 'offers' ? jobOffers : jobSeekers;
 
   return (
