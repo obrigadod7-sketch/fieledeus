@@ -67,11 +67,13 @@ export default function NearbyHelpersPage() {
   const [myLocation, setMyLocation] = useState(null);
   const [nearbyHelpers, setNearbyHelpers] = useState([]);
   const [helpLocations, setHelpLocations] = useState([]);
+  const [jobLocations, setJobLocations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedHelper, setSelectedHelper] = useState(null);
   const [selectedLocation, setSelectedLocation] = useState(null);
+  const [selectedJob, setSelectedJob] = useState(null);
   const [radius, setRadius] = useState(10);
   const [viewMode, setViewMode] = useState('all');
   const [isNight, setIsNight] = useState(isNightTime());
