@@ -55,39 +55,59 @@ export default function LandingPage() {
 
           <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
             <div 
-              className="bg-white rounded-3xl p-8 shadow-card card-hover cursor-pointer"
+              className="bg-white rounded-3xl p-8 shadow-card card-hover cursor-pointer overflow-hidden relative"
               onClick={() => navigate('/auth?role=migrant')}
               data-testid="need-help-card"
             >
-              <div className="flex justify-center mb-4">
-                <div className="p-4 bg-green-100 rounded-2xl">
-                  <HandHeart size={48} className="text-green-600" />
-                </div>
+              {/* Imagem de fundo */}
+              <div className="absolute inset-0 opacity-10">
+                <img 
+                  src="https://images.unsplash.com/photo-1578357078586-491adf1aa5ba?w=400&q=60" 
+                  alt="" 
+                  className="w-full h-full object-cover"
+                />
               </div>
-              <h2 className="text-2xl font-heading font-bold text-textPrimary mb-3">
-                {t('needHelp')}
-              </h2>
-              <p className="text-textSecondary">
-                {t('needHelpDesc')}
-              </p>
+              <div className="relative z-10">
+                <div className="flex justify-center mb-4">
+                  <div className="p-4 bg-green-100 rounded-2xl">
+                    <HandHeart size={48} className="text-green-600" />
+                  </div>
+                </div>
+                <h2 className="text-2xl font-heading font-bold text-textPrimary mb-3">
+                  {t('needHelp')}
+                </h2>
+                <p className="text-textSecondary">
+                  {t('needHelpDesc')}
+                </p>
+              </div>
             </div>
 
             <div 
-              className="bg-white rounded-3xl p-8 shadow-card card-hover cursor-pointer"
+              className="bg-white rounded-3xl p-8 shadow-card card-hover cursor-pointer overflow-hidden relative"
               onClick={() => navigate('/auth?role=helper')}
               data-testid="want-to-help-card"
             >
-              <div className="flex justify-center mb-4">
-                <div className="p-4 bg-orange-100 rounded-2xl">
-                  <HeartHandshake size={48} className="text-primary" />
-                </div>
+              {/* Imagem de fundo */}
+              <div className="absolute inset-0 opacity-10">
+                <img 
+                  src="https://images.unsplash.com/photo-1599119807932-4826b334c431?w=400&q=60" 
+                  alt="" 
+                  className="w-full h-full object-cover"
+                />
               </div>
-              <h2 className="text-2xl font-heading font-bold text-textPrimary mb-3">
-                {t('wantToHelp')}
-              </h2>
-              <p className="text-textSecondary">
-                {t('wantToHelpDesc')}
-              </p>
+              <div className="relative z-10">
+                <div className="flex justify-center mb-4">
+                  <div className="p-4 bg-orange-100 rounded-2xl">
+                    <HeartHandshake size={48} className="text-primary" />
+                  </div>
+                </div>
+                <h2 className="text-2xl font-heading font-bold text-textPrimary mb-3">
+                  {t('wantToHelp')}
+                </h2>
+                <p className="text-textSecondary">
+                  {t('wantToHelpDesc')}
+                </p>
+              </div>
             </div>
           </div>
 
