@@ -624,25 +624,27 @@ export default function JobsPage() {
           </div>
         </div>
 
-        {/* Call to Action */}
-        <div className="mt-4 bg-gradient-to-r from-primary to-secondary rounded-2xl p-6 text-white text-center">
-          <h3 className="font-bold text-lg mb-2">
-            {viewMode === 'offers' ? '🔍 Procurando Trabalho?' : '🛠️ Oferece Algum Serviço?'}
-          </h3>
-          <p className="text-sm text-white/80 mb-4">
-            {viewMode === 'offers' 
-              ? 'Publique seu perfil e deixe os empregadores te encontrarem'
-              : 'Publique sua oferta de serviço e encontre clientes'}
-          </p>
-          <Button
-            onClick={() => navigate('/home')}
-            variant="secondary"
-            className="rounded-full bg-white text-primary hover:bg-gray-100"
-          >
-            <Plus size={16} className="mr-1" />
-            Publicar Agora
-          </Button>
-        </div>
+            {/* Call to Action */}
+            <div className="mt-4 bg-gradient-to-r from-primary to-secondary rounded-2xl p-6 text-white text-center">
+              <h3 className="font-bold text-lg mb-2">
+                {viewMode === 'offers' ? '🔍 Procurando Trabalho?' : '🛠️ Oferece Algum Serviço?'}
+              </h3>
+              <p className="text-sm text-white/80 mb-4">
+                {viewMode === 'offers' 
+                  ? 'Publique seu perfil e deixe os empregadores te encontrarem'
+                  : 'Publique sua oferta de serviço e encontre clientes'}
+              </p>
+              <Button
+                onClick={() => navigate('/home')}
+                variant="secondary"
+                className="rounded-full bg-white text-primary hover:bg-gray-100"
+              >
+                <Plus size={16} className="mr-1" />
+                Publicar Agora
+              </Button>
+            </div>
+          </>
+        )}
       </div>
 
       <BottomNav />
