@@ -129,6 +129,7 @@ export default function NearbyHelpersPage() {
     if (myLocation) {
       fetchNearbyHelpers();
       fetchHelpLocations();
+      fetchJobLocations();
     }
   }, [myLocation, selectedCategory, radius]);
 
