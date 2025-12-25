@@ -502,12 +502,12 @@ export default function NearbyHelpersPage() {
 
       <div className="container mx-auto max-w-4xl px-2 sm:px-4 py-4">
         {/* Map */}
-        <div className={`${themeColors.card} rounded-2xl shadow-lg border overflow-hidden mb-4 transition-colors duration-500`}>
+        <div className="bg-white border-gray-200 rounded-2xl shadow-lg border overflow-hidden mb-4">
           {loadingLocation ? (
-            <div className={`h-[350px] sm:h-[400px] flex items-center justify-center ${isNight ? 'bg-slate-800' : 'bg-gray-100'}`}>
+            <div className="h-[350px] sm:h-[400px] flex items-center justify-center bg-gray-100">
               <div className="text-center">
                 <Loader2 size={32} className="animate-spin text-blue-500 mx-auto mb-2" />
-                <p className={themeColors.textMuted}>Obtendo sua localização...</p>
+                <p className="text-gray-600">Obtendo sua localização...</p>
               </div>
             </div>
           ) : (
@@ -515,23 +515,19 @@ export default function NearbyHelpersPage() {
           )}
           
           {/* Map Legend */}
-          <div className={`p-3 ${isNight ? 'bg-slate-700' : 'bg-gray-50'} border-t ${isNight ? 'border-slate-600' : 'border-gray-200'} transition-colors duration-500`}>
+          <div className="p-3 bg-gray-50 border-t border-gray-200">
             <div className="flex flex-wrap gap-4 text-xs">
               <div className="flex items-center gap-2">
-                <div className={`w-5 h-5 rounded-full ${isNight ? 'bg-cyan-400' : 'bg-blue-500'} border-2 border-white shadow`}></div>
-                <span className={themeColors.textMuted}>Você</span>
+                <div className="w-5 h-5 rounded-full bg-blue-500 border-2 border-white shadow"></div>
+                <span className="text-gray-600">Você</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-5 h-5 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 border-2 border-white shadow"></div>
-                <span className={themeColors.textMuted}>Voluntários</span>
+                <span className="text-gray-600">Voluntários</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-5 h-5 rounded-lg bg-green-500 border-2 border-white shadow"></div>
-                <span className={themeColors.textMuted}>Locais de Ajuda</span>
-              </div>
-              <div className="flex items-center gap-2 ml-auto">
-                {isNight ? <Moon size={14} className="text-cyan-400" /> : <Sun size={14} className="text-yellow-500" />}
-                <span className={themeColors.textMuted}>{isNight ? 'Modo Noturno' : 'Modo Diurno'}</span>
+                <span className="text-gray-600">Locais de Ajuda</span>
               </div>
             </div>
           </div>
