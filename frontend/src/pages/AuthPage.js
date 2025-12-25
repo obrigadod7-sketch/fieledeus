@@ -630,6 +630,7 @@ export default function AuthPage() {
             {isLogin ? t('noAccount') : t('hasAccount')}
           </button>
         </div>
+        </div>
       </div>
     </div>
   );
