@@ -371,14 +371,24 @@ export default function JobsPage() {
           {/* Toggle de Modos */}
           <div className="flex gap-2 mb-4 overflow-x-auto">
             <button
-              onClick={() => setViewMode('platforms')}
+              onClick={() => setViewMode('search')}
               className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                viewMode === 'platforms'
+                viewMode === 'search'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              🌐 Plataformas de Emprego
+              🔍 Vagas ({externalJobs.length})
+            </button>
+            <button
+              onClick={() => setViewMode('platforms')}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                viewMode === 'platforms'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              🌐 Plataformas
             </button>
             <button
               onClick={() => setViewMode('offers')}
@@ -398,7 +408,7 @@ export default function JobsPage() {
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              🔍 Procuram ({jobSeekers.length})
+              👥 Procuram ({jobSeekers.length})
             </button>
           </div>
 
