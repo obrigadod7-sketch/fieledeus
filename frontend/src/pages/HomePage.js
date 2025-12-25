@@ -138,16 +138,16 @@ export default function HomePage() {
   const [advertisements, setAdvertisements] = useState([]);
 
   const categories = [
-    { value: 'food', label: t('food'), color: 'bg-green-100 text-green-700 border-green-200', icon: '🍽️' },
-    { value: 'legal', label: t('legal'), color: 'bg-blue-100 text-blue-700 border-blue-200', icon: '⚖️' },
-    { value: 'health', label: t('health'), color: 'bg-red-100 text-red-700 border-red-200', icon: '🏥' },
-    { value: 'housing', label: t('housing'), color: 'bg-purple-100 text-purple-700 border-purple-200', icon: '🏠' },
-    { value: 'work', label: t('work'), color: 'bg-yellow-100 text-yellow-700 border-yellow-200', icon: '💼' },
-    { value: 'education', label: t('education'), color: 'bg-indigo-100 text-indigo-700 border-indigo-200', icon: '📚' },
-    { value: 'social', label: t('social'), color: 'bg-pink-100 text-pink-700 border-pink-200', icon: '🤝' },
-    { value: 'clothes', label: 'Roupas', color: 'bg-orange-100 text-orange-700 border-orange-200', icon: '👕' },
-    { value: 'furniture', label: 'Móveis', color: 'bg-teal-100 text-teal-700 border-teal-200', icon: '🪑' },
-    { value: 'transport', label: 'Transporte', color: 'bg-cyan-100 text-cyan-700 border-cyan-200', icon: '🚗' }
+    { value: 'food', label: t('food'), color: 'bg-green-100 text-green-700 border-green-200', icon: Utensils },
+    { value: 'legal', label: t('legal'), color: 'bg-blue-100 text-blue-700 border-blue-200', icon: Scale },
+    { value: 'health', label: t('health'), color: 'bg-red-100 text-red-700 border-red-200', icon: Heart },
+    { value: 'housing', label: t('housing'), color: 'bg-purple-100 text-purple-700 border-purple-200', icon: HomeIcon },
+    { value: 'work', label: t('work'), color: 'bg-yellow-100 text-yellow-700 border-yellow-200', icon: Briefcase },
+    { value: 'education', label: t('education'), color: 'bg-indigo-100 text-indigo-700 border-indigo-200', icon: GraduationCap },
+    { value: 'social', label: t('social'), color: 'bg-pink-100 text-pink-700 border-pink-200', icon: Users },
+    { value: 'clothes', label: 'Roupas', color: 'bg-orange-100 text-orange-700 border-orange-200', icon: Shirt },
+    { value: 'furniture', label: 'Móveis', color: 'bg-teal-100 text-teal-700 border-teal-200', icon: Armchair },
+    { value: 'transport', label: 'Transporte', color: 'bg-cyan-100 text-cyan-700 border-cyan-200', icon: Car }
   ];
 
   useEffect(() => {
