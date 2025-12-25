@@ -1436,10 +1436,11 @@ async def search_jobs(
     }
     
     params = {
-        "query": f"{query} in {location}",
+        "query": f"{query} {location}",
         "page": str(page),
         "num_pages": "1",
-        "date_posted": date_posted
+        "date_posted": date_posted,
+        "country": "fr"
     }
     
     if remote_only:
