@@ -384,6 +384,50 @@ export default function NearbyHelpersPage() {
         marker.on('click', () => {
           setSelectedLocation(location);
           setSelectedHelper(null);
+          setSelectedJob(null);
+        });
+
+        markersRef.current.push(marker);
+      });
+    }
+
+    // Marcadores das vagas de emprego
+    if (viewMode === 'all' || viewMode === 'jobs') {
+      jobLocations.forEach((job) => {
+        const jobIcon = window.L.divIcon({
+          className: 'custom-marker',
+          html: `
+            <div style="background: linear-gradient(135deg, #2563eb, #1d4ed8); width: 40px; height: 40px; border-radius: 10px; border: 3px solid white; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.5); display: flex; align-items: center; justify-content: center; font-size: 18px;">
+              💼
+            </div>
+          `,
+          iconSize: [40, 40],
+          iconAnchor: [20, 20]
+        });
+
+        const marker = window.L.marker([job.lat, job.lng], { icon: jobIcon })
+          .addTo(map);
+
+        const salaryInfo = job.salary_min || job.salary_max 
+          ? `<span style="color: #22c55e; font-size: 11px; font-weight: bold;">💰 ${job.salary_min || ''}-${job.salary_max || ''} EUR</span><br/>` 
+          : '';
+
+        marker.bindPopup(`
+          <div style="text-align: center; min-width: 220px; padding: 10px; background: white; color: #1f2937;">
+            <strong style="font-size: 13px; color: #2563eb;">💼 ${job.name}</strong><br/>
+            <span style="color: #6b7280; font-size: 11px;">🏢 ${job.company || 'Empresa'}</span><br/>
+            <span style="color: #6b7280; font-size: 11px;">📍 ${job.address}</span><br/>
+            ${salaryInfo}
+            ${job.is_remote ? '<span style="color: #22c55e; font-size: 11px;">🏠 Remoto</span><br/>' : ''}
+            <span style="color: #3b82f6; font-size: 11px;">📍 ${job.distance || '?'} km</span><br/>
+            <a href="${job.url}" target="_blank" style="color: #2563eb; font-size: 12px; text-decoration: underline; font-weight: bold;">Ver Vaga →</a>
+          </div>
+        `);
+
+        marker.on('click', () => {
+          setSelectedJob(job);
+          setSelectedLocation(null);
+          setSelectedHelper(null);
         });
 
         markersRef.current.push(marker);
