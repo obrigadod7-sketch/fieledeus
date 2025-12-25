@@ -949,6 +949,131 @@ export default function HomePage() {
           </div>
         )}
         </div>
+
+          {/* Sidebar Direita - Anúncios do Dashboard */}
+          <div className="hidden lg:block w-80 flex-shrink-0 space-y-4">
+            {/* Header da Sidebar */}
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl p-4 shadow-lg">
+              <h3 className="font-bold text-sm">📢 Anúncios & Oportunidades</h3>
+              <p className="text-xs text-white/80 mt-1">Vagas de emprego e mensagens para você</p>
+            </div>
+
+            {/* Renderizar anúncios */}
+            {advertisements.length > 0 ? (
+              advertisements.map((item, idx) => {
+                // Vaga de Emprego
+                if (item.type === 'job' || item.item_type === 'job') {
+                  return (
+                    <div key={item.id || idx} className="bg-white rounded-2xl shadow-md overflow-hidden border border-blue-100 hover:shadow-lg transition-all">
+                      {item.image_url && (
+                        <img 
+                          src={item.image_url} 
+                          alt={item.title} 
+                          className="w-full h-28 object-cover"
+                        />
+                      )}
+                      <div className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-xs font-bold px-2 py-1 bg-blue-600 text-white rounded-full">💼 VAGA</span>
+                          {item.source && (
+                            <span className="text-xs text-blue-600">{item.source}</span>
+                          )}
+                        </div>
+                        <h3 className="font-bold text-sm text-gray-800 mb-1 line-clamp-2">{item.title}</h3>
+                        <p className="text-xs text-gray-600 mb-3 line-clamp-2">{item.content}</p>
+                        {item.link_url && (
+                          <a 
+                            href={item.link_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="block w-full text-center py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm transition-colors"
+                          >
+                            {item.link_text || 'Ver Vaga'} →
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  );
+                }
+                
+                // Anúncio de Doação
+                if (item.type === 'donation') {
+                  return (
+                    <div key={item.id || idx} className="bg-white rounded-2xl shadow-md overflow-hidden border border-orange-100">
+                      {item.image_url && (
+                        <img 
+                          src={item.image_url} 
+                          alt={item.title} 
+                          className="w-full h-32 object-cover"
+                        />
+                      )}
+                      <div className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-xs font-bold px-2 py-1 bg-orange-500 text-white rounded-full">❤️ DOAÇÃO</span>
+                        </div>
+                        <h3 className="font-bold text-sm text-gray-800 mb-2">{item.title}</h3>
+                        <p className="text-xs text-gray-600 leading-relaxed mb-3">{item.content}</p>
+                        {item.link_url && (
+                          <a 
+                            href={item.link_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="block w-full text-center py-2 px-4 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl text-sm transition-colors"
+                          >
+                            {item.link_text || 'Doar Agora'} →
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  );
+                }
+                
+                // Mensagem de Motivação ou outro tipo
+                return (
+                  <div key={item.id || idx} className="bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100">
+                    {item.image_url && (
+                      <img 
+                        src={item.image_url} 
+                        alt={item.title} 
+                        className="w-full h-28 object-cover"
+                      />
+                    )}
+                    <div className="p-4">
+                      <h3 className="font-bold text-sm text-gray-800 mb-2">{item.title}</h3>
+                      <p className="text-xs text-gray-600 leading-relaxed">{item.content}</p>
+                      {item.link_url && (
+                        <a 
+                          href={item.link_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="block w-full text-center py-2 px-4 mt-3 bg-gray-800 hover:bg-gray-900 text-white font-bold rounded-xl text-sm transition-colors"
+                        >
+                          {item.link_text || 'Saiba Mais'} →
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="bg-white rounded-2xl p-6 text-center border border-gray-200">
+                <p className="text-gray-500 text-sm">Nenhum anúncio no momento</p>
+                <p className="text-xs text-gray-400 mt-1">Volte mais tarde para ver oportunidades</p>
+              </div>
+            )}
+
+            {/* Link para mais vagas */}
+            <a 
+              href="https://rozgarline.me/jobs/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="block bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-2xl p-4 text-center hover:shadow-lg transition-all"
+            >
+              <span className="font-bold">🔍 Ver Todas as Vagas</span>
+              <p className="text-xs text-white/80 mt-1">Acesse RozgarLine para mais oportunidades</p>
+            </a>
+          </div>
+        </div>
       </div>
 
       <BottomNav />
