@@ -693,19 +693,20 @@ export default function HomePage() {
                     </div>
                   )}
                 </div>
-              </div>
-            </div>
+                  </div>
+                </div>
 
-            <div className="border-t pt-4 px-1 flex-shrink-0 bg-white">
-              <Button 
-                data-testid="submit-post-button"
-                onClick={createPost} 
-                className="w-full rounded-full py-6 text-lg font-bold bg-primary hover:bg-primary-hover shadow-lg"
-              >
-                📢 Publicar Agora
-              </Button>
-            </div>
-          </DialogContent>
+                <div className="border-t p-6 pt-4 flex-shrink-0 bg-white">
+                  <Button 
+                    data-testid="submit-post-button"
+                    onClick={createPost} 
+                    className="w-full rounded-full py-6 text-lg font-bold bg-primary hover:bg-primary-hover shadow-lg"
+                  >
+                    📢 Publicar Agora
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
         </Dialog>
         ) : (
           /* Botão para Helpers/Admins - Redireciona para página Ajudar */
