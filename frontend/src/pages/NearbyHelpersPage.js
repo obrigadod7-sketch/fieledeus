@@ -220,7 +220,7 @@ export default function NearbyHelpersPage() {
     
     try {
       let url = `${process.env.REACT_APP_BACKEND_URL}/api/help-locations?lat=${myLocation.lat}&lng=${myLocation.lng}`;
-      if (selectedCategory !== 'all') {
+      if (selectedCategory !== 'all' && selectedCategory !== 'jobs') {
         url += `&category=${selectedCategory}`;
       }
       
@@ -233,6 +233,39 @@ export default function NearbyHelpersPage() {
       }
     } catch (error) {
       console.error('Error fetching help locations:', error);
+    }
+  };
+
+  const fetchJobLocations = async () => {
+    if (!myLocation) return;
+    
+    // Só buscar vagas se categoria for 'all' ou 'jobs'
+    if (selectedCategory !== 'all' && selectedCategory !== 'jobs' && selectedCategory !== 'work') {
+      setJobLocations([]);
+      return;
+    }
+    
+    try {
+      // Primeiro sincronizar vagas com o mapa
+      await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/jobs/sync-to-map`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      // Depois buscar localizações das vagas
+      const response = await fetch(
+        `${process.env.REACT_APP_BACKEND_URL}/api/jobs/map-locations?lat=${myLocation.lat}&lng=${myLocation.lng}&radius=${radius}`
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        setJobLocations(data.locations || []);
+      }
+    } catch (error) {
+      console.error('Error fetching job locations:', error);
     }
   };
 
