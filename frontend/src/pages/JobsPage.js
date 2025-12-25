@@ -438,6 +438,300 @@ export default function JobsPage() {
       {/* Conteúdo Principal */}
       <div className="container mx-auto max-w-4xl px-4 py-4">
         
+        {/* Modo: Resultados de Busca de Vagas */}
+        {viewMode === 'search' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-800">
+                🔍 {totalJobs > 0 ? `${totalJobs} vagas encontradas` : 'Resultados da busca'}
+              </h2>
+              {externalJobs.length > 0 && (
+                <span className="text-sm text-gray-500">
+                  Página {currentPage}
+                </span>
+              )}
+            </div>
+
+            {searchLoading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Buscando vagas em Indeed, LinkedIn, Glassdoor...</p>
+              </div>
+            ) : externalJobs.length === 0 ? (
+              <div className="text-center py-12 bg-white rounded-2xl">
+                <div className="text-5xl mb-4">🔍</div>
+                <h3 className="font-bold text-gray-800 mb-2">Busque por vagas</h3>
+                <p className="text-gray-500 mb-4">
+                  Digite um cargo ou área de interesse para encontrar vagas disponíveis
+                </p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {['Garçom', 'Faxineira', 'Motorista', 'Cozinheiro', 'Eletricista'].map(term => (
+                    <button
+                      key={term}
+                      onClick={() => {
+                        setSearchQuery(term);
+                        searchExternalJobs(term, locationQuery);
+                      }}
+                      className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm hover:bg-blue-200"
+                    >
+                      {term}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Lista de Vagas */}
+                <div className="space-y-3">
+                  {externalJobs.map((job) => (
+                    <div 
+                      key={job.id}
+                      className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-pointer"
+                      onClick={() => {
+                        setSelectedJob(job);
+                        setShowJobDetails(true);
+                      }}
+                    >
+                      <div className="flex gap-4">
+                        {/* Logo da Empresa */}
+                        <div className="flex-shrink-0">
+                          {job.company_logo ? (
+                            <img 
+                              src={job.company_logo} 
+                              alt={job.company}
+                              className="w-14 h-14 rounded-xl object-cover border"
+                              onError={(e) => { e.target.style.display = 'none'; }}
+                            />
+                          ) : (
+                            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xl font-bold">
+                              {job.company?.charAt(0) || '?'}
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Informações da Vaga */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <h3 className="font-bold text-gray-800 line-clamp-1">{job.title}</h3>
+                            {job.is_remote && (
+                              <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs whitespace-nowrap">
+                                🏠 Remoto
+                              </span>
+                            )}
+                          </div>
+                          
+                          <p className="text-sm text-gray-600 mt-1">{job.company}</p>
+                          
+                          <div className="flex flex-wrap items-center gap-2 mt-2 text-xs text-gray-500">
+                            <span className="flex items-center gap-1">
+                              <MapPin size={12} />
+                              {job.location || 'França'}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Clock size={12} />
+                              {getTimeAgo(job.date_posted)}
+                            </span>
+                            {job.employment_type && (
+                              <span className="px-2 py-0.5 bg-gray-100 rounded-full">
+                                {job.employment_type}
+                              </span>
+                            )}
+                            {job.source && (
+                              <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full">
+                                via {job.source}
+                              </span>
+                            )}
+                          </div>
+                          
+                          {/* Salário se disponível */}
+                          {(job.salary_min || job.salary_max) && (
+                            <div className="mt-2 text-sm font-medium text-green-600">
+                              💰 {job.salary_min && `${job.salary_min.toLocaleString()}`}
+                              {job.salary_min && job.salary_max && ' - '}
+                              {job.salary_max && `${job.salary_max.toLocaleString()}`}
+                              {job.salary_currency && ` ${job.salary_currency}`}
+                            </div>
+                          )}
+                          
+                          {/* Descrição resumida */}
+                          {job.description && (
+                            <p className="mt-2 text-sm text-gray-600 line-clamp-2">
+                              {job.description.replace(/<[^>]*>/g, '').substring(0, 150)}...
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Botão de candidatar */}
+                      <div className="mt-3 flex gap-2">
+                        <Button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(job.url, '_blank');
+                          }}
+                          className="flex-1 rounded-xl bg-blue-600 hover:bg-blue-700"
+                          size="sm"
+                        >
+                          <ExternalLink size={14} className="mr-1" />
+                          Candidatar-se
+                        </Button>
+                        <Button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedJob(job);
+                            setShowJobDetails(true);
+                          }}
+                          variant="outline"
+                          className="rounded-xl"
+                          size="sm"
+                        >
+                          Ver mais
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Paginação */}
+                {totalJobs > 10 && (
+                  <div className="flex justify-center gap-2 mt-6">
+                    <Button
+                      onClick={() => searchExternalJobs(searchQuery, locationQuery, currentPage - 1)}
+                      disabled={currentPage <= 1 || searchLoading}
+                      variant="outline"
+                      className="rounded-xl"
+                    >
+                      ← Anterior
+                    </Button>
+                    <span className="px-4 py-2 bg-gray-100 rounded-xl">
+                      Página {currentPage}
+                    </span>
+                    <Button
+                      onClick={() => searchExternalJobs(searchQuery, locationQuery, currentPage + 1)}
+                      disabled={searchLoading}
+                      variant="outline"
+                      className="rounded-xl"
+                    >
+                      Próxima →
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Modal de Detalhes da Vaga */}
+        <Dialog open={showJobDetails} onOpenChange={setShowJobDetails}>
+          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                💼 {selectedJob?.title}
+              </DialogTitle>
+            </DialogHeader>
+            
+            {selectedJob && (
+              <div className="space-y-4">
+                {/* Header da empresa */}
+                <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
+                  {selectedJob.company_logo ? (
+                    <img 
+                      src={selectedJob.company_logo} 
+                      alt={selectedJob.company}
+                      className="w-16 h-16 rounded-xl object-cover"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-xl bg-blue-600 flex items-center justify-center text-white text-2xl font-bold">
+                      {selectedJob.company?.charAt(0)}
+                    </div>
+                  )}
+                  <div>
+                    <h3 className="font-bold text-lg">{selectedJob.company}</h3>
+                    <p className="text-gray-600 flex items-center gap-1">
+                      <MapPin size={14} />
+                      {selectedJob.location}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Informações */}
+                <div className="grid grid-cols-2 gap-3">
+                  {selectedJob.employment_type && (
+                    <div className="p-3 bg-blue-50 rounded-xl">
+                      <p className="text-xs text-gray-500">Tipo</p>
+                      <p className="font-medium">{selectedJob.employment_type}</p>
+                    </div>
+                  )}
+                  {selectedJob.date_posted && (
+                    <div className="p-3 bg-green-50 rounded-xl">
+                      <p className="text-xs text-gray-500">Publicado</p>
+                      <p className="font-medium">{getTimeAgo(selectedJob.date_posted)}</p>
+                    </div>
+                  )}
+                  {(selectedJob.salary_min || selectedJob.salary_max) && (
+                    <div className="p-3 bg-yellow-50 rounded-xl col-span-2">
+                      <p className="text-xs text-gray-500">Salário</p>
+                      <p className="font-medium text-green-600">
+                        💰 {selectedJob.salary_min?.toLocaleString()} - {selectedJob.salary_max?.toLocaleString()} {selectedJob.salary_currency}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Descrição */}
+                {selectedJob.description && (
+                  <div>
+                    <h4 className="font-bold mb-2">📝 Descrição da Vaga</h4>
+                    <div 
+                      className="text-sm text-gray-600 prose prose-sm max-w-none"
+                      dangerouslySetInnerHTML={{ 
+                        __html: selectedJob.description.substring(0, 2000) 
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Qualificações */}
+                {selectedJob.qualifications?.length > 0 && (
+                  <div>
+                    <h4 className="font-bold mb-2">✅ Qualificações</h4>
+                    <ul className="text-sm text-gray-600 space-y-1">
+                      {selectedJob.qualifications.slice(0, 5).map((q, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="text-green-500">•</span>
+                          {q}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Botões de ação */}
+                <div className="flex gap-3 pt-4 border-t">
+                  <Button
+                    onClick={() => window.open(selectedJob.url, '_blank')}
+                    className="flex-1 rounded-xl bg-blue-600 hover:bg-blue-700"
+                  >
+                    <ExternalLink size={16} className="mr-2" />
+                    Candidatar-se Agora
+                  </Button>
+                  <Button
+                    onClick={() => setShowJobDetails(false)}
+                    variant="outline"
+                    className="rounded-xl"
+                  >
+                    Fechar
+                  </Button>
+                </div>
+                
+                <p className="text-xs text-gray-400 text-center">
+                  Fonte: {selectedJob.source} • Você será redirecionado para o site original
+                </p>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+        
         {/* Modo: Plataformas de Emprego */}
         {viewMode === 'platforms' && (
           <div className="space-y-4">
