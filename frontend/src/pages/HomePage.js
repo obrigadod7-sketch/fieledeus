@@ -603,31 +603,33 @@ export default function HomePage() {
 
           {/* Conteúdo Principal - Feed */}
           <div className="flex-1 max-w-2xl mx-auto">
-        <Dialog open={showCreatePost} onOpenChange={setShowCreatePost}>
-          <DialogTrigger asChild>
-            <Button 
-              data-testid="create-post-button"
-              className="w-full rounded-full py-6 mb-6 bg-primary hover:bg-primary-hover text-white font-bold shadow-lg"
-            >
-              <Plus size={20} className="mr-2" />
-              {user?.role === 'migrant' ? 'Preciso de Ajuda' : 'Oferecer Ajuda'}
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="rounded-3xl max-w-2xl max-h-[85vh] flex flex-col" data-testid="create-post-dialog">
-            <DialogHeader className="pb-4 border-b flex-shrink-0">
-              <DialogTitle className="text-2xl font-heading">
-                {newPost.type === 'need' ? '🆘 Preciso de Ajuda' : '🤝 Quero Ajudar'}
-              </DialogTitle>
-              <DialogDescription>
-                Preencha as informações abaixo para publicar
-              </DialogDescription>
-            </DialogHeader>
-            <div 
-              className="flex-1 overflow-y-scroll px-2 py-2 scroll-container" 
-              style={{ 
-                maxHeight: 'calc(85vh - 200px)',
-                scrollbarWidth: 'thin',
-                scrollbarColor: '#1CA9C9 #f1f1f1'
+        {/* Botão para Migrantes - Abre modal */}
+        {user?.role === 'migrant' ? (
+          <Dialog open={showCreatePost} onOpenChange={setShowCreatePost}>
+            <DialogTrigger asChild>
+              <Button 
+                data-testid="create-post-button"
+                className="w-full rounded-full py-6 mb-6 bg-green-600 hover:bg-green-700 text-white font-bold shadow-lg"
+              >
+                <Plus size={20} className="mr-2" />
+                🆘 Preciso de Ajuda
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="rounded-3xl max-w-2xl max-h-[85vh] flex flex-col" data-testid="create-post-dialog">
+              <DialogHeader className="pb-4 border-b flex-shrink-0">
+                <DialogTitle className="text-2xl font-heading">
+                  🆘 Preciso de Ajuda
+                </DialogTitle>
+                <DialogDescription>
+                  Preencha as informações abaixo para publicar
+                </DialogDescription>
+              </DialogHeader>
+              <div 
+                className="flex-1 overflow-y-scroll px-2 py-2 scroll-container" 
+                style={{ 
+                  maxHeight: 'calc(85vh - 200px)',
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: '#1CA9C9 #f1f1f1'
               }}
             >
               <div className="space-y-6 pr-2">
