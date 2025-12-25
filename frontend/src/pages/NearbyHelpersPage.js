@@ -419,7 +419,7 @@ export default function NearbyHelpersPage() {
       </div>
 
       {/* Filters */}
-      <div className={`${isNight ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} border-b px-4 py-3 sticky top-0 z-10 transition-colors duration-500`}>
+      <div className="bg-white border-gray-200 border-b px-4 py-3 sticky top-0 z-10">
         <div className="container mx-auto max-w-4xl">
           {/* View Mode Toggle */}
           <div className="flex gap-2 mb-3 overflow-x-auto pb-2">
@@ -428,7 +428,7 @@ export default function NearbyHelpersPage() {
               className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
                 viewMode === 'all' 
                   ? 'bg-blue-600 text-white' 
-                  : isNight ? 'bg-slate-700 text-gray-300 hover:bg-slate-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               🌐 {t('all')}
@@ -438,7 +438,7 @@ export default function NearbyHelpersPage() {
               className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
                 viewMode === 'helpers' 
                   ? 'bg-orange-500 text-white' 
-                  : isNight ? 'bg-slate-700 text-gray-300 hover:bg-slate-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               🤝 Voluntários ({nearbyHelpers.length})
@@ -448,7 +448,7 @@ export default function NearbyHelpersPage() {
               className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
                 viewMode === 'locations' 
                   ? 'bg-blue-500 text-white' 
-                  : isNight ? 'bg-slate-700 text-gray-300 hover:bg-slate-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               🏢 Locais ({helpLocations.length})
@@ -460,7 +460,7 @@ export default function NearbyHelpersPage() {
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className={`w-full p-2 border rounded-xl text-sm ${isNight ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-gray-300'}`}
+                className="w-full p-2 border rounded-xl text-sm bg-white border-gray-300"
               >
                 {HELP_CATEGORIES.map(cat => (
                   <option key={cat.value} value={cat.value}>
@@ -470,16 +470,18 @@ export default function NearbyHelpersPage() {
               </select>
             </div>
             <div className="flex items-center gap-2">
-              <span className={`text-sm ${themeColors.textMuted}`}>Raio:</span>
+              <span className="text-sm text-gray-600">Raio:</span>
               <select
                 value={radius}
                 onChange={(e) => setRadius(Number(e.target.value))}
-                className={`p-2 border rounded-xl text-sm ${isNight ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-gray-300'}`}
+                className="p-2 border rounded-xl text-sm bg-white border-gray-300"
               >
                 <option value={5}>5 km</option>
                 <option value={10}>10 km</option>
                 <option value={20}>20 km</option>
                 <option value={50}>50 km</option>
+                <option value={100}>100 km</option>
+                <option value={500}>500 km</option>
               </select>
             </div>
             <Button
@@ -489,7 +491,7 @@ export default function NearbyHelpersPage() {
               }}
               variant="outline"
               size="sm"
-              className={`rounded-xl ${isNight ? 'border-slate-600 text-gray-300 hover:bg-slate-700' : ''}`}
+              className="rounded-xl"
             >
               <RefreshCw size={16} className="mr-1" />
               Atualizar
