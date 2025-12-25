@@ -387,7 +387,7 @@ export default function HomePage() {
             </div>
           </div>
           
-          {/* Categorias com ícones visuais - Estilo JobsPage */}
+          {/* Categorias com ícones visuais - Estilo AlloVoisins */}
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
             <button
               onClick={() => setCategoryFilter('all')}
@@ -400,20 +400,23 @@ export default function HomePage() {
               <Filter size={18} />
               <span className="text-[10px] font-medium">Todos</span>
             </button>
-            {categories.map(cat => (
-              <button
-                key={cat.value}
-                onClick={() => setCategoryFilter(cat.value)}
-                className={`flex flex-col items-center gap-1 min-w-[55px] p-2 rounded-xl transition-all flex-shrink-0 ${
-                  categoryFilter === cat.value
-                    ? 'bg-primary text-white shadow-md'
-                    : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-                }`}
-              >
-                <span className="text-lg">{cat.icon}</span>
-                <span className="text-[10px] font-medium whitespace-nowrap">{cat.label}</span>
-              </button>
-            ))}
+            {categories.map(cat => {
+              const IconComponent = cat.icon;
+              return (
+                <button
+                  key={cat.value}
+                  onClick={() => setCategoryFilter(cat.value)}
+                  className={`flex flex-col items-center gap-1 min-w-[55px] p-2 rounded-xl transition-all flex-shrink-0 ${
+                    categoryFilter === cat.value
+                      ? 'bg-primary text-white shadow-md'
+                      : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                  }`}
+                >
+                  <IconComponent size={18} />
+                  <span className="text-[10px] font-medium whitespace-nowrap">{cat.label}</span>
+                </button>
+              );
+            })}
           </div>
 
           {/* Filtro de Tipo */}
