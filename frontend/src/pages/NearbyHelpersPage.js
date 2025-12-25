@@ -275,7 +275,7 @@ export default function NearbyHelpersPage() {
           const helperIcon = window.L.divIcon({
             className: 'custom-marker',
             html: `
-              <div style="background: linear-gradient(135deg, #f97316, #ea580c); width: 36px; height: 36px; border-radius: 50%; border: 3px solid ${isNight ? '#1e293b' : 'white'}; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.4); display: flex; align-items: center; justify-content: center; font-size: 16px;">
+              <div style="background: linear-gradient(135deg, #f97316, #ea580c); width: 36px; height: 36px; border-radius: 50%; border: 3px solid white; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.4); display: flex; align-items: center; justify-content: center; font-size: 16px;">
                 🤝
               </div>
             `,
@@ -292,9 +292,9 @@ export default function NearbyHelpersPage() {
           }).join(' ') || '';
 
           marker.bindPopup(`
-            <div style="text-align: center; min-width: 160px; padding: 8px; background: ${isNight ? '#1e293b' : 'white'}; color: ${isNight ? 'white' : '#1f2937'};">
+            <div style="text-align: center; min-width: 160px; padding: 8px; background: white; color: #1f2937;">
               <strong style="font-size: 14px;">${helper.name}</strong><br/>
-              <span style="color: ${isNight ? '#94a3b8' : '#6b7280'}; font-size: 11px;">
+              <span style="color: #6b7280; font-size: 11px;">
                 ${helper.role === 'volunteer' ? '🤝 Voluntário Profissional' : '🤝 Ajudante'}
               </span><br/>
               <span style="font-size: 14px; margin: 4px 0; display: block;">${categories}</span>
