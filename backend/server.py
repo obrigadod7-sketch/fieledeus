@@ -1794,7 +1794,7 @@ async def auto_post_jobs(limit: int = 5):
             'description': f"""🏢 **{job.get('company', 'Empresa')}**
 📍 {job.get('location', 'França')}
 {f"💰 {job.get('salary_min')}-{job.get('salary_max')} {job.get('salary_currency', 'EUR')}" if job.get('salary_min') else ""}
-{f"🏠 Trabalho Remoto" if job.get('is_remote') else ""}
+{"🏠 Trabalho Remoto" if job.get('is_remote') else ""}
 
 {job.get('description', '')[:300]}...
 
