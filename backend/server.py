@@ -1615,8 +1615,6 @@ async def get_sidebar_content():
 async def sync_jobs_to_map(current_user: User = Depends(get_current_user)):
     """Sincroniza vagas de emprego com o mapa de oportunidades"""
     
-    import random
-    
     # Buscar vagas do cache
     jobs_data = await search_jobs(query="emploi", location="France", page=1)
     jobs = jobs_data.get('jobs', [])
