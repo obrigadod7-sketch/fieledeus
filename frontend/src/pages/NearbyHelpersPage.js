@@ -31,6 +31,7 @@ const CATEGORY_COLORS = {
   social: 'bg-pink-500',
   education: 'bg-indigo-500',
   work: 'bg-yellow-500',
+  jobs: 'bg-blue-600',
   furniture: 'bg-teal-500',
   transport: 'bg-cyan-500'
 };
@@ -44,6 +45,7 @@ const CATEGORY_HEX = {
   social: '#ec4899',
   education: '#6366f1',
   work: '#eab308',
+  jobs: '#2563eb',
   furniture: '#14b8a6',
   transport: '#06b6d4'
 };
