@@ -130,13 +130,28 @@ export default function JobsPage() {
   const [locationQuery, setLocationQuery] = useState('Paris');
   const [jobOffers, setJobOffers] = useState([]);
   const [jobSeekers, setJobSeekers] = useState([]);
+  const [externalJobs, setExternalJobs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [showCreateOffer, setShowCreateOffer] = useState(false);
-  const [viewMode, setViewMode] = useState('platforms'); // 'platforms', 'offers' ou 'seekers'
+  const [viewMode, setViewMode] = useState('search'); // 'search', 'platforms', 'offers' ou 'seekers'
   const [showAllPlatforms, setShowAllPlatforms] = useState(false);
+  const [totalJobs, setTotalJobs] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedJob, setSelectedJob] = useState(null);
+  const [showJobDetails, setShowJobDetails] = useState(false);
 
   useEffect(() => {
     fetchJobs();
+    // Buscar vagas externas na inicialização
+    searchExternalJobs('emploi', 'France');
+  }, []);
+
+  useEffect(() => {
+    if (selectedCategory !== 'all') {
+      const categoryQuery = SEARCH_SUGGESTIONS[selectedCategory]?.[0] || selectedCategory;
+      searchExternalJobs(categoryQuery, locationQuery);
+    }
   }, [selectedCategory]);
 
   const fetchJobs = async () => {
@@ -166,7 +181,56 @@ export default function JobsPage() {
     }
   };
 
+  // Buscar vagas externas da API JSearch
+  const searchExternalJobs = async (query, location, page = 1) => {
+    setSearchLoading(true);
+    try {
+      const params = new URLSearchParams({
+        query: query || 'emploi',
+        location: location || 'France',
+        page: page.toString(),
+        date_posted: 'all'
+      });
+
+      const response = await fetch(
+        `${process.env.REACT_APP_BACKEND_URL}/api/jobs/search?${params}`
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        setExternalJobs(data.jobs || []);
+        setTotalJobs(data.total || 0);
+        setCurrentPage(page);
+        
+        if (data.jobs?.length > 0) {
+          toast.success(`${data.jobs.length} vagas encontradas!`);
+        } else {
+          toast.info('Nenhuma vaga encontrada. Tente outros termos.');
+        }
+      } else {
+        const error = await response.json();
+        toast.error(error.detail || 'Erro ao buscar vagas');
+      }
+    } catch (error) {
+      console.error('Error searching external jobs:', error);
+      toast.error('Erro de conexão ao buscar vagas');
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  // Executar busca
+  const handleSearch = () => {
+    if (!searchQuery.trim()) {
+      toast.error('Digite algo para buscar');
+      return;
+    }
+    searchExternalJobs(searchQuery, locationQuery, 1);
+    setViewMode('search');
+  };
+
   const getTimeAgo = (dateString) => {
+    if (!dateString) return 'Recente';
     const date = new Date(dateString);
     const now = new Date();
     const diffMs = now - date;
