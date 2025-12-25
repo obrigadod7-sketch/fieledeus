@@ -12,6 +12,7 @@ export default function BottomNav() {
     { icon: Home, label: 'Home', path: '/home', testId: 'nav-home' },
     { icon: Briefcase, label: 'Trabalho', path: '/jobs', testId: 'nav-jobs' },
     { icon: Users, label: 'Ajudar', path: '/volunteers', testId: 'nav-volunteers' },
+    { icon: MessageCircle, label: 'Chat IA', path: '/chat', testId: 'nav-chat' },
     { icon: MapPin, label: 'Mapa', path: '/nearby', testId: 'nav-nearby' },
     { icon: User, label: 'Perfil', path: '/profile', testId: 'nav-profile' },
   ];
