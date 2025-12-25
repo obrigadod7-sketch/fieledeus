@@ -1411,13 +1411,23 @@ async def search_jobs(
     cache_key = f"jobs_{query}_{location}_{page}_{date_posted}"
     cached = await db.job_cache.find_one({'cache_key': cache_key})
     
-    if cached and cached.get('expires_at', datetime.min) > datetime.now(timezone.utc):
-        return {
-            'jobs': cached.get('jobs', []),
-            'total': cached.get('total', 0),
-            'page': page,
-            'cached': True
-        }
+    if cached:
+        expires_at = cached.get('expires_at')
+        if expires_at:
+            # Converter para datetime se for string
+            if isinstance(expires_at, str):
+                expires_at = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
+            # Garantir que ambos são timezone-aware
+            if expires_at.tzinfo is None:
+                expires_at = expires_at.replace(tzinfo=timezone.utc)
+            
+            if expires_at > datetime.now(timezone.utc):
+                return {
+                    'jobs': cached.get('jobs', []),
+                    'total': cached.get('total', 0),
+                    'page': page,
+                    'cached': True
+                }
     
     # Fazer requisição à API JSearch
     headers = {
