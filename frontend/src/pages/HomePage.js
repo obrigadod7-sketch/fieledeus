@@ -660,7 +660,7 @@ export default function HomePage() {
                   <div className="space-y-2">
                     {muralMessages.slice(0, 5).map((msg, idx) => (
                       <div key={msg.id || idx} className="bg-white rounded-xl p-2 border border-amber-100">
-                        <p className="text-xs text-gray-700 line-clamp-2">"{msg.message}"</p>
+                        <p className="text-xs text-gray-700 line-clamp-2">&ldquo;{msg.message}&rdquo;</p>
                         <p className="text-xs text-amber-600 font-medium mt-1">— {msg.name}</p>
                       </div>
                     ))}
@@ -781,7 +781,7 @@ export default function HomePage() {
               <div className="flex gap-2 pb-1">
                 {muralMessages.slice(0, 5).map((msg, idx) => (
                   <div key={msg.id || idx} className="flex-shrink-0 w-48 bg-white rounded-xl p-2 border border-amber-100">
-                    <p className="text-xs text-gray-700 line-clamp-2">"{msg.message}"</p>
+                    <p className="text-xs text-gray-700 line-clamp-2">&ldquo;{msg.message}&rdquo;</p>
                     <p className="text-xs text-amber-600 font-medium mt-1">— {msg.name}</p>
                   </div>
                 ))}
