@@ -507,24 +507,6 @@ export default function HomePage() {
       <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 max-w-3xl overflow-x-hidden">
         {/* Conteúdo Principal - Feed CENTRALIZADO */}
         <div className="w-full">
-            </div>
-          )}
-          
-          <div className="p-2 overflow-x-auto">
-            {muralMessages.length === 0 ? (
-              <p className="text-xs text-gray-400 text-center py-1">Seja o primeiro!</p>
-            ) : (
-              <div className="flex gap-2">
-                {muralMessages.slice(0, 4).map((msg, idx) => (
-                  <div key={msg.id || idx} className="flex-shrink-0 w-36 text-xs">
-                    <p className="text-gray-600 line-clamp-2">&ldquo;{msg.message}&rdquo;</p>
-                    <p className="text-gray-400 text-[10px]">— {msg.name}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
 
         {/* Botão para Migrantes - Abre modal */}
         {user?.role === 'migrant' ? (
