@@ -643,6 +643,77 @@ export default function HomePage() {
               <span className="font-bold">🔍 Ver Todas as Vagas</span>
               <p className="text-xs text-white/80 mt-1">Acesse RozgarLine para mais oportunidades</p>
             </a>
+
+            {/* Mural de Mensagens */}
+            <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-2xl shadow-md overflow-hidden border-2 border-amber-200">
+              <div className="bg-gradient-to-r from-amber-400 to-yellow-500 p-3">
+                <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                  📋 Mural de Mensagens
+                </h3>
+                <p className="text-xs text-white/90">Deixe sua mensagem para a comunidade</p>
+              </div>
+              
+              <div className="p-3 max-h-48 overflow-y-auto">
+                {muralMessages.length === 0 ? (
+                  <p className="text-xs text-gray-500 text-center py-2">Nenhuma mensagem ainda. Seja o primeiro!</p>
+                ) : (
+                  <div className="space-y-2">
+                    {muralMessages.slice(0, 5).map((msg, idx) => (
+                      <div key={msg.id || idx} className="bg-white rounded-xl p-2 border border-amber-100">
+                        <p className="text-xs text-gray-700 line-clamp-2">"{msg.message}"</p>
+                        <p className="text-xs text-amber-600 font-medium mt-1">— {msg.name}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              {/* Formulário de nova mensagem */}
+              {showMuralForm ? (
+                <div className="p-3 border-t border-amber-200 bg-white">
+                  <input
+                    type="text"
+                    placeholder="Seu nome"
+                    value={newMuralMessage.name}
+                    onChange={(e) => setNewMuralMessage({...newMuralMessage, name: e.target.value})}
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg mb-2"
+                    maxLength={50}
+                  />
+                  <textarea
+                    placeholder="Sua mensagem..."
+                    value={newMuralMessage.message}
+                    onChange={(e) => setNewMuralMessage({...newMuralMessage, message: e.target.value})}
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg resize-none"
+                    rows={2}
+                    maxLength={500}
+                  />
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      onClick={() => setShowMuralForm(false)}
+                      className="flex-1 py-2 text-xs text-gray-600 hover:bg-gray-100 rounded-lg"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={submitMuralMessage}
+                      className="flex-1 py-2 text-xs bg-amber-500 text-white font-bold rounded-lg hover:bg-amber-600"
+                    >
+                      Enviar
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-2 text-center">
+                    ⚠️ Mensagens são moderadas antes de aparecer
+                  </p>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowMuralForm(true)}
+                  className="w-full p-3 text-center text-sm font-medium text-amber-600 hover:bg-amber-100 border-t border-amber-200 transition-colors"
+                >
+                  ✏️ Deixar uma mensagem
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Conteúdo Principal - Feed */}
