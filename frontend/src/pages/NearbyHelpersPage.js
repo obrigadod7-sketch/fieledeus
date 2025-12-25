@@ -82,20 +82,18 @@ export default function NearbyHelpersPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Cores do tema baseadas no modo dia/noite
+  // Cores do tema - Interface clara, apenas mapa escuro à noite
   const themeColors = useMemo(() => ({
-    background: isNight ? 'bg-slate-900' : 'bg-gray-50',
-    header: isNight ? 'from-blue-900 to-indigo-900' : 'from-blue-600 to-blue-700',
-    card: isNight ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200',
-    cardHover: isNight ? 'hover:border-blue-500' : 'hover:border-blue-400',
-    text: isNight ? 'text-white' : 'text-gray-800',
-    textMuted: isNight ? 'text-gray-400' : 'text-gray-600',
-    mapBg: isNight 
-      ? 'from-slate-900 via-slate-800 to-indigo-900' 
-      : 'from-blue-50 via-sky-100 to-blue-200',
-    userMarker: isNight ? 'bg-cyan-400' : 'bg-blue-500',
-    userPulse: isNight ? 'bg-cyan-400/30' : 'bg-blue-400/30',
-  }), [isNight]);
+    background: 'bg-gray-50',
+    header: 'from-blue-600 to-blue-700',
+    card: 'bg-white border-gray-200',
+    cardHover: 'hover:border-blue-400',
+    text: 'text-gray-800',
+    textMuted: 'text-gray-600',
+    mapBg: 'from-blue-50 via-sky-100 to-blue-200',
+    userMarker: 'bg-blue-500',
+    userPulse: 'bg-blue-400/30',
+  }), []);
 
   useEffect(() => {
     // Load Leaflet CSS
