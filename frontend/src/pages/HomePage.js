@@ -718,6 +718,78 @@ export default function HomePage() {
 
           {/* Conteúdo Principal - Feed */}
           <div className="flex-1 max-w-2xl mx-auto">
+        
+        {/* Mural de Mensagens - Versão Mobile */}
+        <div className="lg:hidden mb-4 bg-gradient-to-br from-amber-50 to-yellow-50 rounded-2xl shadow-md overflow-hidden border-2 border-amber-200">
+          <div className="bg-gradient-to-r from-amber-400 to-yellow-500 p-3 flex items-center justify-between">
+            <div>
+              <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                📋 Mural de Mensagens
+              </h3>
+              <p className="text-xs text-white/90">Deixe sua mensagem</p>
+            </div>
+            <button
+              onClick={() => setShowMuralForm(!showMuralForm)}
+              className="px-3 py-1 bg-white/20 rounded-full text-xs text-white font-medium hover:bg-white/30"
+            >
+              {showMuralForm ? 'Fechar' : '✏️ Escrever'}
+            </button>
+          </div>
+          
+          {showMuralForm && (
+            <div className="p-3 bg-white border-b border-amber-200">
+              <input
+                type="text"
+                placeholder="Seu nome"
+                value={newMuralMessage.name}
+                onChange={(e) => setNewMuralMessage({...newMuralMessage, name: e.target.value})}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg mb-2"
+                maxLength={50}
+              />
+              <textarea
+                placeholder="Sua mensagem..."
+                value={newMuralMessage.message}
+                onChange={(e) => setNewMuralMessage({...newMuralMessage, message: e.target.value})}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg resize-none"
+                rows={2}
+                maxLength={500}
+              />
+              <div className="flex gap-2 mt-2">
+                <button
+                  onClick={() => setShowMuralForm(false)}
+                  className="flex-1 py-2 text-xs text-gray-600 hover:bg-gray-100 rounded-lg"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={submitMuralMessage}
+                  className="flex-1 py-2 text-xs bg-amber-500 text-white font-bold rounded-lg hover:bg-amber-600"
+                >
+                  Enviar
+                </button>
+              </div>
+              <p className="text-xs text-gray-400 mt-2 text-center">
+                ⚠️ Mensagens são moderadas
+              </p>
+            </div>
+          )}
+          
+          <div className="p-3 max-h-32 overflow-x-auto">
+            {muralMessages.length === 0 ? (
+              <p className="text-xs text-gray-500 text-center py-2">Nenhuma mensagem ainda</p>
+            ) : (
+              <div className="flex gap-2 pb-1">
+                {muralMessages.slice(0, 5).map((msg, idx) => (
+                  <div key={msg.id || idx} className="flex-shrink-0 w-48 bg-white rounded-xl p-2 border border-amber-100">
+                    <p className="text-xs text-gray-700 line-clamp-2">"{msg.message}"</p>
+                    <p className="text-xs text-amber-600 font-medium mt-1">— {msg.name}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Botão para Migrantes - Abre modal */}
         {user?.role === 'migrant' ? (
           <Dialog open={showCreatePost} onOpenChange={setShowCreatePost}>
