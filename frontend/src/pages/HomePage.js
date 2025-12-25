@@ -477,7 +477,27 @@ export default function HomePage() {
                   </DialogDescription>
                 </DialogHeader>
                 
-                <div className="flex-1 overflow-y-auto p-6 pt-4">
+                <div 
+                  className="flex-1 overflow-y-auto p-6 pt-4 focus:outline-none" 
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    const container = e.currentTarget;
+                    if (e.key === 'ArrowDown') {
+                      e.preventDefault();
+                      container.scrollTop += 50;
+                    } else if (e.key === 'ArrowUp') {
+                      e.preventDefault();
+                      container.scrollTop -= 50;
+                    } else if (e.key === 'PageDown') {
+                      e.preventDefault();
+                      container.scrollTop += 200;
+                    } else if (e.key === 'PageUp') {
+                      e.preventDefault();
+                      container.scrollTop -= 200;
+                    }
+                  }}
+                  ref={(el) => el && el.focus()}
+                >
                   <div className="space-y-6">
                 {/* Categoria */}
                 <div className="bg-gray-50 p-5 rounded-2xl">
