@@ -537,6 +537,16 @@ export default function NearbyHelpersPage() {
             >
               🏢 Locais ({helpLocations.length})
             </button>
+            <button
+              onClick={() => setViewMode('jobs')}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                viewMode === 'jobs' 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              💼 Vagas ({jobLocations.length})
+            </button>
           </div>
 
           <div className="flex flex-wrap gap-3 items-center">
