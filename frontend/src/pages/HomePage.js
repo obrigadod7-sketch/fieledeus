@@ -169,54 +169,6 @@ export default function HomePage() {
       }
     } catch (error) {
       console.error('Error fetching sidebar content:', error);
-      // Fallback para anúncios simples
-      try {
-        const fallbackResponse = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/advertisements`);
-        if (fallbackResponse.ok) {
-          const fallbackData = await fallbackResponse.json();
-          setAdvertisements(fallbackData);
-        }
-      } catch (e) {
-        console.error('Fallback also failed:', e);
-      }
-    }
-  };
-
-  const fetchMuralMessages = async () => {
-    try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/mural`);
-      if (response.ok) {
-        const data = await response.json();
-        setMuralMessages(data.messages || []);
-      }
-    } catch (error) {
-      console.error('Error fetching mural messages:', error);
-    }
-  };
-
-  const submitMuralMessage = async () => {
-    if (!newMuralMessage.name.trim() || !newMuralMessage.message.trim()) {
-      toast.error('Preencha seu nome e mensagem');
-      return;
-    }
-    
-    try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/mural`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newMuralMessage)
-      });
-      
-      if (response.ok) {
-        toast.success('Mensagem enviada!');
-        setNewMuralMessage({ name: '', message: '' });
-        setShowMuralForm(false);
-        fetchMuralMessages();
-      } else {
-        toast.error('Erro ao enviar mensagem');
-      }
-    } catch (error) {
-      toast.error('Erro ao enviar mensagem');
     }
   };
 
