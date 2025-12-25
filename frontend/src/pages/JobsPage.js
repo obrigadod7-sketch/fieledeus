@@ -484,50 +484,50 @@ export default function JobsPage() {
                 className={`flex-1 rounded-full ${viewMode === 'seekers' ? 'bg-green-600' : ''}`}
               >
                 🔍 Procuram Trabalho ({jobSeekers.length})
-          </Button>
-        </div>
-
-        {/* Seção de Cards */}
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-bold text-gray-800">
-              {viewMode === 'offers' ? '🛠️ Profissionais & Serviços' : '🔍 Pessoas Procurando Trabalho'}
-            </h2>
-            <span className="text-sm text-gray-500">
-              {displayData.length} {viewMode === 'offers' ? 'ofertas' : 'pessoas'}
-            </span>
-          </div>
-
-          {loading ? (
-            <div className="text-center py-8 text-gray-500">Carregando...</div>
-          ) : displayData.length === 0 ? (
-            <div className="text-center py-8 bg-white rounded-2xl">
-              <div className="text-5xl mb-3">{viewMode === 'offers' ? '🛠️' : '🔍'}</div>
-              <p className="text-gray-500">
-                {viewMode === 'offers' 
-                  ? 'Nenhuma oferta de serviço encontrada' 
-                  : 'Ninguém procurando trabalho no momento'}
-              </p>
-              <Button
-                onClick={() => navigate('/home')}
-                className="mt-4 rounded-full"
-              >
-                <Plus size={16} className="mr-1" />
-                Seja o primeiro a publicar
               </Button>
             </div>
-          ) : (
-            <div className="grid gap-4">
-              {displayData.map((item) => (
-                <div 
-                  key={item.id}
-                  className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-pointer"
-                  onClick={() => navigate(`/direct-chat/${item.user_id}`)}
-                >
-                  <div className="flex gap-3">
-                    {/* Avatar */}
-                    <div className="flex-shrink-0">
-                      <div className={`w-14 h-14 rounded-full flex items-center justify-center text-white text-xl font-bold ${
+
+            {/* Seção de Cards */}
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="font-bold text-gray-800">
+                  {viewMode === 'offers' ? '🛠️ Profissionais & Serviços' : '🔍 Pessoas Procurando Trabalho'}
+                </h2>
+                <span className="text-sm text-gray-500">
+                  {displayData.length} {viewMode === 'offers' ? 'ofertas' : 'pessoas'}
+                </span>
+              </div>
+
+              {loading ? (
+                <div className="text-center py-8 text-gray-500">Carregando...</div>
+              ) : displayData.length === 0 ? (
+                <div className="text-center py-8 bg-white rounded-2xl">
+                  <div className="text-5xl mb-3">{viewMode === 'offers' ? '🛠️' : '🔍'}</div>
+                  <p className="text-gray-500">
+                    {viewMode === 'offers' 
+                      ? 'Nenhuma oferta de serviço encontrada' 
+                      : 'Ninguém procurando trabalho no momento'}
+                  </p>
+                  <Button
+                    onClick={() => navigate('/home')}
+                    className="mt-4 rounded-full"
+                  >
+                    <Plus size={16} className="mr-1" />
+                    Seja o primeiro a publicar
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid gap-4">
+                  {displayData.map((item) => (
+                    <div 
+                      key={item.id}
+                      className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-pointer"
+                      onClick={() => navigate(`/direct-chat/${item.user_id}`)}
+                    >
+                      <div className="flex gap-3">
+                        {/* Avatar */}
+                        <div className="flex-shrink-0">
+                          <div className={`w-14 h-14 rounded-full flex items-center justify-center text-white text-xl font-bold ${
                         viewMode === 'offers' ? 'bg-gradient-to-br from-blue-500 to-indigo-600' : 'bg-gradient-to-br from-green-500 to-emerald-600'
                       }`}>
                         {item.user?.name?.charAt(0) || 'U'}
