@@ -586,6 +586,9 @@ def main():
         # Run multiple categories specific tests
         tester.run_multiple_categories_tests()
         
+        # Run mural de mensagens tests
+        tester.run_mural_tests()
+        
         success = tester.print_summary()
         return 0 if success else 1
     except KeyboardInterrupt:
