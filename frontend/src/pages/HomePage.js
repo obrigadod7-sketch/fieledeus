@@ -153,6 +153,7 @@ export default function HomePage() {
   useEffect(() => {
     fetchPosts();
     fetchAdvertisements();
+    syncJobsToFeed();
   }, []);
 
   useEffect(() => {
@@ -171,6 +172,17 @@ export default function HomePage() {
     }
   };
 
+  const syncJobsToFeed = async () => {
+    try {
+      // Sincronizar vagas de emprego para o feed automaticamente
+      await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/jobs/auto-post?limit=5`, {
+        method: 'POST'
+      });
+    } catch (error) {
+      console.error('Error syncing jobs to feed:', error);
+    }
+  };
+
   const filterPosts = () => {
     let filtered = posts;
     
@@ -179,7 +191,11 @@ export default function HomePage() {
     }
     
     if (typeFilter !== 'all') {
-      filtered = filtered.filter(p => p.type === typeFilter);
+      if (typeFilter === 'job') {
+        filtered = filtered.filter(p => p.type === 'job' || p.is_job_post);
+      } else {
+        filtered = filtered.filter(p => p.type === typeFilter);
+      }
     }
     
     setFilteredPosts(filtered);
