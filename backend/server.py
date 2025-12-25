@@ -1607,6 +1607,154 @@ async def get_sidebar_content():
     # Buscar vagas de emprego (do cache ou externo)
     jobs_data = await get_external_jobs()
     jobs = jobs_data.get('jobs', [])
+
+# ==================== INTEGRAÇÃO: VAGAS NO MAPA E FEED ====================
+
+@api_router.post("/jobs/sync-to-map")
+async def sync_jobs_to_map(current_user: User = Depends(get_current_user)):
+    """Sincroniza vagas de emprego com o mapa de oportunidades"""
+    
+    # Buscar vagas do cache
+    jobs_data = await search_jobs(query="emploi", location="France", page=1)
+    jobs = jobs_data.get('jobs', [])
+    
+    synced_count = 0
+    for job in jobs[:20]:  # Limitar a 20 vagas
+        # Verificar se já existe
+        existing = await db.job_map_locations.find_one({'job_id': job.get('id')})
+        if existing:
+            continue
+        
+        # Extrair cidade da localização
+        location_str = job.get('location', 'Paris')
+        
+        # Coordenadas aproximadas para principais cidades da França
+        city_coords = {
+            'paris': {'lat': 48.8566, 'lng': 2.3522},
+            'lyon': {'lat': 45.7640, 'lng': 4.8357},
+            'marseille': {'lat': 43.2965, 'lng': 5.3698},
+            'toulouse': {'lat': 43.6047, 'lng': 1.4442},
+            'nice': {'lat': 43.7102, 'lng': 7.2620},
+            'nantes': {'lat': 47.2184, 'lng': -1.5536},
+            'bordeaux': {'lat': 44.8378, 'lng': -0.5792},
+            'lille': {'lat': 50.6292, 'lng': 3.0573},
+            'strasbourg': {'lat': 48.5734, 'lng': 7.7521},
+            'rennes': {'lat': 48.1173, 'lng': -1.6778}
+        }
+        
+        # Encontrar coordenadas
+        coords = city_coords.get('paris')  # Default para Paris
+        for city, coord in city_coords.items():
+            if city in location_str.lower():
+                coords = coord
+                break
+        
+        # Adicionar pequena variação para não sobrepor marcadores
+        import random
+        lat_offset = random.uniform(-0.02, 0.02)
+        lng_offset = random.uniform(-0.02, 0.02)
+        
+        job_location = {
+            'id': str(uuid.uuid4()),
+            'job_id': job.get('id'),
+            'name': job.get('title', 'Vaga de Emprego'),
+            'company': job.get('company', 'Empresa'),
+            'address': location_str,
+            'category': 'work',
+            'lat': coords['lat'] + lat_offset,
+            'lng': coords['lng'] + lng_offset,
+            'url': job.get('url', ''),
+            'salary_min': job.get('salary_min'),
+            'salary_max': job.get('salary_max'),
+            'employment_type': job.get('employment_type'),
+            'is_remote': job.get('is_remote', False),
+            'source': job.get('source', 'JSearch'),
+            'created_at': datetime.now(timezone.utc).isoformat()
+        }
+        
+        await db.job_map_locations.insert_one(job_location)
+        synced_count += 1
+    
+    return {'message': f'{synced_count} vagas sincronizadas com o mapa', 'count': synced_count}
+
+@api_router.get("/jobs/map-locations")
+async def get_job_map_locations(
+    lat: Optional[float] = None,
+    lng: Optional[float] = None,
+    radius: float = 50.0
+):
+    """Retorna vagas de emprego para exibir no mapa"""
+    
+    # Buscar vagas salvas no mapa
+    job_locations = await db.job_map_locations.find({}, {'_id': 0}).to_list(100)
+    
+    # Se coordenadas fornecidas, calcular distância
+    if lat is not None and lng is not None:
+        for job in job_locations:
+            if job.get('lat') and job.get('lng'):
+                job['distance'] = round(calculate_distance(lat, lng, job['lat'], job['lng']), 2)
+        
+        # Filtrar por raio
+        job_locations = [j for j in job_locations if j.get('distance', 0) <= radius]
+        
+        # Ordenar por distância
+        job_locations.sort(key=lambda x: x.get('distance', float('inf')))
+    
+    return {'locations': job_locations, 'total': len(job_locations)}
+
+@api_router.post("/jobs/auto-post")
+async def auto_post_jobs(limit: int = 5):
+    """Cria posts automáticos de vagas de emprego no feed"""
+    
+    # Buscar vagas do cache
+    jobs_data = await search_jobs(query="emploi", location="France", page=1)
+    jobs = jobs_data.get('jobs', [])
+    
+    posted_count = 0
+    for job in jobs[:limit]:
+        # Verificar se já foi postado
+        existing = await db.posts.find_one({'job_id': job.get('id')})
+        if existing:
+            continue
+        
+        # Criar post da vaga
+        post_dict = {
+            'id': str(uuid.uuid4()),
+            'user_id': 'system',
+            'type': 'job',
+            'category': 'work',
+            'categories': ['work'],
+            'title': f"💼 {job.get('title', 'Vaga de Emprego')}",
+            'description': f"""🏢 **{job.get('company', 'Empresa')}**
+📍 {job.get('location', 'França')}
+{f"💰 {job.get('salary_min')}-{job.get('salary_max')} {job.get('salary_currency', 'EUR')}" if job.get('salary_min') else ""}
+{f"🏠 Trabalho Remoto" if job.get('is_remote') else ""}
+
+{job.get('description', '')[:300]}...
+
+🔗 Candidate-se: {job.get('url', '')}""",
+            'location': None,
+            'images': [job.get('company_logo')] if job.get('company_logo') else [],
+            'job_id': job.get('id'),
+            'job_url': job.get('url'),
+            'job_company': job.get('company'),
+            'job_salary_min': job.get('salary_min'),
+            'job_salary_max': job.get('salary_max'),
+            'is_job_post': True,
+            'created_at': datetime.now(timezone.utc).isoformat()
+        }
+        
+        await db.posts.insert_one(post_dict)
+        posted_count += 1
+    
+    return {'message': f'{posted_count} vagas postadas no feed', 'count': posted_count}
+
+@api_router.delete("/jobs/cache")
+async def clear_jobs_cache():
+    """Limpa o cache de vagas para forçar atualização"""
+    result = await db.job_cache.delete_many({})
+    result2 = await db.job_map_locations.delete_many({})
+    return {'message': f'Cache limpo: {result.deleted_count} itens removidos', 'map_locations_removed': result2.deleted_count}
     
     # Intercalar conteúdo: motivação, vaga, doação, vaga, motivação...
     sidebar_items = []
