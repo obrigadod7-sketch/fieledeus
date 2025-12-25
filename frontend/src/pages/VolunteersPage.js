@@ -1,10 +1,14 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import { AuthContext } from '../App';
 import { Button } from '../components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/dialog';
+import { Input } from '../components/ui/input';
+import { Textarea } from '../components/ui/textarea';
+import { Label } from '../components/ui/label';
 import BottomNav from '../components/BottomNav';
-import { MessageCircle, Plus, Check, Heart, Users, Sparkles } from 'lucide-react';
+import { MessageCircle, Plus, Check, Heart, Users, Sparkles, MapPin, Image as ImageIcon, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 // Imagens de pessoas felizes sendo ajudadas
 const HERO_IMAGES = [
