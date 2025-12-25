@@ -26,7 +26,7 @@ services:
     name: watizat-frontend
     runtime: node
     env: node
-    buildCommand: cd frontend && npm install --legacy-peer-deps && npm run build
+    buildCommand: cd frontend && yarn install && yarn build
     staticPublishPath: ./frontend/build
     envVars:
       - key: REACT_APP_BACKEND_URL
