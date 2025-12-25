@@ -2,7 +2,7 @@
 
 ## 🌐 ACESSE AGORA
 
-**URL:** https://support-bridge-10.preview.emergentagent.com
+**URL:** https://social-assist-6.preview.emergentagent.com
 
 ---
 
@@ -67,7 +67,7 @@ O banco de dados já tem:
 
 ### 1. Fazer Login
 ```
-URL: https://support-bridge-10.preview.emergentagent.com
+URL: https://social-assist-6.preview.emergentagent.com
 Email: admin@watizat.com
 Senha: admin123
 ```
@@ -157,7 +157,7 @@ python3 /app/popular_banco.py
 ## 📱 ACESSANDO DE OUTROS DISPOSITIVOS
 
 O aplicativo está disponível em:
-- **URL Pública:** https://support-bridge-10.preview.emergentagent.com
+- **URL Pública:** https://social-assist-6.preview.emergentagent.com
 - **Dispositivos móveis:** Funciona perfeitamente!
 - **Tablets e desktop:** Layout responsivo
 
@@ -225,7 +225,7 @@ O aplicativo está disponível em:
 ✅ **Posts:** 3 posts de exemplo  
 ✅ **Pronto para usar:** SIM!  
 
-**Acesse agora:** https://support-bridge-10.preview.emergentagent.com
+**Acesse agora:** https://social-assist-6.preview.emergentagent.com
 
 ---
 
@@ -254,4 +254,4 @@ python3 /app/popular_banco.py
 
 **TUDO PRONTO! É SÓ USAR! 🚀**
 
-URL: https://support-bridge-10.preview.emergentagent.com
+URL: https://social-assist-6.preview.emergentagent.com

@@ -1,297 +1,194 @@
 <analysis>**original_problem_statement:**
-The user initially provided a GitHub project named Watizat and requested the agent to fix all errors to make it deployable and runnable on the Render platform. The scope quickly expanded to include numerous feature requests and iterative UI/UX redesigns based on user feedback and screenshots.
+The user initially provided a GitHub project named Watizat and requested the agent to fix all errors to make it deployable and runnable. The scope has since expanded to include numerous feature requests and iterative UI/UX redesigns.
 
 Key features and changes requested throughout the project include:
 - Fixing frontend/backend dependency and build errors.
 - Implementing an i18n system.
 - Adding multi-category selection for posts.
-- Creating and then removing/modifying a Jobs page inspired by the AlloVoisins website.
-- Implementing a dark mode and then restricting it only to the map page.
+- Implementing a dark mode and then restricting it to the map page.
 - Adding a detailed, conditional form for users requesting help with employment.
-- Continuously redesigning the main feed's category filters and post cards.
-- Adding inspirational images to the Quero Ajudar (volunteer) page.
+- Continuously redesigning the main feed, category filters, post cards, and login page.
 - Adding and configuring an OpenAI-powered AI Chat feature.
-- The latest request is to implement a form for creating public help offers and to replace the now-defunct jobs page with a message board.
+- Implementing and then removing a message board.
+- Implementing a public help offer form.
+- Integrating external job search APIs (JSearch) and requesting further integrations (Pôle Emploi).
 
 PRODUCT REQUIREMENTS:
-1. Ensure the full-stack application (FastAPI backend, React frontend) is fully functional and correctly deployed on Render.
-2. Implement, and iteratively refine, a wide range of features and UI/UX improvements, with a strong emphasis on matching user-provided screenshots and design inspirations (particularly AlloVoisins).
-3. Ensure the AI assistant and other features that rely on environment variables (like the database) are correctly configured on the user's Render deployment.
-4. Resolve the recurring deployment and build issues on Render to ensure the user can see and test the implemented changes.
+1. Ensure the full-stack application (FastAPI backend, React frontend) is fully functional.
+2. Implement, and iteratively refine, a wide range of features and UI/UX improvements, with a strong emphasis on matching user-provided screenshots and design inspirations.
+3. Integrate external APIs for job searching to provide real-time data within the application.
+4. Resolve deployment and build issues to ensure the user can see and test the implemented changes.
 
 **User's preferred language**: Portuguese. The next agent MUST respond in Portuguese.
 
 **what currently exists?**
-A full-stack application (React/FastAPI/MongoDB) that is functional in the local development environment. Numerous features have been implemented, and in many cases, heavily iterated upon or reverted based on constant user feedback. Key existing components include a multi-category post feed, a redesigned volunteer page, a conditional job application form within the post creation modal, and a dark-themed map. The most significant challenge is the disconnect between the agent's working local version and the user's deployed version on Render, which suffers from build errors and configuration issues.
+A functional full-stack application (React/FastAPI/MongoDB). The persistent deployment failure on Render has been resolved by correcting the  file. The application now features a redesigned UI, including HD images on the login page and a centralized feed with a left-hand sidebar for announcements. A job search page () has been implemented and successfully integrated with the JSearch API to pull and display real-time job listings directly within the app. A public help offer form has been added to the volunteers page. The map page now uses a light theme and has an expanded database of help locations across France.
 
 **Last working item**:
-- **Last item agent was working:** The user made a two-part request:
-    1.  When a user clicks Prefiro criar uma oferta de ajuda pública (I prefer to create a public help offer), a form should open with category tags, a location field, and a photo upload option.
-    2.  The Vagas de Emprego (Jobs) page should be replaced with a mural de mensagens (message board) where users can leave their name and a message, with a notice about moderation.
-    The agent acknowledged the request and was about to begin implementation.
-- **Status:** NOT STARTED
+- **Last item agent was working:** The user requested an integration with Pôle Emploi (France's official employment agency) using a GitHub link. The agent investigated the link and discovered it was an obsolete, mock repository from 2021 and could not be used for a real integration. The agent concluded this and was about to research the official, current API for France Travail (the new name for Pôle Emploi).
+- **Status:** IN PROGRESS
 - **Agent Testing Done:** N
-- **Which testing method agent to use?** Frontend testing agent to validate the new form and message board functionality. Backend testing will be needed if new endpoints are created for the message board.
+- **Which testing method agent to use?** After finding the correct API and creating a backend endpoint, use  or a python script for testing.
 - **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   **Issue 1: Persistent Deployment Failures on Render (P0)**
--   **Issue 2: Incorrect Help Locations on Map (P2)**
+-   **Issue 1: Integrate Pôle Emploi (France Travail) API (P0)**
+-   **Issue 2: Remove Dead Code from Backend (P2)**
 
 **Issues Detail:**
--   **Issue 1: Persistent Deployment Failures on Render**
-    -   **Attempted fixes:** The agent identified that  incorrectly uses  instead of yarn install v1.22.22
-[1/4] Resolving packages...
-success Already up-to-date.
-Done in 0.05s.. The user also reported a  error, which indicates a command was not found during the build process on Render. However, the agent did not fix the  file.
+-   **Issue 1: Integrate Pôle Emploi (France Travail) API**
+    -   **Attempted fixes:** The agent analyzed the user-provided GitHub link () and correctly identified it as an archived, non-functional mock API.
     -   **Next debug checklist:**
-        1.  View the  file.
-        2.  Replace the  command in the  with yarn install v1.22.22
-[1/4] Resolving packages...
-success Already up-to-date.
-Done in 0.09s..
-        3.  Ensure the  for both frontend and backend are correct.
-        4.  After fixing, provide the user with the updated code in a zip file and clear instructions to update their GitHub repository.
-        5.  Remind the user to check their environment variables on Render, especially .
-    -   **Why fix this issue and what will be achieved with the fix?** This is the highest priority blocker. The user cannot verify any of the agent's work until the application successfully builds and deploys on Render. Fixing this will resolve the main source of friction and repeat requests.
-    -   **Status:** NOT STARTED
-    -   **Is recurring issue?** Y
-    -   **Should Test frontend/backend/both after fix?** Both, using the testing agent on the public Render URL.
+        1.  Research the official API for France Travail (the successor to Pôle Emploi) to find job search endpoints.
+        2.  Identify the authentication requirements (e.g., API key, OAuth 2.0).
+        3.  Clearly explain to the user how they can obtain the necessary credentials for the France Travail API.
+        4.  Once credentials are provided, add them to .
+        5.  Create a new backend endpoint in  (e.g., ) to fetch data from the official API.
+        6.  Update  to call this new endpoint and display the results alongside the JSearch results, or as a separate data source.
+    -   **Why fix this issue and what will be achieved with the fix?** This is a direct user request to enhance the job search functionality with a key, official data source for jobs in France.
+    -   **Status:** IN PROGRESS
+    -   **Is recurring issue?** N
+    -   **Should Test frontend/backend/both after fix?** Backend primarily, then frontend to ensure data is displayed.
 
--   **Issue 2: Incorrect Help Locations on Map**
-    -   **Attempted fixes:** The agent located the hardcoded location data in  but did not proceed to verify or correct the latitude/longitude coordinates.
+-   **Issue 2: Remove Dead Code from Backend**
+    -   **Attempted fixes:** None. This is a newly identified issue.
     -   **Next debug checklist:**
-        1.  Inform the user that correcting the 50+ locations requires manual verification or a geocoding service.
-        2.  Ask the user if they can provide a few examples of incorrect locations and their correct addresses.
-        3.  Alternatively, implement a small script or suggest a one-time process to geocode the addresses in  to get accurate coordinates.
-    -   **Why fix this issue and what will be achieved with the fix?** The user explicitly requested this fix. It will make the map feature reliable and useful.
+        1.  View .
+        2.  Locate and remove the endpoints related to the mural de mensagens (message board), specifically  (GET) and  (POST).
+        3.  Locate and remove the functions  and .
+        4.  Inform the user that the associated  collection in the MongoDB database can also be dropped, and ask for confirmation before doing so.
+    -   **Why fix this issue and what will be achieved with the fix?** A user-requested feature was removed from the frontend, but its backend logic remains. This constitutes dead code that adds clutter and could cause confusion. Removing it improves code hygiene.
     -   **Status:** NOT STARTED
     -   **Is recurring issue?** N
+    -   **Should Test frontend/backend/both after fix?** Backend, by ensuring the server restarts correctly and no functionality is broken.
 
 **In progress Task List**:
-(None, previous tasks were completed or replaced by new user requests).
+-   **Task 1: Pôle Emploi API Integration (P0)**
+    -   **Where to resume:** Researching the official France Travail API documentation. The previous attempt using a user-provided link was a dead end.
+    -   **What will be achieved with this?** The job search page will be able to pull live job data directly from France's official employment agency, adding a valuable and trusted source for job seekers.
+    -   **Status:** IN PROGRESS
+    -   **Should Test frontend/backend/both after fix?** Backend.
+    -   **Blocked on something:** User needs to provide API credentials once the process is identified.
 
 **Upcoming and Future Tasks**
-- **Task 1: Implement Public Help Offer Form (P0)**
-    - Create a new modal or page that opens when the Prefiro criar uma oferta de ajuda pública button is clicked on .
-    - The form should include fields for categories (tags), location, a photo, a title, and a description.
-    - This will likely require extending the  model and the  endpoint on the backend.
-    - **Phase:** Implementation.
-
-- **Task 2: Create a Message Board (P0)**
-    - Repurpose or replace the  file to create a mural de mensagens.
-    - Create a new backend endpoint (e.g., ) and a new MongoDB collection to store messages (name, message, timestamp).
-    - The UI should display a list of messages and a form to submit a new one. Include a disclaimer about moderation.
-    - **Phase:** Implementation.
+-   **Future Task: Develop a Dedicated Ad System (P2)**
+    -   The user mentioned deixe os postes para as divigucoes futuras pelo ads do site (leave the posts for future promotions by the site's ads). This suggests a desire for a more robust advertising or promotion system.
+    -   **Implementation idea:** Create a new content type or a flag on posts () that allows specific posts to be displayed in the announcement sidebar or other dedicated ad slots.
 
 **Completed work in this session**
-- **Volunteer Page Redesign (Multiple Iterations):** The  page was redesigned several times, culminating in a version with an inspirational background image, a clear modal for selecting help categories, and a direct link for users who prefer to create a public offer.
-- **Conditional Job Application Form:** A detailed employment form was added to the post creation modal. It now correctly appears *only* when a user selects the Preciso de Ajuda (Need Help) type and the Trabalho (Work) category.
-- **Dark Mode Refinement:** An app-wide dark mode was implemented and then reverted at the user's request. It is now correctly applied *only* to the map component on the , leaving the rest of the page with a light theme.
-- **Feed UI/UX Overhaul:** The main feed's category filters were redesigned from simple text links to visually appealing cards with  icons. The post cards themselves were also redesigned and then reverted, with the final version being the original, simpler layout.
-- **Navigation and Workflow Fixes:** The AI Chat tab was restored to the bottom navigation bar. The main Quero Ajudar button on the homepage now correctly redirects helpers to the volunteer page instead of opening the post creation modal.
-- **OpenAI Integration:** The user's  was successfully added to the local  file, and the AI chat was confirmed to be working in the local environment.
+- **Deployment Fix:** Corrected the  build command from  to yarn install v1.22.22
+[1/4] Resolving packages...
+success Already up-to-date.
+Done in 0.19s., resolving the primary deployment blocker.
+- **Job Search API Integration:**
+    - Integrated the JSearch API to fetch and display real-time job listings on the .
+    - Added the  to  and created a new backend endpoint ().
+    - Implemented a frontend interface to search for jobs, display results with logos, and show a loading state.
+    - Debugged the API integration by adding the  parameter and implementing a cache-clearing mechanism.
+- **UI/UX Overhauls:**
+    - **Login Page:** Added inspirational HD background images to the  for Need Help and Want to Help roles.
+    - **Home Page:**
+        - Centralized the main feed.
+        - Implemented, redesigned, and ultimately removed a Message Board feature based on user feedback.
+        - Restored a sidebar for Announcements and moved it to the left side of the screen.
+        - Changed the main CTA button color from green to blue.
+    - **Jobs Page:** Redesigned the layout to be contained within a  container, improving consistency with the rest of the site.
+- **Feature Implementation & Fixes:**
+    - **Public Help Offer Form:** Implemented a modal form on  for creating public help offers, including fields for category, title, description, location, and photo.
+    - **Conditional Job Form:** Added specific job-type tags (e.g., Bricolage, Limpeza) to the conditional employment form that appears in the Create Post modal when the Trabalho category is selected.
+    - **Modal Scroll Fix:** Fixed a bug where the Create Post modal was not scrollable on desktop. Also added keyboard support (arrow keys) for scrolling.
+    - **Map Page:**
+        - Removed the dark theme, defaulting to a light theme for better visibility.
+        - Updated  with a comprehensive list of over 400 help locations across France, significantly expanding the map's data.
 
 **Earlier issues found/mentioned but not fixed**
--   **Issue 1: Deployment build command in **
-    -   **Debug checklist:** The file  uses  in its build command, but the project is set up with yarn install v1.22.22
-[1/4] Resolving packages...
-success Already up-to-date.
-Done in 0.05s.. This needs to be changed to yarn install v1.22.22
-[1/4] Resolving packages...
-success Already up-to-date.
-Done in 0.04s..
-    -   **Why to solve this issue and what will be achieved with this?** This is a likely cause of the  build failures on Render and is a critical blocker.
-    -   **Should Test frontend/backend/both after fix:** Both.
+- None. The critical issues from the previous handoff ( fix, map locations) have been addressed.
 
 **Known issue recurrence from previous fork**
-- **Issue recurrence in previous fork:** User-side deployment process confusion.
-- **Recurrence count:** 2+
-- **Status:** NOT STARTED. This remains the most significant obstacle in the project. The agent must prioritize fixing the  file to resolve the build failures.
+- **Issue:** Deployment failures on Render.
+- **Status:** RESOLVED. The  file was corrected, which was the likely cause of the build failures.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Backend:** FastAPI, Motor (async MongoDB), Pydantic
-- **Frontend:** React, Tailwind CSS,  for icons, 
-- **Database:** MongoDB Atlas
-- **Deployment:** Render (currently failing due to build configuration issues)
+- **Backend:** FastAPI, Motor (async MongoDB), Pydantic,  for external API calls.
+- **Frontend:** React, Tailwind CSS, , .
+- **Database:** MongoDB Atlas.
+- **3rd Party APIs:** JSearch API (for jobs).
+- **Deployment:** Render.
 
 **key DB schema**
-- **users:**  (updated to include helper categories)
-- **posts:** 
-- **volunteers:** 
+- **users:** 
+- **posts:**  (extended with job-specific fields like , , ).
+- **messages:**  (This collection exists but the feature is removed from UI).
+- **cache:**  (New collection for caching API responses).
 
 **changes in tech stack**
--  was added for UI icons.
+-  was installed and is used in the backend for asynchronous HTTP requests to the JSearch API.
 
 **All files of reference**
-- : **CRITICAL.** Contains an incorrect build command (npm <command>
+- : The main file for the new job search functionality. Will need to be modified for the Pôle Emploi integration.
+- : Contains the backend logic for the JSearch API and is the target for adding the Pôle Emploi endpoint and removing the dead  code.
+- : Stores the  and will need to store the Pôle Emploi key.
+- : Contains the main feed, sidebar, and the complex post-creation modal that was recently fixed.
+- : Redesigned login page.
+- : Contains the updated, larger list of help locations.
+- : Contains the corrected deployment configuration.
 
-Usage:
-
-npm install        install all the dependencies in your project
-npm install <foo>  add the <foo> dependency to your project
-npm test           run this project's tests
-npm run <foo>      run the script named <foo>
-npm <command> -h   quick help on <command>
-npm -l             display usage info for all commands
-npm help <term>    search for help on <term>
-npm help npm       more involved overview
-
-All commands:
-
-    access, adduser, audit, bugs, cache, ci, completion,
-    config, dedupe, deprecate, diff, dist-tag, docs, doctor,
-    edit, exec, explain, explore, find-dupes, fund, get, help,
-    help-search, hook, init, install, install-ci-test,
-    install-test, link, ll, login, logout, ls, org, outdated,
-    owner, pack, ping, pkg, prefix, profile, prune, publish,
-    query, rebuild, repo, restart, root, run-script, sbom,
-    search, set, shrinkwrap, star, stars, start, stop, team,
-    test, token, uninstall, unpublish, unstar, update, version,
-    view, whoami
-
-Specify configs in the ini-formatted file:
-    /root/.npmrc
-or on the command line via: npm <command> --key=value
-
-More configuration info: npm help config
-Configuration fields: npm help 7 config
-
-npm@10.8.2 /usr/lib/node_modules/npm instead of yarn install v1.22.22
-[1/4] Resolving packages...
-success Already up-to-date.
-Done in 0.09s.) that is likely causing deployment failures. This MUST be fixed.
-- : The target for the new public help offer form.
-- : This file is now unused and is the prime candidate to be repurposed for the new Message Board feature.
-- : Contains the main feed and the complex post-creation modal with the conditional job form.
-- : Contains the hardcoded, potentially incorrect coordinates for map locations.
-- : Will need to be updated to support the new Message Board and potentially the public help offer form.
-
-**Areas that need refactoring**
-- : This is dead code. It should be repurposed for the new Message Board task or deleted.
-- **Dark Mode Logic**: The global  is now overkill since only the map page uses a dark theme. The logic could be simplified and moved directly into .
+**Areas that need refactoring**:
+- ** splitting:** The main backend file has grown to over 1500 lines. It should be modularized by splitting logic into separate router files (e.g., , ).
+- ** componentization:** This file manages the feed, filters, sidebar, and a very complex creation modal. The modal logic should be extracted into its own component to simplify .
+- **Dead code removal:** The backend endpoints and functions for the message board () are no longer used and should be removed from .
 
 **key api endpoints**
-- : Fetches posts for the main feed.
-- : Creates a new post. Will need to be updated for public help offers with photos.
-- : Updates user profile. Was modified to accept .
-- : Fetches hardcoded locations for the map.
+- : **New.** Searches for jobs using the JSearch API.
+- : **New.** Clears the job search API cache.
+- , : **Dead code.** Endpoints for the removed message board feature.
+- : Fetches locations for the map (now returns a much larger dataset).
 
 **Critical Info for New Agent**
-- **MUST communicate in Portuguese.**
-- **FIX THE DEPLOYMENT FIRST:** The top priority is fixing the  file to use yarn install v1.22.22
-[1/4] Resolving packages...
-success Already up-to-date.
-Done in 0.09s. instead of npm <command>
-
-Usage:
-
-npm install        install all the dependencies in your project
-npm install <foo>  add the <foo> dependency to your project
-npm test           run this project's tests
-npm run <foo>      run the script named <foo>
-npm <command> -h   quick help on <command>
-npm -l             display usage info for all commands
-npm help <term>    search for help on <term>
-npm help npm       more involved overview
-
-All commands:
-
-    access, adduser, audit, bugs, cache, ci, completion,
-    config, dedupe, deprecate, diff, dist-tag, docs, doctor,
-    edit, exec, explain, explore, find-dupes, fund, get, help,
-    help-search, hook, init, install, install-ci-test,
-    install-test, link, ll, login, logout, ls, org, outdated,
-    owner, pack, ping, pkg, prefix, profile, prune, publish,
-    query, rebuild, repo, restart, root, run-script, sbom,
-    search, set, shrinkwrap, star, stars, start, stop, team,
-    test, token, uninstall, unpublish, unstar, update, version,
-    view, whoami
-
-Specify configs in the ini-formatted file:
-    /root/.npmrc
-or on the command line via: npm <command> --key=value
-
-More configuration info: npm help config
-Configuration fields: npm help 7 config
-
-npm@10.8.2 /usr/lib/node_modules/npm. The user cannot see any of your work until the Render build succeeds. This is the root of most of the back-and-forth.
-- **User Feedback is Volatile:** The user frequently provides visual feedback and changes their mind after seeing an implementation. Be prepared to build, screenshot, and then iterate or even revert features. The AlloVoisins screenshot is a recurring design inspiration.
-- **OpenAI Key on Render:** The AI chat works locally but not on the live site because the  is not set in the user's Render environment variables. You will need to guide the user to add this secret key on the Render dashboard after the build is fixed.
+- **Communicate in Portuguese.**
+- The user is highly iterative and provides frequent feedback. Be prepared to implement, screenshot, and then adjust features.
+- The next major task is integrating the official France Travail (Pôle Emploi) API. The user's provided GitHub link was incorrect; you must find the correct API.
+- There is dead code in the backend () from a removed feature that should be cleaned up.
+- The  file is becoming unmanageably large and should be refactored into smaller, modular routers.
 
 **documents and test_reports created in this job**
 - 
-- 
 
 **Last 10 User Messages and any pending HUMAN messages**
--  gostaria que na pagina de quero ajudar adicione imagens no fundo de pessoas sendo ajudadas a alegria dessas pessoas felizes
--  na pagina de quero ajudar adicione imagens no fundo de pessoas sendo ajudadas a alegria dessas pessoas felizes
--  a aba do chat com ia desapareceu quero que volte quando a pessoa clicar no botão oferecer ajuda ela seja direcionada diretamente no ícone que foi criado ajudar se ela quiser postar uma ajuda ai sim ela prencha normally o tipo de ajuda
--  elimine a cor preta da tela da area de maps e deixe so o mapa com a cor preta
--  ola nao quero que essas opções apareçam no tipo de publicação preciso de ajuda ou quero ajuda elimine isso quero as tags do fed se parecem desse modelo da imagen acima as tags da parte frontal
--  melhores essas tags Feed 🆘 SOS... e fique no modeo da pagina de trabalho Todos Bricolagem Limpeza...
--  voute as configuracoes da tela inicial e corrija isso so quero que essa mensagem apareça para quem vai pedir ajudar na area de trabalho junto com a aba trabalho como estava antes
--  nao quero que isso apareça na area de quero ajudar mais sim na area preciso de ajuda eu quero que os topicos do feed fique como na imagen que eu estou enviando
--  quero organize esse feed acima como na imagen acima faca um um mapa com todas as localidades de trabalho disponível nas proximidades conectando as pessoas que postou trabalho e as pessoas que procuram na area do feed
--  verifique a chave api por que o chat nao esta funcionando no render
+-  Vejo que esse repositório foi **arquivado em 2021** e é apenas um **stub/mock** para ambiente de sandbox, não é a API real do Pôle Emploi. Deixe-me pesquisar a **API oficial do Pôle Emploi** (agora chamada **France Travail**) para buscar vagas de emprego:
+-  Vou analisar esse repositório do GitHub para integrar com a API do Pôle Emploi:
+-  voce consegue conectar na pole empolo com esse código https://github.com/betagouv/api-particulier-pole-emploi-connector
+-  default-application_11419216 X-RapidAPI-Key e582b83df0mshaeded199c070167p18fd42jsnb9c7ce5555db Request URL rapidapi.com JSearch API. adicione essa chave api no buscador
+-  obrigadod7@gmail.com eu crie com esse email aqui Precisa criar conta em: https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch como faço para ter chave api
+-  Entendi! Você quer que as vagas apareçam diretamente no seu buscador, sem precisar ir aos sites externos. Para isso, preciso integrar com APIs de emprego. Vou implementar uma integração com APIs de agregadores de vagas. Posso usar: 1. **Adzuna API** - Agrega vagas de vários sites (gratuito) 2. **JSearch API** - Agrega Indeed, LinkedIn, etc. 3. **Pôle Emploi API** - API oficial do governo francês
+-  eu quero que esses sites oferece as informações de empregos como vagas em tudo mais no meu buscador de emprego sem precisar ir no site dessas plataformas tudo seja integrado no meu buscador
+-  conecte o buscador de trabalho com as plataformas que oferecem trabalho ideed entre outras aonde a pessoa possa buscar todas as vagas disponíveis
+-  corrija a area de preciso quando a pessoa escolhe a tag emprego quando a aparece titulo do pedido o trabalhador possa escolher umas das tags disponíveis de trabalho e verifique se o mapa esta funcionado todas as innformacoes estão conectadas
+-  mude area de anúncios para o lado esquerdo corrija a pagina de trabalho e serviços para nao pegar a tela inteira mais sim ficar como nas outras paginas
 
 **Project Health Check:**
-- **Broken:** Yes. The application is failing to deploy on Render due to a misconfigured  file, preventing the user from verifying any changes. This is a critical failure point.
-- **Mocked:** No. The AI chat feature is fully implemented but is non-functional in production due to a missing environment variable on Render, not because it's mocked.
+- **Broken:** No. The application is functional in the local environment and the primary deployment blocker has been fixed.
+- **Mocked:** No. The job search feature uses the real JSearch API.
 
 **3rd Party Integrations**
 - **MongoDB Atlas:** Primary database.
-- **OpenAI:** Integrated for AI Chat, but requires the  environment variable to be set on Render.
-- **Leaflet.js:** Used for the map functionality.
+- **OpenAI:** Integrated for AI Chat (requires  on deployment).
+- **Leaflet.js:** Used for map functionality.
+- **JSearch API (via RapidAPI):** Integrated for real-time job searches. Requires .
+- **Pôle Emploi / France Travail:** **Pending.** User has requested this integration.
 
 **Testing status**
-- **Testing agent used after significant changes:** YES, but tests on the live Render URL failed due to deployment issues.
+- **Testing agent used after significant changes:** YES, once early in the session.
 - **Troubleshoot agent used after agent stuck in loop:** NO
 - **Test files created:** None.
-- **Known regressions:** The entire Render deployment is non-functional.
+- **Known regressions:** None.
 
 **Credentials to test flow:**
-The agent successfully logged in with /. A user account  was mentioned but its status is unknown. Login on the Render deployment is currently failing.
+- **Email:** 
+- **Password:** 
 
 **What agent forgot to execute**
-- **Fix the  build command:** The agent identified the npm <command>
-
-Usage:
-
-npm install        install all the dependencies in your project
-npm install <foo>  add the <foo> dependency to your project
-npm test           run this project's tests
-npm run <foo>      run the script named <foo>
-npm <command> -h   quick help on <command>
-npm -l             display usage info for all commands
-npm help <term>    search for help on <term>
-npm help npm       more involved overview
-
-All commands:
-
-    access, adduser, audit, bugs, cache, ci, completion,
-    config, dedupe, deprecate, diff, dist-tag, docs, doctor,
-    edit, exec, explain, explore, find-dupes, fund, get, help,
-    help-search, hook, init, install, install-ci-test,
-    install-test, link, ll, login, logout, ls, org, outdated,
-    owner, pack, ping, pkg, prefix, profile, prune, publish,
-    query, rebuild, repo, restart, root, run-script, sbom,
-    search, set, shrinkwrap, star, stars, start, stop, team,
-    test, token, uninstall, unpublish, unstar, update, version,
-    view, whoami
-
-Specify configs in the ini-formatted file:
-    /root/.npmrc
-or on the command line via: npm <command> --key=value
-
-More configuration info: npm help config
-Configuration fields: npm help 7 config
-
-npm@10.8.2 /usr/lib/node_modules/npm vs yarn install v1.22.22
-[1/4] Resolving packages...
-success Already up-to-date.
-Done in 0.04s. issue and saw the user's  log but never implemented the fix. This is a critical omission.
-- **Correct the map coordinates:** The agent found the source file () for the incorrect map locations requested by the user but did not proceed with a fix.</analysis>
+- The agent did not remove the backend endpoints () and database logic associated with the Message Board feature after the user requested its removal from the UI. This has resulted in dead code in .</analysis>

@@ -2,7 +2,7 @@
 
 ## ✅ Seu aplicativo está FUNCIONANDO!
 
-**URL:** https://support-bridge-10.preview.emergentagent.com
+**URL:** https://social-assist-6.preview.emergentagent.com
 
 Você já pode:
 - ✅ Acessar o aplicativo
