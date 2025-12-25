@@ -136,11 +136,6 @@ export default function HomePage() {
   const [newComment, setNewComment] = useState('');
   const [commentingOn, setCommentingOn] = useState(null);
   const [advertisements, setAdvertisements] = useState([]);
-  
-  // Estados para o Mural de Mensagens
-  const [muralMessages, setMuralMessages] = useState([]);
-  const [showMuralForm, setShowMuralForm] = useState(false);
-  const [newMuralMessage, setNewMuralMessage] = useState({ name: '', message: '' });
 
   const categories = [
     { value: 'food', label: t('food'), color: 'bg-green-100 text-green-700 border-green-200', icon: Utensils },
