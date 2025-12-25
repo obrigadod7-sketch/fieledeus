@@ -108,6 +108,100 @@ export default function VolunteersPage() {
     return ALL_CATEGORIES.find(c => c.value === categoryValue) || { icon: '📝', label: categoryValue };
   };
 
+  // Funções para o formulário de oferta pública
+  const toggleOfferCategory = (category) => {
+    if (publicOffer.categories.includes(category)) {
+      setPublicOffer({...publicOffer, categories: publicOffer.categories.filter(c => c !== category)});
+    } else {
+      setPublicOffer({...publicOffer, categories: [...publicOffer.categories, category]});
+    }
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5000000) {
+        toast.error('Imagem muito grande! Máximo 5MB');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPublicOffer({...publicOffer, images: [...publicOffer.images, reader.result]});
+        toast.success('Foto adicionada!');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = (index) => {
+    const newImages = publicOffer.images.filter((_, idx) => idx !== index);
+    setPublicOffer({...publicOffer, images: newImages});
+  };
+
+  const getLocation = () => {
+    if (navigator.geolocation) {
+      toast.info('Obtendo localização...');
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setPublicOffer({
+            ...publicOffer,
+            location: {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+              address: 'Localização atual'
+            }
+          });
+          toast.success('Localização adicionada!');
+        },
+        (error) => {
+          toast.error('Erro ao obter localização. Tente novamente.');
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      );
+    }
+  };
+
+  const submitPublicOffer = async () => {
+    if (!publicOffer.title || !publicOffer.description) {
+      toast.error('Preencha o título e a descrição');
+      return;
+    }
+    if (publicOffer.categories.length === 0) {
+      toast.error('Selecione pelo menos uma categoria');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/posts`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          type: 'offer',
+          category: publicOffer.categories[0],
+          categories: publicOffer.categories,
+          title: publicOffer.title,
+          description: publicOffer.description,
+          images: publicOffer.images,
+          location: publicOffer.location
+        })
+      });
+
+      if (response.ok) {
+        toast.success('Oferta publicada com sucesso!');
+        setShowOfferModal(false);
+        setPublicOffer({ title: '', description: '', categories: [], location: null, images: [] });
+        navigate('/home');
+      } else {
+        toast.error('Erro ao publicar oferta');
+      }
+    } catch (error) {
+      toast.error('Erro ao publicar oferta');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 pb-20" data-testid="volunteers-page">
       {/* Hero Section com Imagem de Fundo */}
