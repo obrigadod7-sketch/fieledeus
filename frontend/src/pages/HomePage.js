@@ -863,6 +863,12 @@ export default function HomePage() {
                               key={cat.value}
                               type="button"
                               onClick={() => {
+                                // Se for moradia, redirecionar para página de hospedagem
+                                if (cat.value === 'housing') {
+                                  setShowCreatePost(false);
+                                  navigate('/housing');
+                                  return;
+                                }
                                 setNewPost({...newPost, category: cat.value});
                                 // Se for trabalho, ir para etapa de busca
                                 if (cat.value === 'work') {
@@ -883,8 +889,8 @@ export default function HomePage() {
                           ))}
                         </div>
                         
-                        {/* Se não for trabalho, mostrar formulário padrão */}
-                        {newPost.category && newPost.category !== 'work' && (
+                        {/* Se não for trabalho ou moradia, mostrar formulário padrão */}
+                        {newPost.category && newPost.category !== 'work' && newPost.category !== 'housing' && (
                           <div className="mt-6 space-y-4">
                             {/* Título */}
                             <div className="bg-white border-2 border-gray-200 p-4 rounded-2xl">
