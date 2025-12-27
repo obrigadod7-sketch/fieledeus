@@ -1148,16 +1148,29 @@ export default function HomePage() {
                           </div>
                         )}
                         
-                        {/* Botão Publicar Perfil */}
+                        {/* Card de Alerta de Vagas */}
+                        <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl p-4 text-white">
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                              <span className="text-xl">🔔</span>
+                            </div>
+                            <div>
+                              <p className="font-bold text-sm">Receba vagas todos os dias!</p>
+                              <p className="text-xs text-white/80">Novas oportunidades direto no seu feed</p>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Botão Receber Vagas */}
                         <Button 
                           onClick={createPost}
                           className="w-full rounded-full py-5 text-base font-bold bg-green-600 hover:bg-green-700 shadow-lg"
                         >
-                          ✅ Publicar Meu Perfil no Feed
+                          🔔 Receber Vagas Diárias no Meu Feed
                         </Button>
                         
                         <p className="text-xs text-center text-gray-500">
-                          Seu perfil será visível para empregadores e voluntários
+                          Seu perfil será publicado e você receberá vagas relacionadas a "{jobSearchQuery}"
                         </p>
                       </div>
                     </div>
