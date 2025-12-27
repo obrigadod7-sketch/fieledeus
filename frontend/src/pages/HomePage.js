@@ -607,7 +607,7 @@ export default function HomePage() {
                 href="tel:112"
                 className="flex items-center gap-1 px-2 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-full text-xs shadow-lg animate-pulse"
               >
-                🆘 SOS
+                🆘 {t('sosEmergency')}
               </a>
               <a
                 href="https://wa.me/5514996078465?text=Olá! Preciso de ajuda."
@@ -615,7 +615,7 @@ export default function HomePage() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-1 px-2 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-full text-xs shadow-lg"
               >
-                💬 <span className="hidden sm:inline">Fale comigo</span>
+                💬 <span className="hidden sm:inline">{t('talkToMe')}</span>
               </a>
             </div>
           </div>
