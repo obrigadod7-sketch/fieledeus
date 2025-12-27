@@ -387,6 +387,58 @@ export default function HomePage() {
   };
 
   const createPost = async () => {
+    // Para posts de busca de emprego, criar post resumido
+    if (newPost.category === 'work' && jobSearchStep === 2 && jobSearchQuery) {
+      try {
+        // Criar post resumido de busca de emprego
+        const jobPost = {
+          type: 'need',
+          category: 'work',
+          title: `🔍 Procuro: ${jobSearchQuery}`,
+          description: `📍 ${jobSearchLocation || 'França'}\n⏰ ${
+            newPost.job_availability === 'full_time' ? 'Tempo Integral' :
+            newPost.job_availability === 'part_time' ? 'Meio Período' :
+            newPost.job_availability === 'flexible' ? 'Horário Flexível' :
+            newPost.job_availability === 'weekends' ? 'Finais de Semana' : 'Disponível'
+          }\n📋 ${
+            newPost.job_experience === 'none' ? 'Sem experiência' :
+            newPost.job_experience === '1year' ? '1 ano de experiência' :
+            newPost.job_experience === '2years' ? '2+ anos de experiência' :
+            newPost.job_experience === '5years' ? '5+ anos de experiência' : ''
+          }`,
+          images: [],
+          location: null,
+          // Campos para receber vagas diárias
+          job_alert_enabled: true,
+          job_search_query: jobSearchQuery,
+          job_search_location: jobSearchLocation || 'França',
+          job_availability: newPost.job_availability,
+          job_experience: newPost.job_experience,
+          is_job_seeker: true
+        };
+
+        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/posts`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(jobPost)
+        });
+
+        if (response.ok) {
+          toast.success('🔔 Perfil criado! Você receberá vagas diárias.');
+          toast.info(`Buscando vagas de "${jobSearchQuery}" para você!`, { duration: 4000 });
+          handleCloseCreatePost(false);
+          fetchPosts();
+        }
+      } catch (error) {
+        toast.error('Erro ao criar perfil');
+      }
+      return;
+    }
+
+    // Post normal
     if (!newPost.title || !newPost.description) {
       toast.error('Preencha todos os campos');
       return;
