@@ -839,6 +839,9 @@ const resources = {
       next: 'Next',
       previous: 'Previous',
       nearestLocation: 'Nearest Location',
+      viewResources: 'View Resources',
+      resources: 'Resources',
+      update: 'Update',
       
       // Roles & Users
       migrant: 'Migrant',
