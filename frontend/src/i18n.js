@@ -37,6 +37,7 @@ const resources = {
       profile: 'Perfil',
       map: 'Mapa',
       volunteers: 'Voluntários',
+      helpNav: 'Ajudar',
       services: 'Serviços',
       nearbyHelp: 'Ajuda Próxima',
       all: 'Todos',
