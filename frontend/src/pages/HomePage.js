@@ -1017,9 +1017,35 @@ export default function HomePage() {
                   </span>
                 </div>
                 <h3 className="text-base sm:text-lg font-bold text-textPrimary mb-2 break-words overflow-hidden">{post.title}</h3>
-                <p className="text-sm sm:text-base text-textSecondary mb-3 leading-relaxed overflow-hidden whitespace-pre-wrap" style={{wordBreak: 'break-word', overflowWrap: 'anywhere'}}>{post.description}</p>
+                
+                {/* Descrição - Para vagas de emprego, mostrar sem a URL */}
+                {post.is_job_post ? (
+                  <div className="mb-3">
+                    <p className="text-sm sm:text-base text-textSecondary leading-relaxed">
+                      {post.job_company && <span className="font-medium">🏢 {post.job_company}</span>}
+                    </p>
+                    <p className="text-sm text-textSecondary mt-1 line-clamp-3">
+                      {post.description?.split('🔗')[0]?.trim()}
+                    </p>
+                    {/* Botão para Ver Vaga */}
+                    {post.job_url && (
+                      <a 
+                        href={post.job_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl text-sm transition-colors"
+                      >
+                        💼 Ver Vaga Completa
+                        <ExternalLink size={14} />
+                      </a>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm sm:text-base text-textSecondary mb-3 leading-relaxed overflow-hidden whitespace-pre-wrap" style={{wordBreak: 'break-word', overflowWrap: 'anywhere'}}>{post.description}</p>
+                )}
 
-                {post.images && post.images.length > 0 && (
+                {/* Imagens - NÃO mostrar para posts de vagas de emprego */}
+                {post.images && post.images.length > 0 && !post.is_job_post && (
                   <div className={`mb-3 ${post.images.length === 1 ? '' : 'grid grid-cols-2 gap-2'}`}>
                     {post.images.map((img, idx) => (
                       <div key={idx} className={`${post.images.length === 1 ? 'w-full' : ''} rounded-2xl overflow-hidden bg-gray-100`}>
