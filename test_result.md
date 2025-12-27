@@ -9,6 +9,7 @@ user_problem_statement: |
   1. Criar formulário de "Oferta de Ajuda Pública" com categorias, localização e upload de foto
   2. Criar "Mural de Mensagens" como um quadrado pequeno na área do feed
   3. Corrigir render.yaml para usar yarn ao invés de npm
+  4. Test Housing/Hospedagem Solidária feature with backend APIs
 
 backend:
   - task: "API endpoint GET /api/mural"
@@ -22,6 +23,9 @@ backend:
       - working: true
         agent: "main"
         comment: "Endpoint retorna mensagens do mural corretamente"
+      - working: true
+        agent: "testing"
+        comment: "Tested successfully - GET /api/mural returns messages with proper structure"
 
   - task: "API endpoint POST /api/mural"
     implemented: true
@@ -34,6 +38,81 @@ backend:
       - working: true
         agent: "main"
         comment: "Endpoint cria mensagens no mural com sucesso"
+      - working: true
+        agent: "testing"
+        comment: "Tested successfully - POST /api/mural creates and persists messages correctly"
+
+  - task: "Housing API endpoint GET /api/housing"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Tested successfully - Returns list of housing listings with proper structure and user info"
+
+  - task: "Housing API endpoint POST /api/housing"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Tested successfully - Creates new housing listings with all required fields"
+
+  - task: "Housing API endpoint GET /api/housing/{id}"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Tested successfully - Returns detailed listing info including user contact details"
+
+  - task: "Housing API filters GET /api/housing?type=offer"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Tested successfully - Filters listings by type (offer/need) correctly"
+
+  - task: "Housing API filters GET /api/housing?city=Paris"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Tested successfully - Filters listings by city with case-insensitive regex matching"
+
+  - task: "Authentication with test@test.com / test123"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Tested successfully - Login works with test credentials, user created if not exists"
 
 frontend:
   - task: "Formulário de Oferta de Ajuda Pública"
