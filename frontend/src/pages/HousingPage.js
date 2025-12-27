@@ -239,7 +239,7 @@ export default function HousingPage() {
             <p className="text-xs text-gray-600">{t('peopleSearching')}</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-bold text-purple-600">{listings.filter(l => l.status === 'matched').length}</p>
+            <p className="text-2xl font-bold text-purple-600">{listings.filter(l => l.listing_status === 'matched').length}</p>
             <p className="text-xs text-gray-600">{t('successfulMatches')}</p>
           </div>
         </div>
