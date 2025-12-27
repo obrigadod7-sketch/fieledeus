@@ -564,12 +564,6 @@ const resources = {
       helpWithEducation: 'Aide éducation',
       helpWithSocial: 'Soutien social',
       
-      // Common
-      back: 'Retour',
-      email: 'Email',
-      password: 'Mot de passe',
-      all: 'Tous',
-      
       // Volunteers Page
       professionalVolunteers: 'Bénévoles Professionnels',
       connectWithProfessionals: 'Connectez-vous avec des professionnels qui offrent une aide gratuite',
