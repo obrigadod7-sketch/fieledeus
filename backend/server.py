@@ -1822,6 +1822,115 @@ async def clear_jobs_cache():
     result2 = await db.job_map_locations.delete_many({})
     return {'message': f'Cache limpo: {result.deleted_count} itens removidos', 'map_locations_removed': result2.deleted_count}
 
+# ==================== PREFERÊNCIAS DE EMPREGO DO USUÁRIO ====================
+
+class JobPreferences(BaseModel):
+    search_query: str
+    search_location: str = "França"
+    availability: Optional[str] = None
+    experience: Optional[str] = None
+
+@api_router.post("/user/job-preferences")
+async def save_job_preferences(prefs: JobPreferences, current_user: User = Depends(get_current_user)):
+    """Salva as preferências de emprego do usuário para receber vagas personalizadas"""
+    
+    job_prefs = {
+        'user_id': current_user.id,
+        'search_query': prefs.search_query,
+        'search_location': prefs.search_location,
+        'availability': prefs.availability,
+        'experience': prefs.experience,
+        'is_active': True,
+        'created_at': datetime.now(timezone.utc).isoformat(),
+        'updated_at': datetime.now(timezone.utc).isoformat()
+    }
+    
+    # Atualizar ou criar preferências
+    await db.job_preferences.update_one(
+        {'user_id': current_user.id},
+        {'$set': job_prefs},
+        upsert=True
+    )
+    
+    return {'message': 'Preferências salvas! Você receberá vagas personalizadas.', 'preferences': job_prefs}
+
+@api_router.get("/user/job-preferences")
+async def get_job_preferences(current_user: User = Depends(get_current_user)):
+    """Retorna as preferências de emprego do usuário"""
+    prefs = await db.job_preferences.find_one({'user_id': current_user.id}, {'_id': 0})
+    return prefs or {'is_active': False}
+
+@api_router.delete("/user/job-preferences")
+async def delete_job_preferences(current_user: User = Depends(get_current_user)):
+    """Desativa as preferências de emprego do usuário"""
+    await db.job_preferences.update_one(
+        {'user_id': current_user.id},
+        {'$set': {'is_active': False, 'updated_at': datetime.now(timezone.utc).isoformat()}}
+    )
+    return {'message': 'Alertas de vagas desativados'}
+
+@api_router.get("/user/personalized-jobs")
+async def get_personalized_jobs(current_user: User = Depends(get_current_user)):
+    """Retorna vagas personalizadas baseadas nas preferências do usuário"""
+    
+    # Buscar preferências do usuário
+    prefs = await db.job_preferences.find_one({'user_id': current_user.id, 'is_active': True})
+    
+    if not prefs:
+        return {'jobs': [], 'message': 'Nenhuma preferência de emprego configurada'}
+    
+    # Mapeamento português → francês
+    translations = {
+        'garçom': 'serveur', 'garcom': 'serveur', 'cozinheiro': 'cuisinier',
+        'limpeza': 'nettoyage', 'motorista': 'chauffeur', 'construção': 'construction',
+        'vendedor': 'vendeur', 'caixa': 'caissier', 'entregador': 'livreur',
+        'pedreiro': 'maçon', 'eletricista': 'électricien', 'jardineiro': 'jardinier',
+        'babá': 'nounou', 'cuidador': 'aide-soignant', 'segurança': 'agent de sécurité',
+        'recepcionista': 'réceptionniste', 'auxiliar': 'assistant', 'operador': 'opérateur',
+        'mecânico': 'mécanicien', 'padeiro': 'boulanger', 'carpinteiro': 'charpentier',
+        'soldador': 'soudeur', 'técnico': 'technicien', 'enfermeiro': 'infirmier',
+        'secretária': 'secrétaire', 'contador': 'comptable'
+    }
+    
+    # Traduzir termo de busca
+    query = prefs.get('search_query', '').lower()
+    translated_query = translations.get(query, query)
+    location = prefs.get('search_location', 'France')
+    
+    # Buscar vagas
+    jobs_data = await search_jobs(query=translated_query, location=location, page=1)
+    jobs = jobs_data.get('jobs', [])
+    
+    # Formatar vagas para o feed
+    personalized_jobs = []
+    for job in jobs[:10]:  # Limitar a 10 vagas
+        personalized_jobs.append({
+            'id': job.get('id', str(uuid.uuid4())),
+            'type': 'personalized_job',
+            'title': job.get('title', 'Vaga de Emprego'),
+            'company': job.get('company', 'Empresa'),
+            'location': job.get('location', location),
+            'url': job.get('url', ''),
+            'company_logo': job.get('company_logo'),
+            'salary_min': job.get('salary_min'),
+            'salary_max': job.get('salary_max'),
+            'salary_currency': job.get('salary_currency', 'EUR'),
+            'is_remote': job.get('is_remote', False),
+            'date_posted': job.get('date_posted', 'Recente'),
+            'source': job.get('source', 'JSearch'),
+            'search_query': prefs.get('search_query'),
+            'is_personalized': True
+        })
+    
+    return {
+        'jobs': personalized_jobs,
+        'total': len(personalized_jobs),
+        'preferences': {
+            'query': prefs.get('search_query'),
+            'location': prefs.get('search_location')
+        }
+    }
+
 app.include_router(api_router)
 
 # Health check na raiz para o Render
