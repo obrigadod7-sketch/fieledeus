@@ -463,6 +463,15 @@ export default function HousingPage() {
                     {listing.max_guests > 1 && ` · ${listing.max_guests} ${t('guests')}`}
                   </p>
 
+                  {/* Availability Dates */}
+                  {listing.available_from && (
+                    <p className="text-gray-500 text-sm flex items-center gap-1">
+                      <Calendar size={12} />
+                      {new Date(listing.available_from).toLocaleDateString()} 
+                      {listing.available_until && ` - ${new Date(listing.available_until).toLocaleDateString()}`}
+                    </p>
+                  )}
+
                   <div className="flex items-center gap-2 pt-1">
                     {listing.listing_type === 'offer' ? (
                       <span className="text-sm">
