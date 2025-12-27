@@ -378,14 +378,14 @@ export default function VolunteersPage() {
               setShowModal(false);
               setShowOfferModal(true);
             }}
-            className="mt-4 p-4 border-2 border-dashed border-primary/30 rounded-xl text-center cursor-pointer hover:bg-primary/5 transition-all"
+            className="mt-3 sm:mt-4 p-3 sm:p-4 border-2 border-dashed border-primary/30 rounded-xl text-center cursor-pointer hover:bg-primary/5 transition-all"
           >
             <div className="flex items-center justify-center gap-2 text-primary">
-              <Plus size={18} />
-              <span className="font-medium">Prefiro criar uma oferta pública</span>
+              <Plus size={16} className="flex-shrink-0" />
+              <span className="font-medium text-sm sm:text-base">Criar oferta pública</span>
             </div>
-            <p className="text-xs text-gray-500 mt-1">
-              Publique uma oferta para que pessoas te encontrem
+            <p className="text-xs text-gray-500 mt-1 break-words">
+              Pessoas que precisam podem te encontrar
             </p>
           </div>
         </DialogContent>
@@ -393,28 +393,28 @@ export default function VolunteersPage() {
 
       {/* Modal de Criar Oferta Pública */}
       <Dialog open={showOfferModal} onOpenChange={setShowOfferModal}>
-        <DialogContent className="rounded-3xl max-w-lg mx-4 max-h-[90vh] overflow-y-auto bg-white p-6">
+        <DialogContent className="rounded-3xl max-w-lg mx-2 sm:mx-4 max-h-[90vh] overflow-y-auto bg-white p-4 sm:p-6">
           <DialogHeader className="pb-2">
-            <DialogTitle className="text-xl font-bold flex items-center gap-2">
-              <Plus className="w-6 h-6 text-primary" />
-              Criar Oferta de Ajuda Pública
+            <DialogTitle className="text-lg sm:text-xl font-bold flex items-center gap-2">
+              <Plus className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
+              <span className="break-words">Criar Oferta de Ajuda</span>
             </DialogTitle>
-            <DialogDescription>
-              Publique sua oferta para que pessoas que precisam possam te encontrar
+            <DialogDescription className="text-xs sm:text-sm break-words">
+              Publique para que pessoas possam te encontrar
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-5 mt-4">
+          <div className="space-y-4 sm:space-y-5 mt-3 sm:mt-4">
             {/* Seleção de Categorias */}
-            <div className="bg-gray-50 p-4 rounded-2xl">
-              <Label className="text-base font-bold mb-3 block">📂 Em que você pode ajudar?</Label>
-              <div className="flex flex-wrap gap-2">
+            <div className="bg-gray-50 p-3 sm:p-4 rounded-2xl">
+              <Label className="text-sm sm:text-base font-bold mb-2 sm:mb-3 block">📂 Em que você pode ajudar?</Label>
+              <div className="flex flex-wrap gap-1.5 sm:gap-2">
                 {ALL_CATEGORIES.map(cat => (
                   <button
                     key={cat.value}
                     type="button"
                     onClick={() => toggleOfferCategory(cat.value)}
-                    className={`px-3 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-1 ${
+                    className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all flex items-center gap-1 ${
                       publicOffer.categories.includes(cat.value)
                         ? 'bg-primary text-white shadow-md'
                         : 'bg-white border border-gray-300 text-gray-700 hover:border-primary'
