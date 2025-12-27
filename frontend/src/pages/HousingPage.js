@@ -13,37 +13,36 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogTrigger
 } from '../components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../components/ui/select";
 import { toast } from 'sonner';
 import {
   Home,
   Plus,
   MapPin,
-  Calendar,
   Users,
   Heart,
   Star,
   MessageCircle,
-  Filter,
   Search,
   Bed,
   Sofa,
   Building,
-  Clock,
-  CheckCircle,
-  Shield,
   ChevronLeft,
+  ChevronRight,
   User,
+  Wifi,
+  Car,
+  Flame,
+  Waves,
   X,
-  Camera
+  Filter,
+  SlidersHorizontal,
+  Share2,
+  Calendar,
+  Clock,
+  Shield,
+  BadgeCheck,
+  Sparkles
 } from 'lucide-react';
 
 export default function HousingPage() {
@@ -55,53 +54,82 @@ export default function HousingPage() {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [filterType, setFilterType] = useState('all'); // all, offer, need
+  const [showFiltersModal, setShowFiltersModal] = useState(false);
+  const [filterType, setFilterType] = useState('all');
   const [filterCity, setFilterCity] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [favorites, setFavorites] = useState([]);
+  const [selectedListing, setSelectedListing] = useState(null);
   
   // Create listing states
-  const [listingType, setListingType] = useState(''); // offer or need
+  const [listingType, setListingType] = useState('');
+  const [createStep, setCreateStep] = useState(1);
   const [newListing, setNewListing] = useState({
     title: '',
     description: '',
     city: '',
     address: '',
-    accommodation_type: 'room', // room, sofa, house, shared
-    duration: 'temporary', // temporary, long_term, exchange
+    accommodation_type: 'room',
+    duration: 'temporary',
     max_guests: 1,
     amenities: [],
     pets_allowed: false,
     available_from: '',
     available_until: '',
-    exchange_services: '', // For house-sitting exchange
+    exchange_services: '',
     photos: []
   });
 
+  // Sample images for listings without photos
+  const defaultImages = [
+    'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80',
+    'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80',
+    'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80',
+    'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800&q=80',
+    'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&q=80',
+  ];
+
   const accommodationTypes = [
-    { value: 'room', label: t('privateRoom'), icon: Bed },
-    { value: 'sofa', label: t('sofaCouch'), icon: Sofa },
-    { value: 'house', label: t('entireHouse'), icon: Building },
-    { value: 'shared', label: t('sharedRoom'), icon: Users }
+    { value: 'room', label: t('privateRoom'), icon: Bed, emoji: '🛏️' },
+    { value: 'sofa', label: t('sofaCouch'), icon: Sofa, emoji: '🛋️' },
+    { value: 'house', label: t('entireHouse'), icon: Building, emoji: '🏠' },
+    { value: 'shared', label: t('sharedRoom'), icon: Users, emoji: '👥' }
   ];
 
   const durationTypes = [
-    { value: 'emergency', label: t('emergencyStay'), desc: '1-3 ' + t('days') },
-    { value: 'temporary', label: t('temporaryStay'), desc: '1-4 ' + t('weeks') },
-    { value: 'long_term', label: t('longTermStay'), desc: '1+ ' + t('months') },
-    { value: 'exchange', label: t('exchangeStay'), desc: t('houseSittingExchange') }
+    { value: 'emergency', label: t('emergencyStay'), desc: '1-3 ' + t('days'), emoji: '🆘' },
+    { value: 'temporary', label: t('temporaryStay'), desc: '1-4 ' + t('weeks'), emoji: '📅' },
+    { value: 'long_term', label: t('longTermStay'), desc: '1+ ' + t('months'), emoji: '🏡' },
+    { value: 'exchange', label: t('exchangeStay'), desc: t('houseSittingExchange'), emoji: '🤝' }
   ];
 
   const amenitiesList = [
-    { id: 'wifi', label: 'WiFi', icon: '📶' },
-    { id: 'kitchen', label: t('kitchen'), icon: '🍳' },
-    { id: 'washing', label: t('washingMachine'), icon: '🧺' },
-    { id: 'heating', label: t('heating'), icon: '🔥' },
-    { id: 'parking', label: t('parking'), icon: '🅿️' },
-    { id: 'accessible', label: t('accessible'), icon: '♿' }
+    { id: 'wifi', label: 'WiFi', icon: Wifi },
+    { id: 'kitchen', label: t('kitchen'), icon: Flame },
+    { id: 'washing', label: t('washingMachine'), icon: Waves },
+    { id: 'heating', label: t('heating'), icon: Flame },
+    { id: 'parking', label: t('parking'), icon: Car },
+    { id: 'accessible', label: t('accessible'), icon: Users }
+  ];
+
+  const cities = [
+    { name: 'Paris', emoji: '🗼' },
+    { name: 'Lyon', emoji: '🦁' },
+    { name: 'Marseille', emoji: '⚓' },
+    { name: 'Toulouse', emoji: '🌹' },
+    { name: 'Nice', emoji: '🌴' },
+    { name: 'Bordeaux', emoji: '🍷' },
+    { name: 'Lille', emoji: '🏛️' },
+    { name: 'Nantes', emoji: '🐘' }
   ];
 
   useEffect(() => {
     fetchListings();
+    // Load favorites from localStorage
+    const savedFavorites = localStorage.getItem('housing_favorites');
+    if (savedFavorites) {
+      setFavorites(JSON.parse(savedFavorites));
+    }
   }, [filterType, filterCity]);
 
   const fetchListings = async () => {
@@ -161,6 +189,7 @@ export default function HousingPage() {
 
   const resetForm = () => {
     setListingType('');
+    setCreateStep(1);
     setNewListing({
       title: '',
       description: '',
@@ -176,6 +205,14 @@ export default function HousingPage() {
       exchange_services: '',
       photos: []
     });
+  };
+
+  const toggleFavorite = (listingId) => {
+    const newFavorites = favorites.includes(listingId)
+      ? favorites.filter(id => id !== listingId)
+      : [...favorites, listingId];
+    setFavorites(newFavorites);
+    localStorage.setItem('housing_favorites', JSON.stringify(newFavorites));
   };
 
   const toggleAmenity = (amenityId) => {
@@ -197,224 +234,246 @@ export default function HousingPage() {
     return true;
   });
 
+  const getRandomImage = (index) => {
+    return defaultImages[index % defaultImages.length];
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white pb-20">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-4 sm:p-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center gap-3 mb-4">
-            <button onClick={() => navigate('/home')} className="p-2 hover:bg-white/20 rounded-full">
-              <ChevronLeft size={24} />
+    <div className="min-h-screen bg-white pb-20">
+      {/* Airbnb-style Header */}
+      <div className="sticky top-0 z-50 bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          {/* Logo and Search */}
+          <div className="flex items-center justify-between gap-4">
+            <button onClick={() => navigate('/home')} className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gradient-to-r from-rose-500 to-pink-500 rounded-lg flex items-center justify-center">
+                <Home size={18} className="text-white" />
+              </div>
+              <span className="font-bold text-xl hidden sm:block text-rose-500">Watizat</span>
             </button>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-                🏠 {t('solidaryHousing')}
-              </h1>
-              <p className="text-sm text-white/80">{t('solidaryHousingDesc')}</p>
+
+            {/* Search Bar - Airbnb Style */}
+            <div className="flex-1 max-w-2xl">
+              <div className="flex items-center bg-white border border-gray-300 rounded-full shadow-sm hover:shadow-md transition-shadow">
+                <button className="flex-1 flex items-center gap-3 px-4 py-3 text-left">
+                  <Search size={18} className="text-gray-500" />
+                  <div className="flex-1">
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder={t('searchHousingPlaceholder')}
+                      className="w-full text-sm font-medium bg-transparent outline-none placeholder:text-gray-400"
+                    />
+                  </div>
+                </button>
+                <button 
+                  onClick={() => setShowFiltersModal(true)}
+                  className="p-3 mx-1 bg-rose-500 hover:bg-rose-600 rounded-full text-white transition-colors"
+                >
+                  <SlidersHorizontal size={16} />
+                </button>
+              </div>
+            </div>
+
+            {/* User Avatar */}
+            <div className="flex items-center gap-2">
+              <Button 
+                onClick={() => setShowCreateModal(true)}
+                variant="outline" 
+                className="rounded-full hidden sm:flex"
+              >
+                <Plus size={16} className="mr-1" />
+                {t('createListing')}
+              </Button>
+              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center border-2 border-gray-300">
+                <User size={20} className="text-gray-600" />
+              </div>
             </div>
           </div>
-          
-          {/* Search Bar */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t('searchHousingPlaceholder')}
-              className="pl-10 rounded-full bg-white/90 border-0 h-12"
-            />
+        </div>
+
+        {/* Category Tabs - Airbnb Style */}
+        <div className="max-w-7xl mx-auto px-4 pb-3">
+          <div className="flex gap-6 overflow-x-auto scrollbar-hide">
+            {[
+              { type: 'all', label: t('allFilter'), icon: Sparkles },
+              { type: 'offer', label: t('offersHousing'), icon: Home },
+              { type: 'need', label: t('needsHousing'), icon: Search },
+            ].map((tab) => (
+              <button
+                key={tab.type}
+                onClick={() => setFilterType(tab.type)}
+                className={`flex flex-col items-center gap-1 pb-2 px-2 border-b-2 transition-all whitespace-nowrap ${
+                  filterType === tab.type
+                    ? 'border-black text-black'
+                    : 'border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300'
+                }`}
+              >
+                <tab.icon size={24} />
+                <span className="text-xs font-medium">{tab.label}</span>
+              </button>
+            ))}
+            <div className="h-8 w-px bg-gray-200 mx-2 self-center"></div>
+            {cities.slice(0, 5).map((city) => (
+              <button
+                key={city.name}
+                onClick={() => setFilterCity(filterCity === city.name ? '' : city.name)}
+                className={`flex flex-col items-center gap-1 pb-2 px-2 border-b-2 transition-all whitespace-nowrap ${
+                  filterCity === city.name
+                    ? 'border-black text-black'
+                    : 'border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300'
+                }`}
+              >
+                <span className="text-2xl">{city.emoji}</span>
+                <span className="text-xs font-medium">{city.name}</span>
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
       {/* Stats Banner */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex justify-around">
-          <div className="text-center">
-            <p className="text-2xl font-bold text-blue-600">{listings.filter(l => l.listing_type === 'offer').length}</p>
-            <p className="text-xs text-gray-600">{t('availableHomes')}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-2xl font-bold text-green-600">{listings.filter(l => l.listing_type === 'need').length}</p>
-            <p className="text-xs text-gray-600">{t('peopleSearching')}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-2xl font-bold text-purple-600">{listings.filter(l => l.listing_status === 'matched').length}</p>
-            <p className="text-xs text-gray-600">{t('successfulMatches')}</p>
+      <div className="bg-gradient-to-r from-rose-50 to-pink-50 border-b">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex justify-center gap-8 sm:gap-16">
+            <div className="text-center">
+              <p className="text-2xl sm:text-3xl font-bold text-rose-600">
+                {listings.filter(l => l.listing_type === 'offer').length}
+              </p>
+              <p className="text-xs sm:text-sm text-gray-600">{t('availableHomes')}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl sm:text-3xl font-bold text-orange-500">
+                {listings.filter(l => l.listing_type === 'need').length}
+              </p>
+              <p className="text-xs sm:text-sm text-gray-600">{t('peopleSearching')}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl sm:text-3xl font-bold text-green-600">
+                {listings.filter(l => l.listing_status === 'matched').length}
+              </p>
+              <p className="text-xs sm:text-sm text-gray-600">{t('successfulMatches')}</p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="max-w-4xl mx-auto px-4 py-4">
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          <button
-            onClick={() => setFilterType('all')}
-            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-              filterType === 'all'
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-600 border border-gray-200'
-            }`}
-          >
-            {t('allFilter')}
-          </button>
-          <button
-            onClick={() => setFilterType('offer')}
-            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all flex items-center gap-1 ${
-              filterType === 'offer'
-                ? 'bg-green-600 text-white'
-                : 'bg-white text-gray-600 border border-gray-200'
-            }`}
-          >
-            🏡 {t('offersHousing')}
-          </button>
-          <button
-            onClick={() => setFilterType('need')}
-            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all flex items-center gap-1 ${
-              filterType === 'need'
-                ? 'bg-orange-600 text-white'
-                : 'bg-white text-gray-600 border border-gray-200'
-            }`}
-          >
-            🔍 {t('needsHousing')}
-          </button>
-        </div>
-
-        {/* City Filter */}
-        <div className="flex gap-2 mt-3 overflow-x-auto pb-2">
-          {['Paris', 'Lyon', 'Marseille', 'Toulouse', 'Nice'].map(city => (
-            <button
-              key={city}
-              onClick={() => setFilterCity(filterCity === city ? '' : city)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
-                filterCity === city
-                  ? 'bg-blue-100 text-blue-700 border border-blue-300'
-                  : 'bg-gray-100 text-gray-600'
-              }`}
-            >
-              📍 {city}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Listings Grid */}
-      <div className="max-w-4xl mx-auto px-4">
+      {/* Main Content - Airbnb Grid */}
+      <div className="max-w-7xl mx-auto px-4 py-6">
         {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              <div key={i} className="animate-pulse">
+                <div className="aspect-square bg-gray-200 rounded-xl mb-3"></div>
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            ))}
           </div>
         ) : filteredListings.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-2xl shadow-sm">
-            <Home size={48} className="mx-auto text-gray-300 mb-4" />
-            <h3 className="text-lg font-bold text-gray-700 mb-2">{t('noListingsYet')}</h3>
-            <p className="text-sm text-gray-500 mb-4">{t('beFirstToOffer')}</p>
-            <Button onClick={() => setShowCreateModal(true)} className="rounded-full">
+          <div className="text-center py-16">
+            <div className="w-24 h-24 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
+              <Home size={48} className="text-gray-400" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">{t('noListingsYet')}</h3>
+            <p className="text-gray-500 mb-6">{t('beFirstToOffer')}</p>
+            <Button 
+              onClick={() => setShowCreateModal(true)} 
+              className="rounded-full bg-rose-500 hover:bg-rose-600 px-8"
+            >
               <Plus size={18} className="mr-2" />
               {t('createListing')}
             </Button>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {filteredListings.map((listing) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredListings.map((listing, index) => (
               <div
                 key={listing.id}
-                className={`bg-white rounded-2xl shadow-sm overflow-hidden border-2 transition-all hover:shadow-md ${
-                  listing.listing_type === 'offer' 
-                    ? 'border-green-100 hover:border-green-300' 
-                    : 'border-orange-100 hover:border-orange-300'
-                }`}
+                className="group cursor-pointer"
+                onClick={() => setSelectedListing(listing)}
               >
-                {/* Image/Header */}
-                <div className={`h-32 relative ${
-                  listing.listing_type === 'offer'
-                    ? 'bg-gradient-to-br from-green-400 to-emerald-600'
-                    : 'bg-gradient-to-br from-orange-400 to-red-500'
-                }`}>
-                  {listing.photos?.[0] ? (
-                    <img 
-                      src={listing.photos[0]} 
-                      alt={listing.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      {listing.listing_type === 'offer' ? (
-                        <Home size={48} className="text-white/50" />
-                      ) : (
-                        <Search size={48} className="text-white/50" />
-                      )}
-                    </div>
-                  )}
+                {/* Image Container */}
+                <div className="relative aspect-square rounded-xl overflow-hidden mb-3">
+                  <img
+                    src={listing.photos?.[0] || getRandomImage(index)}
+                    alt={listing.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
                   
-                  {/* Badge */}
-                  <div className={`absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-bold ${
+                  {/* Favorite Button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFavorite(listing.id);
+                    }}
+                    className="absolute top-3 right-3 p-2 rounded-full bg-white/80 hover:bg-white transition-colors"
+                  >
+                    <Heart 
+                      size={20} 
+                      className={favorites.includes(listing.id) ? 'fill-rose-500 text-rose-500' : 'text-gray-600'}
+                    />
+                  </button>
+
+                  {/* Type Badge */}
+                  <div className={`absolute top-3 left-3 px-3 py-1.5 rounded-full text-xs font-bold ${
                     listing.listing_type === 'offer'
                       ? 'bg-green-500 text-white'
                       : 'bg-orange-500 text-white'
                   }`}>
-                    {listing.listing_type === 'offer' ? t('offersHousing') : t('needsHousing')}
+                    {listing.listing_type === 'offer' ? '🏡 ' + t('offersHousing') : '🔍 ' + t('needsHousing')}
                   </div>
 
-                  {/* Verified Badge */}
-                  {listing.user?.verified && (
-                    <div className="absolute top-3 right-3 bg-white/90 px-2 py-1 rounded-full flex items-center gap-1">
-                      <Shield size={12} className="text-blue-600" />
-                      <span className="text-xs font-medium text-blue-600">{t('verified')}</span>
+                  {/* Duration Badge */}
+                  {listing.duration === 'exchange' && (
+                    <div className="absolute bottom-3 left-3 px-3 py-1.5 bg-purple-500 text-white rounded-full text-xs font-bold">
+                      🤝 House Sitting
                     </div>
                   )}
+
+                  {/* Image Dots (simulating carousel) */}
+                  <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex gap-1">
+                    {[1, 2, 3, 4, 5].map((dot, i) => (
+                      <div
+                        key={i}
+                        className={`w-1.5 h-1.5 rounded-full ${i === 0 ? 'bg-white' : 'bg-white/50'}`}
+                      ></div>
+                    ))}
+                  </div>
                 </div>
 
-                {/* Content */}
-                <div className="p-4">
-                  <h3 className="font-bold text-gray-800 mb-1 line-clamp-1">{listing.title}</h3>
-                  
-                  <div className="flex items-center gap-1 text-sm text-gray-500 mb-2">
-                    <MapPin size={14} />
-                    <span>{listing.city}</span>
+                {/* Card Content */}
+                <div className="space-y-1">
+                  <div className="flex items-start justify-between">
+                    <h3 className="font-semibold text-gray-900 line-clamp-1 flex-1">
+                      {listing.city}, France
+                    </h3>
+                    <div className="flex items-center gap-1 ml-2">
+                      <Star size={14} className="fill-black" />
+                      <span className="text-sm font-medium">{listing.user?.rating || '4.9'}</span>
+                    </div>
                   </div>
+                  
+                  <p className="text-gray-500 text-sm line-clamp-1">{listing.title}</p>
+                  
+                  <p className="text-gray-500 text-sm">
+                    {accommodationTypes.find(a => a.value === listing.accommodation_type)?.emoji}{' '}
+                    {accommodationTypes.find(a => a.value === listing.accommodation_type)?.label}
+                    {listing.max_guests > 1 && ` · ${listing.max_guests} ${t('guests')}`}
+                  </p>
 
-                  <p className="text-sm text-gray-600 mb-3 line-clamp-2">{listing.description}</p>
-
-                  {/* Tags */}
-                  <div className="flex flex-wrap gap-1 mb-3">
-                    <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs">
-                      {accommodationTypes.find(a => a.value === listing.accommodation_type)?.label || listing.accommodation_type}
-                    </span>
-                    <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full text-xs">
-                      {durationTypes.find(d => d.value === listing.duration)?.label || listing.duration}
-                    </span>
-                    {listing.pets_allowed && (
-                      <span className="px-2 py-0.5 bg-purple-50 text-purple-600 rounded-full text-xs">
-                        🐾 {t('petsAllowed')}
+                  <div className="flex items-center gap-2 pt-1">
+                    {listing.listing_type === 'offer' ? (
+                      <span className="text-sm">
+                        <span className="font-semibold text-green-600">{t('free')}</span>
+                        <span className="text-gray-500"> · {t('solidaryHosting')}</span>
+                      </span>
+                    ) : (
+                      <span className="text-sm text-orange-600 font-medium">
+                        {t('searchingHost')}
                       </span>
                     )}
-                  </div>
-
-                  {/* User Info & Action */}
-                  <div className="flex items-center justify-between pt-3 border-t">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-                        <User size={16} className="text-white" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-800">{listing.user?.name}</p>
-                        <div className="flex items-center gap-1">
-                          <Star size={10} className="text-yellow-500 fill-yellow-500" />
-                          <span className="text-xs text-gray-500">
-                            {listing.user?.rating || '4.8'} ({listing.user?.reviews_count || 0})
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <Button 
-                      size="sm" 
-                      onClick={() => navigate(`/direct-chat/${listing.user_id}`)}
-                      className="rounded-full bg-blue-600 hover:bg-blue-700"
-                    >
-                      <MessageCircle size={14} className="mr-1" />
-                      {t('contact')}
-                    </Button>
                   </div>
                 </div>
               </div>
@@ -423,133 +482,294 @@ export default function HousingPage() {
         )}
       </div>
 
-      {/* Floating Action Button */}
+      {/* Floating Action Button - Mobile */}
       <button
         onClick={() => setShowCreateModal(true)}
-        className="fixed bottom-24 right-4 w-14 h-14 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform z-40"
+        className="fixed bottom-24 right-4 w-14 h-14 bg-gradient-to-r from-rose-500 to-pink-500 text-white rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform z-40 sm:hidden"
       >
         <Plus size={28} />
       </button>
 
-      {/* Create Listing Modal */}
-      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-        <DialogContent className="max-w-lg mx-2 p-0 rounded-3xl overflow-hidden max-h-[90vh]">
+      {/* Listing Detail Modal */}
+      <Dialog open={!!selectedListing} onOpenChange={() => setSelectedListing(null)}>
+        <DialogContent className="max-w-3xl mx-2 p-0 rounded-2xl overflow-hidden max-h-[90vh]">
+          {selectedListing && (
+            <div className="flex flex-col max-h-[85vh]">
+              {/* Image */}
+              <div className="relative h-64 sm:h-80">
+                <img
+                  src={selectedListing.photos?.[0] || getRandomImage(listings.indexOf(selectedListing))}
+                  alt={selectedListing.title}
+                  className="w-full h-full object-cover"
+                />
+                <button
+                  onClick={() => setSelectedListing(null)}
+                  className="absolute top-4 left-4 p-2 bg-white rounded-full shadow-lg"
+                >
+                  <X size={20} />
+                </button>
+                <div className="absolute top-4 right-4 flex gap-2">
+                  <button className="p-2 bg-white rounded-full shadow-lg">
+                    <Share2 size={20} />
+                  </button>
+                  <button 
+                    onClick={() => toggleFavorite(selectedListing.id)}
+                    className="p-2 bg-white rounded-full shadow-lg"
+                  >
+                    <Heart 
+                      size={20} 
+                      className={favorites.includes(selectedListing.id) ? 'fill-rose-500 text-rose-500' : ''}
+                    />
+                  </button>
+                </div>
+                <div className={`absolute bottom-4 left-4 px-4 py-2 rounded-full text-sm font-bold ${
+                  selectedListing.listing_type === 'offer'
+                    ? 'bg-green-500 text-white'
+                    : 'bg-orange-500 text-white'
+                }`}>
+                  {selectedListing.listing_type === 'offer' ? '🏡 ' + t('offersHousing') : '🔍 ' + t('needsHousing')}
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-1">{selectedListing.title}</h2>
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <MapPin size={16} />
+                      <span>{selectedListing.city}, France</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-lg">
+                    <Star size={16} className="fill-black" />
+                    <span className="font-semibold">{selectedListing.user?.rating || '4.9'}</span>
+                    <span className="text-gray-500">({selectedListing.user?.reviews_count || 0})</span>
+                  </div>
+                </div>
+
+                {/* Quick Info */}
+                <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-xl mb-6">
+                  <div className="text-center">
+                    <div className="text-2xl mb-1">
+                      {accommodationTypes.find(a => a.value === selectedListing.accommodation_type)?.emoji}
+                    </div>
+                    <p className="text-xs text-gray-600">
+                      {accommodationTypes.find(a => a.value === selectedListing.accommodation_type)?.label}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl mb-1">👥</div>
+                    <p className="text-xs text-gray-600">{selectedListing.max_guests} {t('guests')}</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl mb-1">
+                      {durationTypes.find(d => d.value === selectedListing.duration)?.emoji}
+                    </div>
+                    <p className="text-xs text-gray-600">
+                      {durationTypes.find(d => d.value === selectedListing.duration)?.label}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div className="mb-6">
+                  <h3 className="font-semibold mb-2">{t('description')}</h3>
+                  <p className="text-gray-600 leading-relaxed">{selectedListing.description}</p>
+                </div>
+
+                {/* Exchange Services */}
+                {selectedListing.exchange_services && (
+                  <div className="mb-6 p-4 bg-purple-50 rounded-xl border border-purple-200">
+                    <h3 className="font-semibold mb-2 flex items-center gap-2">
+                      🤝 {t('exchangeServices')}
+                    </h3>
+                    <p className="text-gray-600">{selectedListing.exchange_services}</p>
+                  </div>
+                )}
+
+                {/* Amenities */}
+                {selectedListing.amenities?.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="font-semibold mb-3">{t('amenities')}</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      {selectedListing.amenities.map(amenityId => {
+                        const amenity = amenitiesList.find(a => a.id === amenityId);
+                        if (!amenity) return null;
+                        return (
+                          <div key={amenityId} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                            <amenity.icon size={20} className="text-gray-600" />
+                            <span className="text-sm">{amenity.label}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Pets */}
+                {selectedListing.pets_allowed && (
+                  <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg mb-6">
+                    <span className="text-2xl">🐾</span>
+                    <span className="text-green-700 font-medium">{t('petsAllowed')}</span>
+                  </div>
+                )}
+
+                {/* Host Info */}
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl mb-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center">
+                      <User size={28} className="text-white" />
+                    </div>
+                    <div>
+                      <p className="font-semibold">{selectedListing.user?.name || 'Host'}</p>
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <BadgeCheck size={14} className="text-blue-500" />
+                        <span>{t('verified')}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={() => {
+                      setSelectedListing(null);
+                      navigate(`/direct-chat/${selectedListing.user_id}`);
+                    }}
+                    className="rounded-full bg-rose-500 hover:bg-rose-600"
+                  >
+                    <MessageCircle size={18} className="mr-2" />
+                    {t('contact')}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Listing Modal - Airbnb Style */}
+      <Dialog open={showCreateModal} onOpenChange={(open) => {
+        if (!open) resetForm();
+        setShowCreateModal(open);
+      }}>
+        <DialogContent className="max-w-xl mx-2 p-0 rounded-2xl overflow-hidden max-h-[90vh]">
           <div className="flex flex-col h-full max-h-[85vh]">
             
             {/* Step 1: Choose Type */}
             {!listingType && (
               <>
-                <DialogHeader className="p-6 pb-4 border-b">
-                  <DialogTitle className="text-xl font-bold flex items-center gap-2">
-                    🏠 {t('solidaryHousing')}
-                  </DialogTitle>
-                  <DialogDescription>
-                    {t('whatWouldYouLikeToDo')}
-                  </DialogDescription>
-                </DialogHeader>
+                <div className="p-6 border-b">
+                  <h2 className="text-2xl font-bold text-center">{t('solidaryHousing')}</h2>
+                  <p className="text-gray-500 text-center mt-1">{t('whatWouldYouLikeToDo')}</p>
+                </div>
 
-                <div className="p-6 space-y-4">
+                <div className="flex-1 overflow-y-auto p-6 space-y-4">
                   <button
                     onClick={() => setListingType('offer')}
-                    className="w-full p-6 rounded-2xl border-2 border-green-200 bg-green-50 hover:bg-green-100 hover:border-green-400 transition-all text-left group"
+                    className="w-full p-6 rounded-2xl border-2 border-gray-200 hover:border-green-400 hover:bg-green-50 transition-all text-left group"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-2xl bg-green-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center group-hover:scale-110 transition-transform">
                         <Home size={32} className="text-white" />
                       </div>
-                      <div>
-                        <h3 className="font-bold text-lg text-green-800">{t('offerHousing')}</h3>
-                        <p className="text-sm text-green-600">{t('offerHousingDesc')}</p>
+                      <div className="flex-1">
+                        <h3 className="font-bold text-lg">{t('offerHousing')}</h3>
+                        <p className="text-sm text-gray-500">{t('offerHousingDesc')}</p>
                       </div>
+                      <ChevronRight className="text-gray-400" />
                     </div>
                   </button>
 
                   <button
                     onClick={() => setListingType('need')}
-                    className="w-full p-6 rounded-2xl border-2 border-orange-200 bg-orange-50 hover:bg-orange-100 hover:border-orange-400 transition-all text-left group"
+                    className="w-full p-6 rounded-2xl border-2 border-gray-200 hover:border-orange-400 hover:bg-orange-50 transition-all text-left group"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-2xl bg-orange-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center group-hover:scale-110 transition-transform">
                         <Search size={32} className="text-white" />
                       </div>
-                      <div>
-                        <h3 className="font-bold text-lg text-orange-800">{t('needHousing')}</h3>
-                        <p className="text-sm text-orange-600">{t('needHousingDesc')}</p>
+                      <div className="flex-1">
+                        <h3 className="font-bold text-lg">{t('needHousing')}</h3>
+                        <p className="text-sm text-gray-500">{t('needHousingDesc')}</p>
                       </div>
+                      <ChevronRight className="text-gray-400" />
                     </div>
                   </button>
 
-                  {/* Exchange/House-sitting option */}
                   <button
                     onClick={() => {
                       setListingType('offer');
                       setNewListing(prev => ({...prev, duration: 'exchange'}));
                     }}
-                    className="w-full p-6 rounded-2xl border-2 border-purple-200 bg-purple-50 hover:bg-purple-100 hover:border-purple-400 transition-all text-left group"
+                    className="w-full p-6 rounded-2xl border-2 border-gray-200 hover:border-purple-400 hover:bg-purple-50 transition-all text-left group"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-2xl bg-purple-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-400 to-indigo-500 flex items-center justify-center group-hover:scale-110 transition-transform">
                         <Heart size={32} className="text-white" />
                       </div>
-                      <div>
-                        <h3 className="font-bold text-lg text-purple-800">{t('houseSitting')}</h3>
-                        <p className="text-sm text-purple-600">{t('houseSittingDesc')}</p>
+                      <div className="flex-1">
+                        <h3 className="font-bold text-lg">{t('houseSitting')}</h3>
+                        <p className="text-sm text-gray-500">{t('houseSittingDesc')}</p>
                       </div>
+                      <ChevronRight className="text-gray-400" />
                     </div>
                   </button>
                 </div>
               </>
             )}
 
-            {/* Step 2: Create Listing Form */}
+            {/* Step 2: Create Form */}
             {listingType && (
               <>
-                <DialogHeader className="p-4 sm:p-6 pb-4 border-b">
-                  <div className="flex items-center gap-2">
-                    <button 
-                      onClick={() => setListingType('')}
-                      className="p-2 hover:bg-gray-100 rounded-full"
-                    >
-                      <ChevronLeft size={20} />
-                    </button>
-                    <div>
-                      <DialogTitle className="text-lg font-bold">
-                        {listingType === 'offer' ? (
-                          <span className="flex items-center gap-2">
-                            🏡 {t('offerHousing')}
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-2">
-                            🔍 {t('needHousing')}
-                          </span>
-                        )}
-                      </DialogTitle>
-                      <DialogDescription className="text-sm">
-                        {t('fillDetailsBelow')}
-                      </DialogDescription>
-                    </div>
+                <div className="p-4 border-b flex items-center gap-3">
+                  <button 
+                    onClick={() => setListingType('')}
+                    className="p-2 hover:bg-gray-100 rounded-full"
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+                  <div className="flex-1">
+                    <h2 className="font-bold">
+                      {listingType === 'offer' ? t('offerHousing') : t('needHousing')}
+                    </h2>
+                    <p className="text-sm text-gray-500">{t('fillDetailsBelow')}</p>
                   </div>
-                </DialogHeader>
+                </div>
 
-                <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+                <div className="flex-1 overflow-y-auto p-6 space-y-6">
                   {/* Title */}
                   <div>
-                    <Label className="text-sm font-bold mb-2 block">✏️ {t('listingTitle')}</Label>
+                    <Label className="text-sm font-semibold mb-2 block">{t('listingTitle')}</Label>
                     <Input
                       value={newListing.title}
                       onChange={(e) => setNewListing({...newListing, title: e.target.value})}
                       placeholder={listingType === 'offer' ? t('offerTitlePlaceholder') : t('needTitlePlaceholder')}
-                      className="rounded-xl"
+                      className="rounded-xl h-12"
                     />
                   </div>
 
                   {/* City */}
                   <div>
-                    <Label className="text-sm font-bold mb-2 block">📍 {t('city')}</Label>
+                    <Label className="text-sm font-semibold mb-2 block">{t('city')}</Label>
+                    <div className="grid grid-cols-4 gap-2 mb-2">
+                      {cities.slice(0, 8).map(city => (
+                        <button
+                          key={city.name}
+                          onClick={() => setNewListing({...newListing, city: city.name})}
+                          className={`p-2 rounded-xl border-2 text-center transition-all ${
+                            newListing.city === city.name
+                              ? 'border-rose-500 bg-rose-50'
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          <span className="text-lg block">{city.emoji}</span>
+                          <span className="text-xs">{city.name}</span>
+                        </button>
+                      ))}
+                    </div>
                     <Input
                       value={newListing.city}
                       onChange={(e) => setNewListing({...newListing, city: e.target.value})}
-                      placeholder="Ex: Paris, Lyon, Marseille..."
+                      placeholder={t('otherCity')}
                       className="rounded-xl"
                     />
                   </div>
@@ -557,19 +777,19 @@ export default function HousingPage() {
                   {/* Accommodation Type */}
                   {listingType === 'offer' && (
                     <div>
-                      <Label className="text-sm font-bold mb-2 block">🏠 {t('accommodationType')}</Label>
+                      <Label className="text-sm font-semibold mb-2 block">{t('accommodationType')}</Label>
                       <div className="grid grid-cols-2 gap-2">
                         {accommodationTypes.map(type => (
                           <button
                             key={type.value}
                             onClick={() => setNewListing({...newListing, accommodation_type: type.value})}
-                            className={`p-3 rounded-xl border-2 transition-all flex items-center gap-2 ${
+                            className={`p-4 rounded-xl border-2 transition-all flex items-center gap-3 ${
                               newListing.accommodation_type === type.value
-                                ? 'bg-blue-50 border-blue-500 text-blue-700'
-                                : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
+                                ? 'border-rose-500 bg-rose-50'
+                                : 'border-gray-200 hover:border-gray-300'
                             }`}
                           >
-                            <type.icon size={18} />
+                            <span className="text-2xl">{type.emoji}</span>
                             <span className="text-sm font-medium">{type.label}</span>
                           </button>
                         ))}
@@ -579,7 +799,7 @@ export default function HousingPage() {
 
                   {/* Duration */}
                   <div>
-                    <Label className="text-sm font-bold mb-2 block">⏱️ {t('duration')}</Label>
+                    <Label className="text-sm font-semibold mb-2 block">{t('duration')}</Label>
                     <div className="grid grid-cols-2 gap-2">
                       {durationTypes.map(dur => (
                         <button
@@ -587,21 +807,22 @@ export default function HousingPage() {
                           onClick={() => setNewListing({...newListing, duration: dur.value})}
                           className={`p-3 rounded-xl border-2 transition-all text-left ${
                             newListing.duration === dur.value
-                              ? 'bg-blue-50 border-blue-500'
-                              : 'bg-white border-gray-200 hover:border-gray-300'
+                              ? 'border-rose-500 bg-rose-50'
+                              : 'border-gray-200 hover:border-gray-300'
                           }`}
                         >
-                          <span className="text-sm font-medium block">{dur.label}</span>
-                          <span className="text-xs text-gray-500">{dur.desc}</span>
+                          <span className="text-lg mr-2">{dur.emoji}</span>
+                          <span className="text-sm font-medium">{dur.label}</span>
+                          <p className="text-xs text-gray-500 mt-1">{dur.desc}</p>
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  {/* Exchange Services (if house-sitting) */}
+                  {/* Exchange Services */}
                   {newListing.duration === 'exchange' && (
                     <div>
-                      <Label className="text-sm font-bold mb-2 block">🤝 {t('exchangeServices')}</Label>
+                      <Label className="text-sm font-semibold mb-2 block">{t('exchangeServices')}</Label>
                       <Textarea
                         value={newListing.exchange_services}
                         onChange={(e) => setNewListing({...newListing, exchange_services: e.target.value})}
@@ -615,18 +836,18 @@ export default function HousingPage() {
                   {/* Max Guests */}
                   {listingType === 'offer' && (
                     <div>
-                      <Label className="text-sm font-bold mb-2 block">👥 {t('maxGuests')}</Label>
-                      <div className="flex items-center gap-3">
+                      <Label className="text-sm font-semibold mb-2 block">{t('maxGuests')}</Label>
+                      <div className="flex items-center justify-center gap-4 p-4 bg-gray-50 rounded-xl">
                         <button
                           onClick={() => setNewListing({...newListing, max_guests: Math.max(1, newListing.max_guests - 1)})}
-                          className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-xl font-bold"
+                          className="w-10 h-10 rounded-full border-2 border-gray-300 hover:border-gray-400 flex items-center justify-center text-xl"
                         >
                           -
                         </button>
-                        <span className="text-2xl font-bold w-12 text-center">{newListing.max_guests}</span>
+                        <span className="text-3xl font-bold w-16 text-center">{newListing.max_guests}</span>
                         <button
                           onClick={() => setNewListing({...newListing, max_guests: newListing.max_guests + 1})}
-                          className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-xl font-bold"
+                          className="w-10 h-10 rounded-full border-2 border-gray-300 hover:border-gray-400 flex items-center justify-center text-xl"
                         >
                           +
                         </button>
@@ -637,47 +858,47 @@ export default function HousingPage() {
                   {/* Amenities */}
                   {listingType === 'offer' && (
                     <div>
-                      <Label className="text-sm font-bold mb-2 block">✨ {t('amenities')}</Label>
+                      <Label className="text-sm font-semibold mb-2 block">{t('amenities')}</Label>
                       <div className="flex flex-wrap gap-2">
                         {amenitiesList.map(amenity => (
                           <button
                             key={amenity.id}
                             onClick={() => toggleAmenity(amenity.id)}
-                            className={`px-3 py-2 rounded-full text-sm transition-all flex items-center gap-1 ${
+                            className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all ${
                               newListing.amenities.includes(amenity.id)
-                                ? 'bg-blue-500 text-white'
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                ? 'border-rose-500 bg-rose-50 text-rose-700'
+                                : 'border-gray-200 text-gray-600 hover:border-gray-300'
                             }`}
                           >
-                            <span>{amenity.icon}</span>
-                            <span>{amenity.label}</span>
+                            <amenity.icon size={16} />
+                            <span className="text-sm">{amenity.label}</span>
                           </button>
                         ))}
                       </div>
                     </div>
                   )}
 
-                  {/* Pets Allowed */}
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl">🐾</span>
+                  {/* Pets Toggle */}
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">🐾</span>
                       <span className="font-medium">{t('petsAllowed')}</span>
                     </div>
                     <button
                       onClick={() => setNewListing({...newListing, pets_allowed: !newListing.pets_allowed})}
-                      className={`w-12 h-6 rounded-full transition-all ${
-                        newListing.pets_allowed ? 'bg-green-500' : 'bg-gray-300'
+                      className={`w-14 h-8 rounded-full transition-all ${
+                        newListing.pets_allowed ? 'bg-rose-500' : 'bg-gray-300'
                       }`}
                     >
-                      <div className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform ${
-                        newListing.pets_allowed ? 'translate-x-6' : 'translate-x-1'
+                      <div className={`w-6 h-6 bg-white rounded-full shadow transform transition-transform ${
+                        newListing.pets_allowed ? 'translate-x-7' : 'translate-x-1'
                       }`}></div>
                     </button>
                   </div>
 
                   {/* Description */}
                   <div>
-                    <Label className="text-sm font-bold mb-2 block">📝 {t('description')}</Label>
+                    <Label className="text-sm font-semibold mb-2 block">{t('description')}</Label>
                     <Textarea
                       value={newListing.description}
                       onChange={(e) => setNewListing({...newListing, description: e.target.value})}
@@ -686,25 +907,19 @@ export default function HousingPage() {
                       rows={4}
                     />
                   </div>
+                </div>
 
-                  {/* Submit Button */}
+                {/* Footer */}
+                <div className="p-4 border-t bg-white">
                   <Button 
                     onClick={createListing}
-                    className={`w-full rounded-full py-6 text-base font-bold ${
+                    className={`w-full rounded-xl py-6 text-base font-bold ${
                       listingType === 'offer'
-                        ? 'bg-green-600 hover:bg-green-700'
-                        : 'bg-orange-600 hover:bg-orange-700'
+                        ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700'
+                        : 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600'
                     }`}
                   >
-                    {listingType === 'offer' ? (
-                      <span className="flex items-center gap-2">
-                        🏡 {t('publishOffer')}
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-2">
-                        🔍 {t('publishRequest')}
-                      </span>
-                    )}
+                    {listingType === 'offer' ? '🏡 ' + t('publishOffer') : '🔍 ' + t('publishRequest')}
                   </Button>
                 </div>
               </>
