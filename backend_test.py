@@ -473,6 +473,197 @@ class WatizatAPITester:
         
         return False
 
+    def test_housing_login(self):
+        """Test login with test@test.com / test123 as specified in review request"""
+        login_data = {
+            "email": "test@test.com",
+            "password": "test123"
+        }
+        
+        success, response = self.run_test(
+            "Housing Test User Login",
+            "POST", 
+            "auth/login",
+            200,
+            data=login_data
+        )
+        
+        if success and 'token' in response and 'user' in response:
+            user = response['user']
+            self.log_test("Housing Login Validation", True, f"Successfully logged in as: {user.get('name')}")
+            # Store token for housing tests
+            self.token = response['token']
+            self.user_id = user.get('id')
+            return True
+        else:
+            # If user doesn't exist, create it
+            self.log_test("Housing Login", False, "User test@test.com not found, will create it")
+            return self.create_housing_test_user()
+    
+    def create_housing_test_user(self):
+        """Create test@test.com user if it doesn't exist"""
+        user_data = {
+            "email": "test@test.com",
+            "password": "test123",
+            "name": "Test User",
+            "role": "migrant",
+            "languages": ["pt", "fr"]
+        }
+        
+        success, response = self.run_test(
+            "Create Housing Test User",
+            "POST",
+            "auth/register",
+            200,
+            data=user_data
+        )
+        
+        if success and 'token' in response:
+            self.token = response['token']
+            self.user_id = response['user']['id']
+            self.log_test("Housing Test User Creation", True, "Test user created successfully")
+            return True
+        else:
+            self.log_test("Housing Test User Creation", False, "Failed to create test user")
+            return False
+
+    def test_housing_get_listings(self):
+        """Test GET /api/housing - should return list of housing listings"""
+        if not self.token:
+            self.log_test("Housing Get Listings - No Token", False, "No authentication token available")
+            return False
+            
+        success, response = self.run_test(
+            "Get Housing Listings",
+            "GET",
+            "housing",
+            200
+        )
+        
+        if success and isinstance(response, list):
+            self.log_test("Housing Listings Structure", True, f"Found {len(response)} housing listings")
+            return True, response
+        else:
+            self.log_test("Housing Listings Structure", False, "Response is not a list or request failed")
+            return False, []
+
+    def test_housing_create_listing(self):
+        """Test POST /api/housing - create a new listing"""
+        if not self.token:
+            self.log_test("Housing Create Listing - No Token", False, "No authentication token available")
+            return False, None
+            
+        listing_data = {
+            "listing_type": "offer",
+            "title": "Test listing",
+            "city": "Paris",
+            "accommodation_type": "room",
+            "duration": "temporary",
+            "description": "A nice room in Paris for temporary stay",
+            "max_guests": 1,
+            "amenities": ["wifi", "kitchen"],
+            "pets_allowed": False
+        }
+        
+        success, response = self.run_test(
+            "Create Housing Listing",
+            "POST",
+            "housing",
+            200,
+            data=listing_data
+        )
+        
+        if success and isinstance(response, dict) and 'id' in response:
+            listing_id = response['id']
+            self.log_test("Housing Listing Creation", True, f"Listing created with ID: {listing_id}")
+            return True, listing_id
+        else:
+            self.log_test("Housing Listing Creation", False, "Response missing 'id' field or wrong format")
+            return False, None
+
+    def test_housing_get_listing_details(self, listing_id):
+        """Test GET /api/housing/{id} - get the created listing details"""
+        if not self.token:
+            self.log_test("Housing Get Listing Details - No Token", False, "No authentication token available")
+            return False
+            
+        success, response = self.run_test(
+            f"Get Housing Listing Details ({listing_id})",
+            "GET",
+            f"housing/{listing_id}",
+            200
+        )
+        
+        if success and isinstance(response, dict) and response.get('id') == listing_id:
+            self.log_test("Housing Listing Details", True, f"Retrieved listing details for ID: {listing_id}")
+            return True, response
+        else:
+            self.log_test("Housing Listing Details", False, "Failed to retrieve listing details or wrong ID")
+            return False, {}
+
+    def test_housing_filter_by_type(self):
+        """Test GET /api/housing?type=offer"""
+        if not self.token:
+            self.log_test("Housing Filter by Type - No Token", False, "No authentication token available")
+            return False
+            
+        success, response = self.run_test(
+            "Filter Housing by Type (offer)",
+            "GET",
+            "housing?type=offer",
+            200
+        )
+        
+        if success and isinstance(response, list):
+            # Check if all listings are of type 'offer'
+            all_offers = True
+            for listing in response:
+                if listing.get('listing_type') != 'offer':
+                    all_offers = False
+                    break
+            
+            if all_offers:
+                self.log_test("Housing Type Filter Validation", True, f"Found {len(response)} offer listings")
+                return True
+            else:
+                self.log_test("Housing Type Filter Validation", False, "Some listings are not of type 'offer'")
+        else:
+            self.log_test("Housing Type Filter", False, "Response is not a list or request failed")
+        
+        return False
+
+    def test_housing_filter_by_city(self):
+        """Test GET /api/housing?city=Paris"""
+        if not self.token:
+            self.log_test("Housing Filter by City - No Token", False, "No authentication token available")
+            return False
+            
+        success, response = self.run_test(
+            "Filter Housing by City (Paris)",
+            "GET",
+            "housing?city=Paris",
+            200
+        )
+        
+        if success and isinstance(response, list):
+            # Check if all listings are in Paris
+            all_paris = True
+            for listing in response:
+                city = listing.get('city', '').lower()
+                if 'paris' not in city:
+                    all_paris = False
+                    break
+            
+            if all_paris:
+                self.log_test("Housing City Filter Validation", True, f"Found {len(response)} Paris listings")
+                return True
+            else:
+                self.log_test("Housing City Filter Validation", False, "Some listings are not in Paris")
+        else:
+            self.log_test("Housing City Filter", False, "Response is not a list or request failed")
+        
+        return False
+
     def run_basic_tests(self):
         """Run the basic tests as specified in the review request"""
         print("🚀 Starting Watizat Backend Tests...")
