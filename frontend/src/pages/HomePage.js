@@ -798,7 +798,7 @@ export default function HomePage() {
                           rel="noopener noreferrer"
                           className="block w-full text-center py-2 px-4 mt-3 bg-gray-800 hover:bg-gray-900 text-white font-bold rounded-xl text-sm transition-colors"
                         >
-                          {item.link_text || 'Saiba Mais'} →
+                          {item.link_text || t('learnMore')} →
                         </a>
                       )}
                     </div>
@@ -807,8 +807,8 @@ export default function HomePage() {
               })
             ) : (
               <div className="bg-white rounded-2xl p-6 text-center border border-gray-200">
-                <p className="text-gray-500 text-sm">Nenhum anúncio no momento</p>
-                <p className="text-xs text-gray-400 mt-1">Volte mais tarde para ver oportunidades</p>
+                <p className="text-gray-500 text-sm">{t('noAdsMessage')}</p>
+                <p className="text-xs text-gray-400 mt-1">{t('comeBackLater')}</p>
               </div>
             )}
 
@@ -819,8 +819,8 @@ export default function HomePage() {
               rel="noopener noreferrer"
               className="block bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-2xl p-4 text-center hover:shadow-lg transition-all"
             >
-              <span className="font-bold">🔍 Ver Todas as Vagas</span>
-              <p className="text-xs text-white/80 mt-1">Acesse RozgarLine para mais oportunidades</p>
+              <span className="font-bold">🔍 {t('viewAllJobsLink')}</span>
+              <p className="text-xs text-white/80 mt-1">{t('accessMoreOpportunities')}</p>
             </a>
           </div>
 
