@@ -1015,8 +1015,6 @@ const resources = {
       commitmentConfidential: 'Maintain information confidentiality',
       commitmentRespect: 'Respect cultural diversity',
       commitmentRespond: 'Respond to messages within 48 hours',
-      previous: 'Previous',
-      next: 'Next',
       advance: 'Advance',
       registering: 'Registering...',
       finishRegistration: 'Finish Registration',
