@@ -246,8 +246,6 @@ const resources = {
       commitmentConfidential: 'Manter confidencialidade das informações',
       commitmentRespect: 'Respeitar a diversidade cultural',
       commitmentRespond: 'Responder mensagens em até 48 horas',
-      previous: 'Anterior',
-      next: 'Próximo',
       advance: 'Avançar',
       registering: 'Cadastrando...',
       finishRegistration: 'Finalizar Cadastro',
