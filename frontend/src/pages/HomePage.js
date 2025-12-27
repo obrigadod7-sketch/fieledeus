@@ -1026,29 +1026,17 @@ export default function HomePage() {
         )}
 
         {/* Modal de Recursos */}
-        <Dialog open={showResourcesModal} onOpenChange={setShowResourcesModal}>}
-                    placeholder="Ex: Preciso de roupas"
-                    className="rounded-xl h-11 sm:h-12 text-sm sm:text-base w-full"
-                  />
-                  <p className="text-xs text-textMuted mt-2">Seja claro e específico</p>
-                </div>
-                
-                {/* Descrição */}
-                <div className="bg-white border-2 border-gray-200 p-5 rounded-2xl">
-                  <Label className="text-base font-bold mb-3 block flex items-center gap-2">
-                    <span className="text-2xl">📝</span>
-                    <span>Detalhes</span>
-                  </Label>
-                  <Textarea
-                    data-testid="post-description-input"
-                    value={newPost.description}
-                    onChange={(e) => setNewPost({...newPost, description: e.target.value})}
-                    rows={5}
-                    placeholder="Descreva em detalhes: tamanhos, quantidades, quando precisa, etc..."
-                    className="rounded-xl text-base"
-                  />
-                  <p className="text-xs text-textMuted mt-2">Quanto mais detalhes, melhor!</p>
-                </div>
+        <Dialog open={showResourcesModal} onOpenChange={setShowResourcesModal}>
+          <DialogContent className="rounded-3xl max-w-2xl max-h-[85vh]">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-heading flex items-center gap-2">
+                {selectedResourceCategory && RESOURCES_INFO[selectedResourceCategory]?.icon}
+                {selectedResourceCategory && RESOURCES_INFO[selectedResourceCategory]?.title}
+              </DialogTitle>
+              <DialogDescription>
+                Organizações e serviços que podem ajudar
+              </DialogDescription>
+            </DialogHeader>
 
                 {/* Formulário Especial para Emprego - Apenas quando categoria é Trabalho e tipo é Preciso de Ajuda */}
                 {newPost.category === 'work' && newPost.type === 'need' && (
