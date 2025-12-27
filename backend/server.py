@@ -2120,7 +2120,7 @@ async def update_housing_status(
         {'$set': {'status': new_status, 'updated_at': datetime.now(timezone.utc).isoformat()}}
     )
     
-    return {'message': f'Status atualizado para {status}'}
+    return {'message': f'Status atualizado para {new_status}'}
 
 app.include_router(api_router)
 
