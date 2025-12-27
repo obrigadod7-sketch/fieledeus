@@ -1084,6 +1084,11 @@ const resources = {
       fillRequiredFields: 'Fill in required fields',
       verified: 'Verified',
       contact: 'Contact',
+      guests: 'guests',
+      free: 'Free',
+      solidaryHosting: 'Solidarity hosting',
+      searchingHost: 'Searching for host',
+      otherCity: 'Other city...',
       
       // Status & Messages
       loading: 'Loading...',
