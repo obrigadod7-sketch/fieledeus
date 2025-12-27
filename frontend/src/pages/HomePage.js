@@ -1055,28 +1055,34 @@ export default function HomePage() {
                     
                     <div className="flex-1 overflow-y-auto p-4 sm:p-6">
                       <div className="space-y-4">
-                        {/* Card do Perfil que será publicado */}
+                        {/* Card do Perfil RESUMIDO que será publicado */}
                         <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 p-4 rounded-2xl">
                           <div className="flex items-center gap-2 mb-3">
                             <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">
                               <User size={20} className="text-white" />
                             </div>
                             <div>
-                              <p className="font-bold text-sm text-green-800">Seu Perfil de Emprego</p>
-                              <p className="text-xs text-green-600">Será publicado no feed</p>
+                              <p className="font-bold text-sm text-green-800">Seu Perfil no Feed</p>
+                              <p className="text-xs text-green-600">Resumido e direto ao ponto</p>
                             </div>
                           </div>
-                          <div className="bg-white rounded-xl p-3 space-y-2">
-                            <p className="font-bold text-sm text-gray-800">💼 {newPost.title}</p>
-                            <p className="text-xs text-gray-600">{newPost.description}</p>
-                            <div className="flex flex-wrap gap-1 mt-2">
-                              <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
-                                🔍 {jobSearchQuery}
-                              </span>
-                              <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs">
-                                📍 {jobSearchLocation || 'França'}
-                              </span>
-                            </div>
+                          <div className="bg-white rounded-xl p-3 space-y-1">
+                            <p className="font-bold text-sm text-gray-800">🔍 Procuro: {jobSearchQuery}</p>
+                            <p className="text-xs text-gray-600">📍 {jobSearchLocation || 'França'}</p>
+                            {newPost.job_availability && (
+                              <p className="text-xs text-gray-600">⏰ {
+                                newPost.job_availability === 'full_time' ? 'Tempo Integral' :
+                                newPost.job_availability === 'part_time' ? 'Meio Período' :
+                                newPost.job_availability === 'flexible' ? 'Horário Flexível' : 'Finais de Semana'
+                              }</p>
+                            )}
+                            {newPost.job_experience && (
+                              <p className="text-xs text-gray-600">📋 {
+                                newPost.job_experience === 'none' ? 'Sem experiência' :
+                                newPost.job_experience === '1year' ? '1 ano de experiência' :
+                                newPost.job_experience === '2years' ? '2+ anos' : '5+ anos'
+                              }</p>
+                            )}
                           </div>
                         </div>
                         
