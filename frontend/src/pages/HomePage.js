@@ -1014,12 +1014,19 @@ export default function HomePage() {
             </DialogContent>
         </Dialog>
         ) : (
-                    <span>Título do Pedido</span>
-                  </Label>
-                  <Input
-                    data-testid="post-title-input"
-                    value={newPost.title}
-                    onChange={(e) => setNewPost({...newPost, title: e.target.value})}
+          /* Botão para Helpers/Admins - Redireciona para página Ajudar */
+          <Button 
+            data-testid="create-post-button"
+            onClick={() => navigate('/volunteers')}
+            className="w-full rounded-full py-6 mb-6 bg-primary hover:bg-primary-hover text-white font-bold shadow-lg"
+          >
+            <Users size={20} className="mr-2" />
+            🤝 Quero Ajudar
+          </Button>
+        )}
+
+        {/* Modal de Recursos */}
+        <Dialog open={showResourcesModal} onOpenChange={setShowResourcesModal}>}
                     placeholder="Ex: Preciso de roupas"
                     className="rounded-xl h-11 sm:h-12 text-sm sm:text-base w-full"
                   />
