@@ -12,6 +12,24 @@ body {
     background: #FAFAFA;
 }
 
+/* Garantir que texto não ultrapasse os containers */
+* {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+/* Quebrar URLs longas corretamente */
+a, p, span, div, h1, h2, h3, h4, h5, h6 {
+    word-break: break-word;
+}
+
+/* Garantir max-width em containers de texto */
+.text-overflow-fix {
+    word-break: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+}
+
 h1, h2, h3, h4, h5, h6 {
     font-family: 'Outfit', sans-serif;
     letter-spacing: -0.02em;
