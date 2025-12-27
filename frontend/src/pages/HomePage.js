@@ -194,6 +194,112 @@ export default function HomePage() {
     }
   };
 
+  // Mapeamento de termos de busca Português → Francês
+  const jobSearchTranslations = {
+    // Profissões
+    'garçom': 'serveur',
+    'garcom': 'serveur',
+    'garçon': 'serveur',
+    'garconete': 'serveuse',
+    'garçonete': 'serveuse',
+    'cozinheiro': 'cuisinier',
+    'cozinha': 'cuisine',
+    'chef': 'chef cuisinier',
+    'limpeza': 'nettoyage',
+    'faxineiro': 'agent de nettoyage',
+    'faxineira': 'agent de nettoyage',
+    'construção': 'construction',
+    'pedreiro': 'maçon',
+    'pintor': 'peintre',
+    'eletricista': 'électricien',
+    'encanador': 'plombier',
+    'motorista': 'chauffeur',
+    'entregador': 'livreur',
+    'entrega': 'livraison',
+    'babá': 'nounou',
+    'baba': 'nounou',
+    'cuidador': 'aide-soignant',
+    'cuidadora': 'aide-soignante',
+    'jardineiro': 'jardinier',
+    'jardinagem': 'jardinage',
+    'segurança': 'agent de sécurité',
+    'porteiro': 'gardien',
+    'recepcionista': 'réceptionniste',
+    'vendedor': 'vendeur',
+    'vendedora': 'vendeuse',
+    'caixa': 'caissier',
+    'atendente': 'employé',
+    'auxiliar': 'assistant',
+    'ajudante': 'aide',
+    'operador': 'opérateur',
+    'montador': 'monteur',
+    'mecânico': 'mécanicien',
+    'mecanico': 'mécanicien',
+    'padeiro': 'boulanger',
+    'açougueiro': 'boucher',
+    'acougueiro': 'boucher',
+    'carpinteiro': 'charpentier',
+    'soldador': 'soudeur',
+    'técnico': 'technicien',
+    'tecnico': 'technicien',
+    'enfermeiro': 'infirmier',
+    'enfermeira': 'infirmière',
+    'professor': 'professeur',
+    'professora': 'professeur',
+    'secretário': 'secrétaire',
+    'secretaria': 'secrétaire',
+    'contador': 'comptable',
+    'advogado': 'avocat',
+    'programador': 'développeur',
+    'desenvolvedor': 'développeur',
+    'designer': 'designer',
+    'marketing': 'marketing',
+    'vendas': 'vente',
+    'administrativo': 'administratif',
+    'logística': 'logistique',
+    'logistica': 'logistique',
+    'armazém': 'entrepôt',
+    'armazem': 'entrepôt',
+    'estoque': 'stock',
+    'empilhadeira': 'cariste',
+    'carregador': 'manutentionnaire',
+    'mudança': 'déménagement',
+    'mudanca': 'déménagement',
+    'hotel': 'hôtel',
+    'restaurante': 'restaurant',
+    'bar': 'bar',
+    'café': 'café',
+    'padaria': 'boulangerie',
+    'supermercado': 'supermarché',
+    'loja': 'magasin',
+    'escritório': 'bureau',
+    'escritorio': 'bureau',
+    'fábrica': 'usine',
+    'fabrica': 'usine',
+    'obra': 'chantier',
+    'hospital': 'hôpital',
+    'clínica': 'clinique',
+    'clinica': 'clinique',
+    'escola': 'école',
+    'creche': 'crèche'
+  };
+
+  // Função para traduzir termo de busca
+  const translateSearchTerm = (term) => {
+    const lowerTerm = term.toLowerCase().trim();
+    // Verificar tradução direta
+    if (jobSearchTranslations[lowerTerm]) {
+      return jobSearchTranslations[lowerTerm];
+    }
+    // Verificar se contém algum termo conhecido
+    for (const [pt, fr] of Object.entries(jobSearchTranslations)) {
+      if (lowerTerm.includes(pt)) {
+        return lowerTerm.replace(pt, fr);
+      }
+    }
+    return term; // Retorna original se não encontrar tradução
+  };
+
   // Função para buscar vagas de emprego (estilo LinkedIn)
   const searchJobsForUser = async () => {
     if (!jobSearchQuery.trim()) {
@@ -204,15 +310,18 @@ export default function HomePage() {
     setLoadingJobs(true);
     try {
       const location = jobSearchLocation || 'France';
+      // Traduzir termo de busca para francês
+      const translatedQuery = translateSearchTerm(jobSearchQuery);
+      
       const response = await fetch(
-        `${process.env.REACT_APP_BACKEND_URL}/api/jobs/search?query=${encodeURIComponent(jobSearchQuery)}&location=${encodeURIComponent(location)}&page=1`
+        `${process.env.REACT_APP_BACKEND_URL}/api/jobs/search?query=${encodeURIComponent(translatedQuery)}&location=${encodeURIComponent(location)}&page=1`
       );
       
       if (response.ok) {
         const data = await response.json();
         setJobSearchResults(data.jobs || []);
         
-        // Atualizar os dados do post com a busca
+        // Atualizar os dados do post com a busca (manter termo original em português)
         setNewPost(prev => ({
           ...prev,
           job_search_query: jobSearchQuery,
