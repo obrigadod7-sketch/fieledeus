@@ -1305,9 +1305,97 @@ export default function HomePage() {
 
         {loading ? (
           <div className="text-center py-12 text-textMuted">Carregando...</div>
-        ) : filteredPosts.length === 0 ? (
-          <div className="text-center py-12 text-textMuted" data-testid="no-posts-message">
-            {categoryFilter !== 'all' || typeFilter !== 'all' ? 'Nenhum post encontrado com esses filtros.' : 'Nenhum post ainda. Seja o primeiro!'}
+        ) : (
+          <>
+            {/* Vagas Personalizadas do Usuário */}
+            {personalizedJobs.length > 0 && (
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">💼</span>
+                    <h3 className="font-bold text-sm text-gray-800">
+                      Vagas para você
+                      {jobPreferences?.query && (
+                        <span className="ml-2 text-blue-600 font-normal">
+                          ({jobPreferences.query})
+                        </span>
+                      )}
+                    </h3>
+                  </div>
+                  <button
+                    onClick={fetchPersonalizedJobs}
+                    className="text-xs text-blue-600 hover:underline"
+                  >
+                    Atualizar
+                  </button>
+                </div>
+                
+                <div className="space-y-3">
+                  {personalizedJobs.slice(0, 5).map((job, idx) => (
+                    <div
+                      key={job.id || idx}
+                      className="bg-white rounded-2xl p-4 shadow-card border border-blue-100 hover:border-blue-300 transition-all"
+                    >
+                      <div className="flex items-start gap-3">
+                        {job.company_logo ? (
+                          <img
+                            src={job.company_logo}
+                            alt={job.company}
+                            className="w-12 h-12 rounded-xl object-contain bg-gray-50 flex-shrink-0"
+                            onError={(e) => { e.target.style.display = 'none'; }}
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0">
+                            <Briefcase size={24} className="text-white" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-bold text-sm text-gray-800 line-clamp-2">{job.title}</h4>
+                          <p className="text-xs text-gray-600 mt-0.5">🏢 {job.company}</p>
+                          <p className="text-xs text-gray-500">📍 {job.location}</p>
+                          {job.salary_min && (
+                            <p className="text-xs text-green-600 font-medium mt-1">
+                              💰 {job.salary_min}{job.salary_max ? `-${job.salary_max}` : ''} {job.salary_currency}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-2 mt-2">
+                            {job.is_remote && (
+                              <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs">
+                                🏠 Remoto
+                              </span>
+                            )}
+                            <span className="text-xs text-gray-400">{job.date_posted}</span>
+                          </div>
+                        </div>
+                        <a
+                          href={job.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-xl transition-colors flex items-center gap-1"
+                        >
+                          Ver
+                          <ExternalLink size={12} />
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {personalizedJobs.length > 5 && (
+                    <button
+                      onClick={() => navigate('/jobs')}
+                      className="w-full py-3 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-xl text-sm font-medium transition-colors"
+                    >
+                      Ver todas as {personalizedJobs.length} vagas →
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Posts do Feed */}
+            {filteredPosts.length === 0 && personalizedJobs.length === 0 ? (
+              <div className="text-center py-12 text-textMuted" data-testid="no-posts-message">
+                {categoryFilter !== 'all' || typeFilter !== 'all' ? 'Nenhum post encontrado com esses filtros.' : 'Nenhum post ainda. Seja o primeiro!'}
           </div>
         ) : (
           <div className="space-y-4">
