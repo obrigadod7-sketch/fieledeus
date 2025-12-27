@@ -118,6 +118,14 @@ export default function HomePage() {
   const [selectedResourceCategory, setSelectedResourceCategory] = useState(null);
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
+  
+  // Estados para o fluxo de emprego estilo LinkedIn
+  const [jobSearchStep, setJobSearchStep] = useState(0); // 0: categoria, 1: busca emprego, 2: detalhes
+  const [jobSearchQuery, setJobSearchQuery] = useState('');
+  const [jobSearchLocation, setJobSearchLocation] = useState('');
+  const [jobSearchResults, setJobSearchResults] = useState([]);
+  const [loadingJobs, setLoadingJobs] = useState(false);
+  
   const [newPost, setNewPost] = useState({
     type: user?.role === 'migrant' ? 'need' : 'offer',
     category: 'food',
@@ -129,7 +137,10 @@ export default function HomePage() {
     job_languages: [],
     job_availability: '',
     job_experience: '',
-    job_looking_for: ''
+    job_looking_for: '',
+    job_types: [],
+    job_search_query: '',
+    job_search_location: ''
   });
   const [showComments, setShowComments] = useState({});
   const [comments, setComments] = useState({});
