@@ -836,7 +836,7 @@ export default function HomePage() {
                 className="w-full rounded-full py-6 mb-6 bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-lg"
               >
                 <Plus size={20} className="mr-2" />
-                🆘 Preciso de Ajuda
+                🆘 {t('iNeedHelpBtn')}
               </Button>
             </DialogTrigger>
             <DialogContent className="rounded-3xl max-w-2xl mx-2 sm:mx-4 p-0 overflow-hidden max-h-[90vh]" data-testid="create-post-dialog">
@@ -847,16 +847,16 @@ export default function HomePage() {
                   <>
                     <DialogHeader className="p-4 sm:p-6 pb-4 border-b flex-shrink-0">
                       <DialogTitle className="text-xl sm:text-2xl font-heading">
-                        🆘 Preciso de Ajuda
+                        🆘 {t('iNeedHelpBtn')}
                       </DialogTitle>
                       <DialogDescription className="text-sm">
-                        O que você precisa?
+                        {t('whatDoYouNeed')}
                       </DialogDescription>
                     </DialogHeader>
                     
                     <div className="flex-1 overflow-y-auto p-4 sm:p-6">
                       <div className="space-y-4">
-                        <Label className="text-sm sm:text-base font-bold block">📂 Selecione a Categoria</Label>
+                        <Label className="text-sm sm:text-base font-bold block">📂 {t('selectCategoryLabel')}</Label>
                         <div className="grid grid-cols-2 gap-2 sm:gap-3">
                           {categories.map(cat => (
                             <button
@@ -888,25 +888,25 @@ export default function HomePage() {
                           <div className="mt-6 space-y-4">
                             {/* Título */}
                             <div className="bg-white border-2 border-gray-200 p-4 rounded-2xl">
-                              <Label className="text-sm font-bold mb-2 block">✏️ Título do Pedido</Label>
+                              <Label className="text-sm font-bold mb-2 block">✏️ {t('requestTitleLabel')}</Label>
                               <Input
                                 data-testid="post-title-input"
                                 value={newPost.title}
                                 onChange={(e) => setNewPost({...newPost, title: e.target.value})}
-                                placeholder="Ex: Preciso de roupas"
+                                placeholder={t('postTitlePlaceholder')}
                                 className="rounded-xl h-11 text-sm w-full"
                               />
                             </div>
                             
                             {/* Descrição */}
                             <div className="bg-white border-2 border-gray-200 p-4 rounded-2xl">
-                              <Label className="text-sm font-bold mb-2 block">📝 Detalhes</Label>
+                              <Label className="text-sm font-bold mb-2 block">📝 {t('detailsLabel')}</Label>
                               <Textarea
                                 data-testid="post-description-input"
                                 value={newPost.description}
                                 onChange={(e) => setNewPost({...newPost, description: e.target.value})}
                                 rows={4}
-                                placeholder="Descreva em detalhes..."
+                                placeholder={t('describeInDetail')}
                                 className="rounded-xl text-sm"
                               />
                             </div>
@@ -917,7 +917,7 @@ export default function HomePage() {
                               onClick={createPost} 
                               className="w-full rounded-full py-5 text-base font-bold bg-primary hover:bg-primary-hover shadow-lg"
                             >
-                              📢 Publicar Agora
+                              📢 {t('publishNowBtn')}
                             </Button>
                           </div>
                         )}
