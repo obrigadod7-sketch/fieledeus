@@ -885,7 +885,7 @@ export default function HomePage() {
                             🎯 Vagas Encontradas
                           </DialogTitle>
                           <DialogDescription className="text-xs sm:text-sm">
-                            {jobSearchResults.length} vagas para "{jobSearchQuery}" em {jobSearchLocation || 'França'}
+                            {jobSearchResults.length} vagas para &ldquo;{jobSearchQuery}&rdquo; em {jobSearchLocation || 'França'}
                           </DialogDescription>
                         </div>
                       </div>
