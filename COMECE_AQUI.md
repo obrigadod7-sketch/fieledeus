@@ -2,7 +2,7 @@
 
 ## ✅ Seu aplicativo está FUNCIONANDO!
 
-**URL:** https://social-assist-6.preview.emergentagent.com
+**URL:** https://job-alert-system-2.preview.emergentagent.com
 
 Você já pode:
 - ✅ Acessar o aplicativo
