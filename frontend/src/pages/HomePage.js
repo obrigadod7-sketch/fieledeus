@@ -194,6 +194,55 @@ export default function HomePage() {
     }
   };
 
+  // Função para buscar vagas de emprego (estilo LinkedIn)
+  const searchJobsForUser = async () => {
+    if (!jobSearchQuery.trim()) {
+      toast.error('Digite o que você procura');
+      return;
+    }
+    
+    setLoadingJobs(true);
+    try {
+      const location = jobSearchLocation || 'France';
+      const response = await fetch(
+        `${process.env.REACT_APP_BACKEND_URL}/api/jobs/search?query=${encodeURIComponent(jobSearchQuery)}&location=${encodeURIComponent(location)}&page=1`
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        setJobSearchResults(data.jobs || []);
+        
+        // Atualizar os dados do post com a busca
+        setNewPost(prev => ({
+          ...prev,
+          job_search_query: jobSearchQuery,
+          job_search_location: location,
+          title: `Procuro emprego: ${jobSearchQuery}`,
+          description: `Estou procurando oportunidades de emprego na área de ${jobSearchQuery}${location ? ` em ${location}` : ''}.`
+        }));
+        
+        // Avançar para a próxima etapa
+        setJobSearchStep(2);
+      }
+    } catch (error) {
+      console.error('Error searching jobs:', error);
+      toast.error('Erro ao buscar vagas');
+    } finally {
+      setLoadingJobs(false);
+    }
+  };
+
+  // Resetar fluxo de emprego quando fechar modal
+  const handleCloseCreatePost = (open) => {
+    setShowCreatePost(open);
+    if (!open) {
+      setJobSearchStep(0);
+      setJobSearchQuery('');
+      setJobSearchLocation('');
+      setJobSearchResults([]);
+    }
+  };
+
   const filterPosts = () => {
     let filtered = posts;
     
