@@ -839,8 +839,8 @@ export default function HomePage() {
                 🆘 Preciso de Ajuda
               </Button>
             </DialogTrigger>
-            <DialogContent className="rounded-3xl max-w-2xl mx-2 sm:mx-4 p-0 overflow-hidden" data-testid="create-post-dialog">
-              <div className="flex flex-col max-h-[85vh]">
+            <DialogContent className="rounded-3xl max-w-2xl mx-2 sm:mx-4 p-0 overflow-hidden max-h-[90vh]" data-testid="create-post-dialog">
+              <div className="flex flex-col h-full max-h-[85vh]">
                 
                 {/* ETAPA 0: Seleção de Categoria */}
                 {jobSearchStep === 0 && (
