@@ -213,7 +213,7 @@ class HousingListing(BaseModel):
     available_until: Optional[str] = None
     exchange_services: Optional[str] = None
     photos: List[str] = []
-    status: str = 'active'  # active, matched, closed
+    listing_status: str = 'active'  # active, matched, closed
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
