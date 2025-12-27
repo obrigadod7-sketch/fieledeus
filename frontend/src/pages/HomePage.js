@@ -667,7 +667,7 @@ export default function HomePage() {
 
         {/* Botão para Migrantes - Abre modal */}
         {user?.role === 'migrant' ? (
-          <Dialog open={showCreatePost} onOpenChange={setShowCreatePost}>
+          <Dialog open={showCreatePost} onOpenChange={handleCloseCreatePost}>
             <DialogTrigger asChild>
               <Button 
                 data-testid="create-post-button"
@@ -677,67 +677,343 @@ export default function HomePage() {
                 🆘 Preciso de Ajuda
               </Button>
             </DialogTrigger>
-            <DialogContent className="rounded-3xl max-w-2xl mx-4 p-0 overflow-hidden" data-testid="create-post-dialog">
+            <DialogContent className="rounded-3xl max-w-2xl mx-2 sm:mx-4 p-0 overflow-hidden" data-testid="create-post-dialog">
               <div className="flex flex-col max-h-[85vh]">
-                <DialogHeader className="p-6 pb-4 border-b flex-shrink-0">
-                  <DialogTitle className="text-2xl font-heading">
-                    🆘 Preciso de Ajuda
-                  </DialogTitle>
-                  <DialogDescription>
-                    Preencha as informações abaixo para publicar
-                  </DialogDescription>
-                </DialogHeader>
                 
-                <div 
-                  className="flex-1 overflow-y-auto p-6 pt-4 focus:outline-none" 
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    const container = e.currentTarget;
-                    if (e.key === 'ArrowDown') {
-                      e.preventDefault();
-                      container.scrollTop += 50;
-                    } else if (e.key === 'ArrowUp') {
-                      e.preventDefault();
-                      container.scrollTop -= 50;
-                    } else if (e.key === 'PageDown') {
-                      e.preventDefault();
-                      container.scrollTop += 200;
-                    } else if (e.key === 'PageUp') {
-                      e.preventDefault();
-                      container.scrollTop -= 200;
-                    }
-                  }}
-                  ref={(el) => el && el.focus()}
-                >
-                  <div className="space-y-6">
-                {/* Categoria */}
-                <div className="bg-gray-50 p-5 rounded-2xl">
-                  <Label className="text-base font-bold mb-3 block">📂 Selecione a Categoria</Label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {categories.map(cat => (
-                      <button
-                        key={cat.value}
-                        type="button"
-                        onClick={() => setNewPost({...newPost, category: cat.value})}
-                        className={`p-4 rounded-xl border-2 transition-all text-left ${
-                          newPost.category === cat.value
-                            ? 'bg-primary text-white border-primary shadow-lg scale-105'
-                            : 'bg-white border-gray-200 hover:border-primary hover:shadow-md'
-                        }`}
-                      >
-                        <cat.icon size={24} className="mb-2" />
-                        <div className={`font-bold text-sm ${newPost.category === cat.value ? 'text-white' : 'text-textPrimary'}`}>
-                          {cat.label}
+                {/* ETAPA 0: Seleção de Categoria */}
+                {jobSearchStep === 0 && (
+                  <>
+                    <DialogHeader className="p-4 sm:p-6 pb-4 border-b flex-shrink-0">
+                      <DialogTitle className="text-xl sm:text-2xl font-heading">
+                        🆘 Preciso de Ajuda
+                      </DialogTitle>
+                      <DialogDescription className="text-sm">
+                        O que você precisa?
+                      </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+                      <div className="space-y-4">
+                        <Label className="text-sm sm:text-base font-bold block">📂 Selecione a Categoria</Label>
+                        <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                          {categories.map(cat => (
+                            <button
+                              key={cat.value}
+                              type="button"
+                              onClick={() => {
+                                setNewPost({...newPost, category: cat.value});
+                                // Se for trabalho, ir para etapa de busca
+                                if (cat.value === 'work') {
+                                  setJobSearchStep(1);
+                                }
+                              }}
+                              className={`p-3 sm:p-4 rounded-xl border-2 transition-all text-left ${
+                                newPost.category === cat.value
+                                  ? 'bg-primary text-white border-primary shadow-lg scale-105'
+                                  : 'bg-white border-gray-200 hover:border-primary hover:shadow-md'
+                              }`}
+                            >
+                              <cat.icon size={20} className="mb-1 sm:mb-2" />
+                              <div className={`font-bold text-xs sm:text-sm ${newPost.category === cat.value ? 'text-white' : 'text-textPrimary'}`}>
+                                {cat.label}
+                              </div>
+                            </button>
+                          ))}
                         </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                        
+                        {/* Se não for trabalho, mostrar formulário padrão */}
+                        {newPost.category && newPost.category !== 'work' && (
+                          <div className="mt-6 space-y-4">
+                            {/* Título */}
+                            <div className="bg-white border-2 border-gray-200 p-4 rounded-2xl">
+                              <Label className="text-sm font-bold mb-2 block">✏️ Título do Pedido</Label>
+                              <Input
+                                data-testid="post-title-input"
+                                value={newPost.title}
+                                onChange={(e) => setNewPost({...newPost, title: e.target.value})}
+                                placeholder="Ex: Preciso de roupas"
+                                className="rounded-xl h-11 text-sm w-full"
+                              />
+                            </div>
+                            
+                            {/* Descrição */}
+                            <div className="bg-white border-2 border-gray-200 p-4 rounded-2xl">
+                              <Label className="text-sm font-bold mb-2 block">📝 Detalhes</Label>
+                              <Textarea
+                                data-testid="post-description-input"
+                                value={newPost.description}
+                                onChange={(e) => setNewPost({...newPost, description: e.target.value})}
+                                rows={4}
+                                placeholder="Descreva em detalhes..."
+                                className="rounded-xl text-sm"
+                              />
+                            </div>
+                            
+                            {/* Botão Publicar */}
+                            <Button 
+                              data-testid="submit-post-button"
+                              onClick={createPost} 
+                              className="w-full rounded-full py-5 text-base font-bold bg-primary hover:bg-primary-hover shadow-lg"
+                            >
+                              📢 Publicar Agora
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
 
-                {/* Título */}
-                <div className="bg-white border-2 border-gray-200 p-4 sm:p-5 rounded-2xl">
-                  <Label className="text-sm sm:text-base font-bold mb-2 sm:mb-3 block flex items-center gap-2">
-                    <span className="text-xl sm:text-2xl">✏️</span>
+                {/* ETAPA 1: Busca de Emprego (Estilo LinkedIn) */}
+                {jobSearchStep === 1 && (
+                  <>
+                    <DialogHeader className="p-4 sm:p-6 pb-4 border-b flex-shrink-0">
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => setJobSearchStep(0)}
+                          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                        >
+                          <ChevronLeft size={20} />
+                        </button>
+                        <div>
+                          <DialogTitle className="text-xl sm:text-2xl font-heading flex items-center gap-2">
+                            💼 Buscar Emprego
+                          </DialogTitle>
+                          <DialogDescription className="text-sm">
+                            Como o LinkedIn - encontre vagas e publique seu perfil
+                          </DialogDescription>
+                        </div>
+                      </div>
+                    </DialogHeader>
+                    
+                    <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+                      <div className="space-y-5">
+                        {/* Ilustração */}
+                        <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-6 text-white text-center">
+                          <Search size={48} className="mx-auto mb-3 opacity-90" />
+                          <h3 className="text-lg font-bold mb-1">Encontre sua Oportunidade</h3>
+                          <p className="text-sm text-white/80">Busque vagas e crie seu perfil profissional</p>
+                        </div>
+                        
+                        {/* Campo de Busca - O que procura */}
+                        <div className="bg-white border-2 border-gray-200 p-4 rounded-2xl">
+                          <Label className="text-sm font-bold mb-2 block flex items-center gap-2">
+                            <Search size={18} className="text-blue-600" />
+                            O que você procura?
+                          </Label>
+                          <Input
+                            value={jobSearchQuery}
+                            onChange={(e) => setJobSearchQuery(e.target.value)}
+                            placeholder="Ex: Garçom, Limpeza, Construção..."
+                            className="rounded-xl h-12 text-base w-full"
+                            onKeyPress={(e) => e.key === 'Enter' && searchJobsForUser()}
+                          />
+                          <div className="flex flex-wrap gap-2 mt-3">
+                            {['Garçom', 'Limpeza', 'Construção', 'Cozinha', 'Entrega'].map(tag => (
+                              <button
+                                key={tag}
+                                onClick={() => setJobSearchQuery(tag)}
+                                className="px-3 py-1.5 bg-gray-100 hover:bg-blue-100 text-gray-700 hover:text-blue-700 rounded-full text-xs font-medium transition-colors"
+                              >
+                                {tag}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        
+                        {/* Campo de Localização */}
+                        <div className="bg-white border-2 border-gray-200 p-4 rounded-2xl">
+                          <Label className="text-sm font-bold mb-2 block flex items-center gap-2">
+                            <MapPin size={18} className="text-red-500" />
+                            Localização
+                          </Label>
+                          <Input
+                            value={jobSearchLocation}
+                            onChange={(e) => setJobSearchLocation(e.target.value)}
+                            placeholder="Ex: Paris, Lyon, Marseille..."
+                            className="rounded-xl h-12 text-base w-full"
+                          />
+                          <div className="flex flex-wrap gap-2 mt-3">
+                            {['Paris', 'Lyon', 'Marseille', 'Toulouse', 'Nice'].map(city => (
+                              <button
+                                key={city}
+                                onClick={() => setJobSearchLocation(city)}
+                                className="px-3 py-1.5 bg-gray-100 hover:bg-red-100 text-gray-700 hover:text-red-700 rounded-full text-xs font-medium transition-colors"
+                              >
+                                📍 {city}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        
+                        {/* Botão de Buscar */}
+                        <Button 
+                          onClick={searchJobsForUser}
+                          disabled={loadingJobs || !jobSearchQuery.trim()}
+                          className="w-full rounded-full py-5 text-base font-bold bg-blue-600 hover:bg-blue-700 shadow-lg"
+                        >
+                          {loadingJobs ? (
+                            <span className="flex items-center gap-2">
+                              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                              Buscando vagas...
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-2">
+                              <Search size={20} />
+                              Buscar Vagas e Criar Perfil
+                            </span>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* ETAPA 2: Resultados e Confirmação do Perfil */}
+                {jobSearchStep === 2 && (
+                  <>
+                    <DialogHeader className="p-4 sm:p-6 pb-4 border-b flex-shrink-0">
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => setJobSearchStep(1)}
+                          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                        >
+                          <ChevronLeft size={20} />
+                        </button>
+                        <div>
+                          <DialogTitle className="text-lg sm:text-xl font-heading">
+                            🎯 Vagas Encontradas
+                          </DialogTitle>
+                          <DialogDescription className="text-xs sm:text-sm">
+                            {jobSearchResults.length} vagas para "{jobSearchQuery}" em {jobSearchLocation || 'França'}
+                          </DialogDescription>
+                        </div>
+                      </div>
+                    </DialogHeader>
+                    
+                    <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+                      <div className="space-y-4">
+                        {/* Card do Perfil que será publicado */}
+                        <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 p-4 rounded-2xl">
+                          <div className="flex items-center gap-2 mb-3">
+                            <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">
+                              <User size={20} className="text-white" />
+                            </div>
+                            <div>
+                              <p className="font-bold text-sm text-green-800">Seu Perfil de Emprego</p>
+                              <p className="text-xs text-green-600">Será publicado no feed</p>
+                            </div>
+                          </div>
+                          <div className="bg-white rounded-xl p-3 space-y-2">
+                            <p className="font-bold text-sm text-gray-800">💼 {newPost.title}</p>
+                            <p className="text-xs text-gray-600">{newPost.description}</p>
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
+                                🔍 {jobSearchQuery}
+                              </span>
+                              <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs">
+                                📍 {jobSearchLocation || 'França'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Informações Adicionais */}
+                        <div className="bg-white border-2 border-gray-200 p-4 rounded-2xl space-y-3">
+                          <Label className="text-sm font-bold block">📋 Complete seu perfil</Label>
+                          
+                          {/* Experiência */}
+                          <div>
+                            <Label className="text-xs text-gray-600 mb-1 block">Experiência</Label>
+                            <Select value={newPost.job_experience} onValueChange={(val) => setNewPost({...newPost, job_experience: val})}>
+                              <SelectTrigger className="rounded-xl">
+                                <SelectValue placeholder="Selecione..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">Sem experiência</SelectItem>
+                                <SelectItem value="1year">1 ano</SelectItem>
+                                <SelectItem value="2years">2+ anos</SelectItem>
+                                <SelectItem value="5years">5+ anos</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          {/* Disponibilidade */}
+                          <div>
+                            <Label className="text-xs text-gray-600 mb-1 block">Disponibilidade</Label>
+                            <div className="grid grid-cols-2 gap-2">
+                              {[
+                                { value: 'full_time', label: 'Tempo Integral' },
+                                { value: 'part_time', label: 'Meio Período' },
+                                { value: 'flexible', label: 'Flexível' },
+                                { value: 'weekends', label: 'Finais de Semana' }
+                              ].map(opt => (
+                                <button
+                                  key={opt.value}
+                                  type="button"
+                                  onClick={() => setNewPost({...newPost, job_availability: opt.value})}
+                                  className={`p-2 rounded-xl text-xs font-medium transition-all ${
+                                    newPost.job_availability === opt.value
+                                      ? 'bg-blue-500 text-white'
+                                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                  }`}
+                                >
+                                  {opt.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Vagas Encontradas */}
+                        {jobSearchResults.length > 0 && (
+                          <div className="space-y-2">
+                            <Label className="text-sm font-bold block">💼 Vagas Disponíveis</Label>
+                            <div className="space-y-2 max-h-48 overflow-y-auto">
+                              {jobSearchResults.slice(0, 5).map((job, idx) => (
+                                <a 
+                                  key={idx}
+                                  href={job.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="block p-3 bg-white border border-gray-200 rounded-xl hover:border-blue-400 hover:shadow-md transition-all"
+                                >
+                                  <div className="flex items-start gap-3">
+                                    <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                                      <Building2 size={20} className="text-blue-600" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="font-medium text-sm text-gray-800 truncate">{job.title}</p>
+                                      <p className="text-xs text-gray-500 truncate">{job.company}</p>
+                                      <p className="text-xs text-gray-400 truncate">📍 {job.location}</p>
+                                    </div>
+                                    <ExternalLink size={16} className="text-gray-400 flex-shrink-0" />
+                                  </div>
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Botão Publicar Perfil */}
+                        <Button 
+                          onClick={createPost}
+                          className="w-full rounded-full py-5 text-base font-bold bg-green-600 hover:bg-green-700 shadow-lg"
+                        >
+                          ✅ Publicar Meu Perfil no Feed
+                        </Button>
+                        
+                        <p className="text-xs text-center text-gray-500">
+                          Seu perfil será visível para empregadores e voluntários
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </DialogContent>
+        </Dialog>
+        ) : (
                     <span>Título do Pedido</span>
                   </Label>
                   <Input
