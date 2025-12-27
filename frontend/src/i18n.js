@@ -1101,6 +1101,12 @@ const resources = {
       solidaryHosting: 'Solidarity hosting',
       searchingHost: 'Searching for host',
       otherCity: 'Other city...',
+      availability: 'Availability',
+      availableFrom: 'Available from',
+      availableUntil: 'Available until',
+      from: 'From',
+      until: 'Until',
+      availabilityHint: 'Set when your space is available to receive guests',
       
       // Status & Messages
       loading: 'Loading...',
