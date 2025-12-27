@@ -160,9 +160,9 @@ export default function HomePage() {
     { value: 'work', label: t('work'), color: 'bg-yellow-100 text-yellow-700 border-yellow-200', icon: Briefcase },
     { value: 'education', label: t('education'), color: 'bg-indigo-100 text-indigo-700 border-indigo-200', icon: GraduationCap },
     { value: 'social', label: t('social'), color: 'bg-pink-100 text-pink-700 border-pink-200', icon: Users },
-    { value: 'clothes', label: 'Roupas', color: 'bg-orange-100 text-orange-700 border-orange-200', icon: Shirt },
-    { value: 'furniture', label: 'Móveis', color: 'bg-teal-100 text-teal-700 border-teal-200', icon: Armchair },
-    { value: 'transport', label: 'Transporte', color: 'bg-cyan-100 text-cyan-700 border-cyan-200', icon: Car }
+    { value: 'clothes', label: t('clothes'), color: 'bg-orange-100 text-orange-700 border-orange-200', icon: Shirt },
+    { value: 'furniture', label: t('furniture'), color: 'bg-teal-100 text-teal-700 border-teal-200', icon: Armchair },
+    { value: 'transport', label: t('transport'), color: 'bg-cyan-100 text-cyan-700 border-cyan-200', icon: Car }
   ];
 
   useEffect(() => {
@@ -631,7 +631,7 @@ export default function HomePage() {
               }`}
             >
               <Filter size={18} />
-              <span className="text-[10px] font-medium">Todos</span>
+              <span className="text-[10px] font-medium">{t('allFilter')}</span>
             </button>
             {categories.map(cat => {
               const IconComponent = cat.icon;
@@ -662,7 +662,7 @@ export default function HomePage() {
                   : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
               }`}
             >
-              Todos
+              {t('allFilter')}
             </button>
             <button
               onClick={() => setTypeFilter('need')}
@@ -672,7 +672,7 @@ export default function HomePage() {
                   : 'bg-white text-gray-600 border border-gray-200 hover:bg-green-50'
               }`}
             >
-              🆘 Precisa de Ajuda
+              🆘 {t('needsHelpFilter')}
             </button>
             <button
               onClick={() => setTypeFilter('offer')}
@@ -682,7 +682,7 @@ export default function HomePage() {
                   : 'bg-white text-gray-600 border border-gray-200 hover:bg-blue-50'
               }`}
             >
-              🤝 Oferece Ajuda
+              🤝 {t('offersHelpFilter')}
             </button>
             <button
               onClick={() => setTypeFilter('job')}
@@ -692,7 +692,7 @@ export default function HomePage() {
                   : 'bg-white text-gray-600 border border-gray-200 hover:bg-indigo-50'
               }`}
             >
-              💼 Vagas de Emprego
+              💼 {t('jobVacancies')}
             </button>
           </div>
         </div>
