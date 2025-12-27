@@ -178,6 +178,11 @@ const resources = {
       fillRequiredFields: 'Preencha os campos obrigatórios',
       verified: 'Verificado',
       contact: 'Contatar',
+      guests: 'hóspedes',
+      free: 'Gratuito',
+      solidaryHosting: 'Hospedagem solidária',
+      searchingHost: 'Buscando anfitrião',
+      otherCity: 'Outra cidade...',
       
       // Status & Messages
       loading: 'Carregando...',
