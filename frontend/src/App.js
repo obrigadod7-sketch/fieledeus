@@ -37,36 +37,49 @@ export const AuthContext = React.createContext();
 function App() {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
-  const [loading, setLoading] = useState(true);
+  const [checkingAuth, setCheckingAuth] = useState(!!token);
   const { i18n } = useTranslation();
 
   useEffect(() => {
-    if (token) {
-      fetchUser();
-    } else {
-      setLoading(false);
+    if (!token) {
+      setCheckingAuth(false);
+      return;
     }
-  }, [token]);
 
-  const fetchUser = async () => {
-    try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/profile`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
+    const controller = new AbortController();
+    const timeoutMs = 5000; // 5s timeout for profile check
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    (async () => {
+      try {
+        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/profile`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          signal: controller.signal
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data);
+        } else {
+          // invalid token: clear silently
+          localStorage.removeItem('token');
+          setToken(null);
         }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data);
-      } else {
-        logout();
+      } catch (error) {
+        console.warn('fetchUser error or timeout:', error);
+      } finally {
+        clearTimeout(timeoutId);
+        setCheckingAuth(false);
       }
-    } catch (error) {
-      console.error('Error fetching user:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    })();
+
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [token]);
 
   const login = (newToken, userData) => {
     localStorage.setItem('token', newToken);
@@ -79,10 +92,6 @@ function App() {
     setToken(null);
     setUser(null);
   };
-
-  if (loading) {
-    return <LoadingComponent />;
-  }
 
   return (
     <AuthContext.Provider value={{ user, token, login, logout }}>
