@@ -30,7 +30,7 @@ services:
     name: watizat-frontend
     runtime: node
     env: node
-    buildCommand: cd frontend && yarn install --frozen-lockfile && GENERATE_SOURCEMAP=false yarn build
+    buildCommand: cd frontend && npm install --legacy-peer-deps && npm run build
     staticPublishPath: ./frontend/build
     routes:
       - type: rewrite
