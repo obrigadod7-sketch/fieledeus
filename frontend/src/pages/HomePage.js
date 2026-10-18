@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '../components/ui/dialog';
 import { Input } from '../components/ui/input';
 import BottomNav from '../components/BottomNav';
-import { Plus, MapPin, User, Clock, MessageCircle, Image as ImageIcon, MessageSquare, Send, X, Filter, Info, ExternalLink, Lock, Utensils, Scale, Heart, Home as HomeIcon, Briefcase, GraduationCap, Users, Building2, Search, ChevronLeft } from 'lucide-react';
+import { Plus, MapPin, User, Clock, MessageCircle, Image as ImageIcon, MessageSquare, Send, X, Filter, Info, ExternalLink, Lock, Utensils, Scale, Heart, Home as HomeIcon, Briefcase, GraduationCap, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -60,6 +60,7 @@ export default function HomePage() {
   const [newComment, setNewComment] = useState('');
   const [commentingOn, setCommentingOn] = useState(null);
   const [advertisements, setAdvertisements] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
 
   const categories = [
     { value: 'food', label: t('food'), color: 'bg-green-100 text-green-700 border-green-200', icon: '🍽️' },
@@ -139,6 +140,8 @@ export default function HomePage() {
       if (response.ok) {
         const data = await response.json();
         setPosts(data.filter(p => !p.is_auto_response));
+      } else {
+        console.error('Failed to fetch posts', response.status);
       }
     } catch (error) {
       console.error('Error fetching posts:', error);
@@ -153,6 +156,12 @@ export default function HomePage() {
       return;
     }
 
+    if (!token) {
+      toast.error('Você precisa estar logado para criar um post');
+      return;
+    }
+
+    setSubmitting(true);
     try {
       const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/posts`, {
         method: 'POST',
@@ -163,6 +172,7 @@ export default function HomePage() {
         body: JSON.stringify(newPost)
       });
 
+      const text = await response.text();
       if (response.ok) {
         toast.success('Post criado!');
         if (newPost.type === 'need') {
@@ -171,9 +181,22 @@ export default function HomePage() {
         setShowCreatePost(false);
         setNewPost({ type: user?.role === 'migrant' ? 'need' : 'offer', category: 'food', title: '', description: '', images: [], location: null });
         fetchPosts();
+      } else {
+        // try to parse JSON error
+        try {
+          const err = JSON.parse(text);
+          toast.error(err.message || 'Erro ao criar post');
+          console.error('Create post error:', err);
+        } catch (e) {
+          toast.error(text || 'Erro ao criar post');
+          console.error('Create post error (text):', text);
+        }
       }
     } catch (error) {
+      console.error('Error creating post:', error);
       toast.error('Erro ao criar post');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -623,6 +646,167 @@ export default function HomePage() {
       </div>
 
       <BottomNav />
+
+      {/* Dialog content: create post dialog placed at end to keep file organized */}
+      <Dialog open={showCreatePost} onOpenChange={setShowCreatePost}>
+        <DialogContent className="rounded-3xl max-w-2xl max-h-[85vh] flex flex-col" data-testid="create-post-dialog">
+          <DialogHeader className="pb-4 border-b flex-shrink-0">
+            <DialogTitle className="text-2xl font-heading">
+              {newPost.type === 'need' ? '🆘 Preciso de Ajuda' : '🤝 Quero Ajudar'}
+            </DialogTitle>
+            <DialogDescription>
+              Preencha as informações abaixo para publicar
+            </DialogDescription>
+          </DialogHeader>
+          <div 
+            className="flex-1 overflow-y-scroll px-2 py-2 scroll-container" 
+            style={{ 
+              maxHeight: 'calc(85vh - 200px)',
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#1CA9C9 #f1f1f1'
+            }}
+          >
+            <div className="space-y-6 pr-2">
+              {/* Categoria */}
+              <div className="bg-gray-50 p-5 rounded-2xl">
+                <Label className="text-base font-bold mb-3 block">📂 Selecione a Categoria</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {categories.map(cat => (
+                    <button
+                      key={cat.value}
+                      type="button"
+                      onClick={() => setNewPost({...newPost, category: cat.value})}
+                      className={`p-4 rounded-xl border-2 transition-all text-left ${
+                        newPost.category === cat.value
+                          ? 'bg-primary text-white border-primary shadow-lg scale-105'
+                          : 'bg-white border-gray-200 hover:border-primary hover:shadow-md'
+                      }`}
+                    >
+                      <div className="text-2xl mb-2">{cat.icon}</div>
+                      <div className={`font-bold text-sm ${newPost.category === cat.value ? 'text-white' : 'text-textPrimary'}`}>
+                        {cat.label}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Título */}
+              <div className="bg-white border-2 border-gray-200 p-5 rounded-2xl">
+                <Label className="text-base font-bold mb-3 block flex items-center gap-2">
+                  <span className="text-2xl">✏️</span>
+                  <span>Título do Pedido</span>
+                </Label>
+                <Input
+                  data-testid="post-title-input"
+                  value={newPost.title}
+                  onChange={(e) => setNewPost({...newPost, title: e.target.value})}
+                  placeholder="Ex: Preciso de roupas de inverno"
+                  className="rounded-xl h-12 text-base"
+                />
+                <p className="text-xs text-textMuted mt-2">Seja claro e específico</p>
+              </div>
+              
+              {/* Descrição */}
+              <div className="bg-white border-2 border-gray-200 p-5 rounded-2xl">
+                <Label className="text-base font-bold mb-3 block flex items-center gap-2">
+                  <span className="text-2xl">📝</span>
+                  <span>Detalhes</span>
+                </Label>
+                <Textarea
+                  data-testid="post-description-input"
+                  value={newPost.description}
+                  onChange={(e) => setNewPost({...newPost, description: e.target.value})}
+                  rows={5}
+                  placeholder="Descreva em detalhes: tamanhos, quantidades, quando precisa, etc..."
+                  className="rounded-xl text-base"
+                />
+                <p className="text-xs text-textMuted mt-2">Quanto mais detalhes, melhor!</p>
+              </div>
+
+              {/* Mídia e Localização */}
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 p-5 rounded-2xl space-y-4">
+                <Label className="text-base font-bold block flex items-center gap-2">
+                  <span className="text-2xl">📎</span>
+                  <span>Adicionar Mais Informações (Opcional)</span>
+                </Label>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Button
+                    type="button"
+                    data-testid="add-image-button"
+                    onClick={() => fileInputRef.current?.click()}
+                    variant="outline"
+                    className="h-14 rounded-xl border-2 bg-white hover:bg-blue-50 hover:border-primary"
+                  >
+                    <ImageIcon size={20} className="mr-2" />
+                    <span className="font-bold">Adicionar Fotos</span>
+                  </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    data-testid="add-location-button"
+                    onClick={getLocation}
+                    variant="outline"
+                    className="h-14 rounded-xl border-2 bg-white hover:bg-blue-50 hover:border-primary"
+                  >
+                    <MapPin size={20} className="mr-2" />
+                    <span className="font-bold">Localização</span>
+                  </Button>
+                </div>
+
+                {newPost.images && newPost.images.length > 0 && (
+                  <div className="bg-white p-3 rounded-xl">
+                    <p className="text-sm font-bold text-textPrimary mb-3">Fotos adicionadas:</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {newPost.images.map((img, idx) => (
+                        <div key={idx} className="relative w-24 h-24 rounded-xl overflow-hidden border-2 border-gray-200 group">
+                          <img src={img} alt="" className="w-full h-full object-cover" />
+                          <button
+                            onClick={() => removeImage(idx)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {newPost.location && (
+                  <div className="p-4 bg-green-100 rounded-xl flex items-center gap-3 border-2 border-green-300">
+                    <div className="bg-green-500 p-2 rounded-full">
+                      <MapPin size={20} className="text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-green-800">Localização adicionada</p>
+                      <p className="text-xs text-green-700">Sua localização será compartilhada</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t pt-4 px-1 flex-shrink-0 bg-white">
+            <Button 
+              data-testid="submit-post-button"
+              onClick={createPost} 
+              disabled={submitting}
+              className={`w-full rounded-full py-6 text-lg font-bold ${submitting ? 'bg-gray-400' : 'bg-primary hover:bg-primary-hover'} shadow-lg`}
+            >
+              {submitting ? 'Publicando...' : '📢 Publicar Agora'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
