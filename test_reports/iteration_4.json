@@ -1,0 +1,36 @@
+{
+  "summary": "Iteration 4 tested the landing redesign, iPhone stability and admin login with a no-TLD email. Backend: pytest -n 0 passes 31/31, including 5 new tests in test_login_no_tld.py. POST /api/auth/login with admin@admin or nouser@notld now returns 401 'Invalid credentials' (no 422), and a missing email still returns 422. End-to-end admin@admin check: ADMIN_EMAIL/ADMIN_PASSWORD were temporarily set to admin@admin/123456 and the backend restarted. The seed created the admin; API login returned 200; UI login at 390px went to /home and /admin showed the Painel Administrativo stats. The browser's type=email check accepts admin@admin. .env was then restored and checked with diff (identical to the backup), the backend restarted, the admin@admin user deleted from users, and admin@fieledeus.com login re-checked (200). Landing page: hero image, title, tagline, both photo cards, 'Já tem uma conta?' and the Entrar, volunteer and lang-pt/fr/en/es buttons are all present. All 5 images load (naturalWidth > 0). Language switching changes the title and card texts in all 4 languages. All 4 CTAs go to the right routes. iPhone check (iPhone Safari UA, has_touch, is_mobile, at 390x844 and 375x667): scrollWidth equals innerWidth on /, /auth, /home, /jobs, /volunteers, /profile and /nearby, and window.scrollX stays 0 while scrolling. body overflow-x is clip, inputs on /auth are 16px, the viewport meta has viewport-fit=cover, and the bottom nav backdrop-filter is none. The .min-h-screen rule has a 100vh fallback plus 100svh. No page errors. Regression: maria sees 10 feed posts, and load-more brings it to 12.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/auth/login", "issue": "No brute-force lockout (already the case, reported in iteration 3)."},
+      {"endpoint": "POST /api/auth/register", "issue": "UserCreate.email is still EmailStr, so registering a no-TLD email returns 422. This is intended, just a note."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "VolunteersPage 'Quero Ajudar' dialog (also in ProfilePage)", "issue": "On mobile the dialog is shifted about 8px right and its right edge is clipped. The class 'mx-2' is combined with the base 'w-full translate-x-[-50%]', so it renders wider than the viewport. Fix: use w-[calc(100%-1rem)] (or max-w-[calc(100vw-1rem)]) and drop mx-2. This was already the case.", "selector": "[role=dialog]", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Landing", "issues": ["These strings are hardcoded in Portuguese and do not change with the language buttons: 'Começar' on the cards, 'Paris · Comunidade solidária', the category chips (Alimentação/Moradia/Jurídico/Trabalho), the footer text and the image alt texts."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_login_no_tld.py", "/app/backend/tests/test_admin_seed.py", "/app/backend/tests/test_feed_posts.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "Optional: translate the hardcoded PT strings on LandingPage through i18n.",
+    "Optional: fix the dialog width on mobile (mx-2 + w-full + translate-x-[-50%]) in VolunteersPage and ProfilePage."
+  ],
+  "critical_code_review_comments": [
+    "Removing EmailStr from UserLogin is fine, since login does a regex lookup with re.escape. Pydantic still requires the email field, so a missing email still gives 422.",
+    "seed_admin does not demote the previous admin when ADMIN_EMAIL changes, so old admin accounts stay admin. That is acceptable but worth knowing.",
+    "server.py is still about 2229 lines and should be split."
+  ],
+  "updated_files": ["/app/backend/tests/test_login_no_tld.py (new)", "/app/backend/.env (temporarily changed, then restored byte-identical)"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "admin@fieledeus.com / FielAdmin2026! (admin); maria@teste.com / Teste123! (migrant)",
+  "seed_data_creation": "admin@admin was created temporarily and then deleted from users.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Run the backend tests with -n 0. Mobile checks used a new browser context with an iPhone UA, has_touch and is_mobile. /volunteers opens the 'Quero Ajudar' modal automatically (showModal defaults to true), which is intended. /auth redirects to /home when logged in."
+}
