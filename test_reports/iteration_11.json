@@ -1,0 +1,31 @@
+{
+  "summary": "Iteration 11 retest of the church site fixes. Backend: 9 of 9 pytest tests pass. Admin unblock with blocked:false now returns 200 and the user can log in afterwards; blocking an admin still returns 400. All 137 git-tracked repo files exist in /app/church, and the src/pages file list is identical to /tmp/igrejanovo. The only content differences are the hash-prefixed hrefs. HashRouter works: the main iframe menu links render real content for INÍCIO, ESTUDO, CULTOS AO VIVO, MISSÕES, MINISTÉRIOS, INFANTIL, PAINEL INFANTIL (placeholder dashboard) and CANTINA. A reload inside the iframe works. Opening /igreja/#/estudo and /igreja/#/ministerios directly and reloading works. Every route in App.tsx renders without a 404, including /ministerios/<slug> (7 slugs), /ministerio-dos-jovens, /kids, /login, /forgot-password, /setup-admin, /reset-password, /auth/callback, /dashboard/*, /kids/dashboard/*, and /dashboard/kids/*. church-back-btn goes to / when logged out and to /home when logged in, even after iframe navigation. Mobile 390px bottom nav: all labels are single-line with no clipping, for both the 8-item migrant nav and the 9-item admin nav. New regression caused by HashRouter: the 'CÉLULAS' and 'FAMÍLIA PASTORAL' menu items, and every in-page anchor button, show the church 404 page.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Church menu CÉLULAS / FAMÍLIA PASTORAL (ElementorHeader.tsx nav, lines 28-29)", "issue": "href='#celulas' and href='#pastoral' are read by HashRouter as routes 'celulas' and 'pastoral', so the iframe shows '404 Oops! Page not found'. Two of the 11 menu items are broken.", "selector": "nav a[href='#celulas'], nav a[href='#pastoral']", "priority": "HIGH"},
+      {"component": "In-page anchor hero buttons", "issue": "These all lead to the 404 page under HashRouter (3 verified, the rest share the same pattern): Cantina 'Horários' (#horarios), Estudo 'Ver agenda' (#agenda), Missões 'Como participar' (#participar), CultosAoVivo '#catalogo', MinisterioJovens 'Atividades' (#atividades), KidsPlatform 'Ver turmas' (#turmas).", "selector": "a[href^='#']:not([href^='#/'])", "priority": "HIGH"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Church iframe", "issues": ["The 'PEDIDOS DE ORAÇÃO' link goes to the external missionevangeliquelusitana.com site with no target=_blank, so it navigates inside the iframe. This is the same as in the original repo, and the domain did not resolve from the test container. Consider target='_blank'.", "The 'Abrir em nova aba' button always opens /igreja/ (the home page) rather than the current church page. Minor."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_church_admin_guard.py", "/app/test_reports/pytest/pytest_iter11.xml"],
+  "action_items": [
+    "Fix the anchor links under HashRouter. Change the CÉLULAS and FAMÍLIA PASTORAL nav items to router paths that scroll on the home page (e.g. to='/?s=celulas' or state). Index.tsx then calls document.getElementById(id)?.scrollIntoView() in a useEffect. Or use an onClick handler that runs navigate('/') and then scrollIntoView.",
+    "Replace the in-page HeroGhostButton/anchor hrefs ('#horarios', '#agenda', '#participar', '#catalogo', '#atividades', '#turmas') with an onClick scrollIntoView, e.g. a shared ScrollLink component. Then rebuild /app/church into /app/frontend/public/igreja.",
+    "Optional: add target='_blank' rel='noreferrer' to the external links in the church nav and Index (Pedidos de Oração, células nas casas)."
+  ],
+  "critical_code_review_comments": [
+    "ElementorHeader treats any href not starting with '/' as a plain <a>. Under HashRouter, plain '#x' anchors conflict with routing, so a generic hash-anchor helper is needed.",
+    "The /dashboard and /kids/dashboard ProtectedRoute pages render the placeholder UI without auth. This matches the upstream repo (the placeholder is intentional) and is noted only for awareness."
+  ],
+  "updated_files": ["/app/backend/tests/test_church_admin_guard.py"],
+  "success_rate": {"backend": "100% (9/9)", "frontend": "~85% (all routes and the main menu work; 2 of 11 menu items and 6 anchor buttons give a 404)"},
+  "seed_data_creation": "Temporary TEST_ admin users were created and deleted inside the pytest run",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: REACT_APP_BACKEND_URL=... pytest backend/tests/test_church_admin_guard.py. In the church iframe, get the frame via element_handle().content_frame() (page.frames[1] is about:blank). After the fix, verify that clicking the CÉLULAS/FAMÍLIA PASTORAL nav items and the hero anchor buttons scrolls to the section without a 404 (check that document.body.innerText does not contain 'Oops! Page not found').",
+  "rca of the issue": "HashRouter uses location.hash as the route. An <a href='#celulas'> sets the hash to '#celulas', which HashRouter parses as pathname 'celulas'. That matches no route, so path='*' renders NotFound. Repro: open /igreja/#/cantina and click 'Horários'. The URL becomes /igreja/#horarios and the page shows 404."
+}

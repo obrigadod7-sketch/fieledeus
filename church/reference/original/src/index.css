@@ -1,0 +1,236 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Design system (HSL only). */
+
+@layer base {
+:root {
+    /* Core */
+    /* Palette base (from provided image)
+       #0F4873 (azul escuro)  -> 204 77% 25%
+       #187CC4 (azul claro)   -> 205 78% 43%
+       #B2CAD7 (azul bebê)    -> 201 30% 77%
+       #F9F5F3 (branco)       -> 20 33% 96%
+       #B26919 (dourado)      -> 30 75% 40%
+       #AA2B2B (vermelho)     -> 0 60% 42%
+    */
+
+    --background: 20 33% 96%;
+    --foreground: 204 77% 18%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 204 77% 18%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 204 77% 18%;
+
+    /* Brand (azul + dourado) */
+    --primary: 205 78% 43%;
+    --primary-foreground: 20 33% 96%;
+
+    --secondary: 30 75% 40%;
+    --secondary-foreground: 20 33% 96%;
+
+    --muted: 201 30% 92%;
+    --muted-foreground: 204 35% 34%;
+
+    --accent: 201 30% 88%;
+    --accent-foreground: 204 77% 18%;
+
+    --destructive: 0 60% 42%;
+    --destructive-foreground: 20 33% 96%;
+
+    --border: 201 22% 84%;
+    --input: 201 22% 84%;
+    --ring: 205 78% 43%;
+
+    --radius: 1rem;
+
+    /* Typography */
+    --font-sans: "Source Sans 3", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji",
+      "Segoe UI Emoji";
+    --font-display: "Spectral", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+
+    /* Signature gradients & effects */
+    --gradient-hero: radial-gradient(1200px 700px at 20% 10%, hsl(var(--primary) / 0.20), transparent 55%),
+      radial-gradient(1000px 600px at 80% 0%, hsl(var(--secondary) / 0.22), transparent 55%),
+      linear-gradient(180deg, hsl(var(--background)), hsl(var(--background)));
+
+    --gradient-card: radial-gradient(600px 280px at 10% 0%, hsl(var(--primary) / 0.12), transparent 60%),
+      linear-gradient(180deg, hsl(var(--card)), hsl(var(--card)));
+
+    --shadow-elev: 0 18px 40px -22px hsl(var(--primary) / 0.45);
+
+    /* Used by the hero pointer glow */
+    --hero-spot: radial-gradient(
+      680px circle at var(--mx, 50%) var(--my, 30%),
+      hsl(var(--primary) / 0.22),
+      transparent 55%
+    );
+
+    /* Site palette (HSL only) */
+    --mel-blue-900: 204 77% 25%; /* #0F4873 */
+    --mel-blue-800: 204 77% 22%;
+    --mel-blue-700: 205 78% 43%; /* #187CC4 */
+    --mel-blue-600: 205 78% 38%;
+    --mel-blue-a: 205 78% 43%;
+    --mel-blue-b: 205 78% 50%;
+    --mel-divider: 205 78% 50%;
+
+    /* overlays */
+    --mel-overlay: 204 77% 10%;
+
+    /* “azul médio” → azul acinzentado, suave/desbotado (para suavizar fotos) */
+    --mel-haze: 204 18% 46%;
+
+    /* Paleta para overlays nas FOTOS (Cultos/Células) */
+    --mel-photo-base: 196 31% 34%; /* #3B6371 */
+    --mel-photo-deep: 207 77% 21%; /* #0C3A5D */
+    --mel-photo-mid: 205 58% 27%; /* #1D4C6C */
+    --mel-photo-mid2: 203 56% 32%; /* #235B7F */
+    --mel-photo-haze: 204 25% 61%; /* #85A1B4 */
+    --mel-ice: 20 33% 96%; /* #F9F5F3 */
+
+    /* Banner tonalities (usadas nos cards com foto) */
+    --mel-banner-1: var(--mel-photo-base);
+    --mel-banner-2: var(--mel-photo-mid);
+    --mel-banner-3: var(--mel-photo-deep);
+
+    /* Sidebar tokens kept for shadcn sidebar */
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 204 77% 8%;
+    --foreground: 20 33% 96%;
+
+    --card: 204 64% 10%;
+    --card-foreground: 20 33% 96%;
+
+    --popover: 204 64% 10%;
+    --popover-foreground: 20 33% 96%;
+
+    --primary: 205 78% 52%;
+    --primary-foreground: 204 77% 8%;
+
+    --secondary: 30 75% 46%;
+    --secondary-foreground: 204 77% 8%;
+
+    --muted: 204 34% 16%;
+    --muted-foreground: 201 18% 78%;
+
+    --accent: 204 34% 16%;
+    --accent-foreground: 20 33% 96%;
+
+    --destructive: 0 60% 46%;
+    --destructive-foreground: 204 77% 8%;
+
+    --border: 204 34% 18%;
+    --input: 204 34% 18%;
+    --ring: 205 78% 52%;
+
+    --gradient-hero: radial-gradient(1200px 700px at 20% 10%, hsl(var(--primary) / 0.24), transparent 55%),
+      radial-gradient(1000px 600px at 80% 0%, hsl(var(--secondary) / 0.16), transparent 55%),
+      linear-gradient(180deg, hsl(var(--background)), hsl(var(--background)));
+
+    --gradient-card: radial-gradient(600px 280px at 10% 0%, hsl(var(--primary) / 0.16), transparent 60%),
+      linear-gradient(180deg, hsl(var(--card)), hsl(var(--card)));
+
+    --shadow-elev: 0 18px 40px -22px hsl(var(--primary) / 0.55);
+
+    --hero-spot: radial-gradient(
+      680px circle at var(--mx, 50%) var(--my, 30%),
+      hsl(var(--primary) / 0.22),
+      transparent 55%
+    );
+
+    --sidebar-background: 204 77% 9%;
+    --sidebar-foreground: 20 33% 96%;
+    --sidebar-primary: 205 78% 52%;
+    --sidebar-primary-foreground: 204 77% 8%;
+    --sidebar-accent: 204 34% 16%;
+    --sidebar-accent-foreground: 20 33% 96%;
+    --sidebar-border: 204 34% 18%;
+    --sidebar-ring: 205 78% 52%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    font-family: var(--font-sans);
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer utilities {
+  .bg-hero {
+    background-image: var(--gradient-hero);
+  }
+
+  .bg-card-glow {
+    background-image: var(--gradient-card);
+  }
+
+  .shadow-elev {
+    box-shadow: var(--shadow-elev);
+  }
+
+  /* Remove floating translation widgets (ex.: Google Translate / GTranslate).
+     These are often injected externally and show a "Portuguese/Português" pill on the bottom-right. */
+  .gtranslate_wrapper,
+  .gt_float_switcher,
+  .gtranslate,
+  #google_translate_element,
+  .goog-te-gadget,
+  .goog-te-balloon-frame,
+  #goog-gt-tt,
+  iframe.goog-te-banner-frame {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  /* Google Translate banner can push the page down. */
+  body {
+    top: 0 !important;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      animation: reveal-in 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    }
+
+    @keyframes reveal-in {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  }
+}
+

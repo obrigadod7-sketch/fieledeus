@@ -1,0 +1,48 @@
+{
+  "summary": "Tested all 8 requested features end to end, both backend and frontend. Backend: 15/15 pytest pass (appointments create/list/accept/decline/cancel/reschedule with the turn-taking rules, migrant gets 403 when proposing, address hidden before accept, calls in audio and video mode, video upload/stream with Range, forgot/reset password including token reuse returning 400). Frontend flows that work: helper chat header shows the voice/video/Agendar/my-appointments buttons; the schedule dialog shows the 'Confirme que entendeu as condições' toast when the checkbox is unchecked, and once checked it creates a card with status 'Aguardando resposta'. The migrant has no schedule button. The migrant sees the lock text plus Aceitar/Outro horário/Recusar; a reschedule changes the status to 'Novo horário proposto', after which the helper gets the action buttons; accept shows the address, notes, 'Abrir rota' (Google Maps dir URL) and a valid .ics download; video modality shows 'Entrar na chamada' (meet.jit.si) and no route button; 'Cancelar encontro' works. The /appointments page works with the Próximos/Anteriores tabs and the bottom nav 'Agenda'. The chat video-call button posts a join-call-link. Feed: the 'Vídeo' upload button works, the post saves video_url and PostCard renders post-video-<id>. Password reset: forgot link -> reset-sent-msg -> [MOCK EMAIL] link in the log -> new password -> login OK -> reuse shows 'Link inválido ou expirado'. One real bug: for the video modality, the 'Informações práticas' notes are visible to the invitee before acceptance.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "GET /api/appointments (features._public)", "issue": "For modality 'video', notes are NOT hidden from the invitee before accept (only meeting_url is nulled). Verified in the UI: the migrant saw 'TEST_ secret note' on a pending video appointment. This contradicts the consent text, which says 'endereço e as informações práticas serão mostrados quando o encontro for aceito'. Fix: also set appt['notes']=None in the video branch.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "POST /api/appointments & /reschedule", "issue": "Dates in the past are accepted. Only the frontend date input min blocks them, and only for the date, not the time. Add a server-side check that the slot is in the future."},
+      {"endpoint": "GET /api/videos/{id}", "issue": "Each Range request re-downloads the WHOLE object from storage (about 0.7s for a 2.8MB file, and it grows linearly with size, up to 50MB). An out-of-bounds range returns 206 with an empty body instead of 416. Suggest caching or a range passthrough."},
+      {"endpoint": "POST /api/uploads/video", "issue": "await file.read() loads the full file into memory before the 50MB check; read in chunks and abort early."},
+      {"endpoint": "POST /api/auth/forgot-password", "issue": "Uses an exact lowercase email match, while login uses email_query (case-insensitive regex). Legacy users stored with mixed-case emails would silently get no reset link. Use email_query for consistency."},
+      {"endpoint": "POST /api/calls/{id}", "issue": "Does not reject other_user_id == current_user.id, and does not check chat permission (canChat) server-side."},
+      {"endpoint": "auth (playbook)", "issue": "No brute-force lockout on login, and no httpOnly auth cookie (the token is stored in localStorage). Passwords are bcrypt $2b$ (OK). This pre-dates this feature; noted for the playbook only."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "AppointmentCard", "issue": "Cancelled/declined cards show the invitee 'Endereço e detalhes aparecem após aceitar' even though the appointment is closed. Hide the lock text when the status is declined/cancelled.", "selector": "[data-testid^=appointment-card-]", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "ScheduleDialog", "issues": ["Uses the browser-native <input type=date/time> pickers instead of the shadcn Calendar/Popover", "today() uses toISOString (UTC), so after 21h in Brazil the min date becomes tomorrow; nowPlus(60/150) can wrap past midnight so that end <= start by default late in the evening"]},
+      {"screen": "DirectChat header (mobile 390px)", "issues": ["The other user's name wraps onto 2 lines ('Ana / Voluntaria') because of the 4-5 icon buttons; consider truncate or a smaller icon set"]},
+      {"screen": "AppointmentCard", "issues": ["On desktop the 3-column action buttons are cramped; the 'Outro horário' label nearly touches the border"]},
+      {"screen": "ICS export", "issues": ["Missing the DTSTAMP field (required by RFC 5545; Outlook may reject the file), uses floating times with no TZID, and commas in LOCATION are not escaped. URL.revokeObjectURL is called right after click(), which can cancel the download on Safari/Firefox; wrap it in a setTimeout"]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_scheduling_calls_video_reset.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "HIGH: in features._public, hide notes for video-modality appointments before accept (set appt['notes']=None in the video branch)",
+    "Add a server-side check rejecting past date/time slots in create and reschedule",
+    "Hide the lock text on closed (declined/cancelled) appointment cards",
+    "Optional: add DTSTAMP/TZID to the ICS and delay revokeObjectURL; use email_query in forgot-password; return 416 for invalid ranges; avoid fetching the full video for every Range request"
+  ],
+  "critical_code_review_comments": [
+    "features._public: the hidden logic for video keeps notes visible, which is a data-exposure bug (see backend critical)",
+    "respond(): 'cancel' is allowed for pending/rescheduled too (by either party). That is fine, but the frontend only shows cancel when the status is accepted, so the proposer cannot withdraw a pending proposal from the UI",
+    "get_video loads the full object into memory for each range request, which scales poorly with 50MB videos",
+    "DirectChatPage.js is 690 lines, close to the 700-line limit; consider extracting the header and message bubble"
+  ],
+  "updated_files": ["/app/backend/tests/test_scheduling_calls_video_reset.py (new)"],
+  "success_rate": {"backend": "100% (15/15 tests); 1 logic/privacy bug found by UI inspection", "frontend": "~95% (all flows work; the video-notes leak plus minor UX issues)"},
+  "test_credentials": "helper1@test.com / Teste@123, migrant1@test.com / Teste@123 (both passwords were reset during testing and RESTORED to Teste@123, login verified)",
+  "seed_data_creation": "TEST_ appointments, their chat messages and the TEST_ video post were deleted after testing. The original accepted helper1-migrant1 appointment (31/10/2026) is intact. Some 'Chamada de vídeo/voz iniciada' chat messages and uploaded video file records remain.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "The server clock is Oct 2026, so use dates after 2026-10-23 for 'Próximos'. Login testids: email-input/password-input/submit-button. Chat testids: chat-schedule-btn, schedule-dialog, schedule-date/start/end-input, schedule-modality-{video|request_address|my_address|other_address}, schedule-address-input, schedule-notes-input, schedule-agree-checkbox, schedule-submit-btn, schedule-note-input (reschedule), appointment-card-{id}, appointment-status-{id}, appt-{accept|reschedule|decline|cancel|route|join|calendar}-{id}, join-call-link. Playwright's Chromium cannot decode H.264 mp4 (video.error=4); this is an environment limitation, and the bytes and content-type served by /api/videos were verified identical to the original. Reset tokens can be read with: grep 'MOCK EMAIL' /var/log/supervisor/backend.err.log."
+}

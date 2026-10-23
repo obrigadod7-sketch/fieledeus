@@ -1,0 +1,38 @@
+{
+  "summary": "Tested the Igreja/church feature, the login error message, the rule that an admin cannot block another admin, and regressions. Backend: 7 of 8 pytest tests passed. The church site renders in the iframe and its menu links (ESTUDO, MINISTÉRIOS, CULTOS AO VIVO) navigate correctly, with no page errors. Wrong password and unknown email both show 'E-mail ou senha incorretos'. An admin blocking another admin returns 400 'Não é possível bloquear um administrador'. Blocking yourself returns 400. Once demoted, the same user can be blocked. The landing link landing-church-link opens /church. Home feed Conversar opens direct-chat for both migrant and helper, and the admin dashboard loads with 7 tabs. Problems found: deep links / reloads under /igreja/* serve the main app's index.html, so the iframe goes blank. church-back-btn goes back through the iframe history first. The mobile bottom nav labels wrap mid-word.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "PUT /api/admin/users/{id}/block", "issue": "The guard returns 400 for any admin target, including unblock (blocked:false). An admin who was blocked before being promoted cannot be unblocked."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Church static site deep links", "issue": "GET /igreja/estudo, /igreja/ministerios, etc. return the MAIN app's index.html (title 'Watizat', /static/js/bundle.js), not /igreja/index.html. Reloading inside the iframe after navigating gives a BLANK page (confirmed by screenshot). Opening a church sub-URL directly or sharing it also fails. The CRA dev server's historyApiFallback only falls back to the root index.html.", "selector": "[data-testid='church-iframe']", "priority": "HIGH"},
+      {"component": "ChurchPage back button", "issue": "navigate(-1) uses the joint session history. After N menu clicks inside the iframe, the back button steps back through iframe pages (the URL stays /church) instead of leaving the Igreja page. In the test, 3 iframe navigations followed by back left the user on /church.", "selector": "[data-testid='church-back-btn']", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "BottomNav mobile (390px), 8 items for migrant", "issues": ["Labels wrap mid-word: 'Hom e', 'Trabalh o', 'Map a', 'Agend a', 'Igrej a', 'Perfi l'. Use whitespace-nowrap with a smaller font or truncate, or move items into a 'Mais' menu."]},
+      {"screen": "Church iframe", "issues": ["The church index.html <title> is still 'Lovable App'"]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_church_admin_guard.py", "/app/test_reports/pytest/pytest_iter10.xml"],
+  "action_items": [
+    "Make /igreja/* deep links serve /app/frontend/public/igreja/index.html. Options: in the CRA dev server, add a setupProxy.js / devServer historyApiFallback rewrite { from: /^\\/igreja/, to: '/igreja/index.html' }, and add an equivalent rewrite in production hosting. Alternatively switch the church app to HashRouter so reloads work everywhere.",
+    "Fix church-back-btn so it leaves the page instead of stepping through iframe history: navigate to a fixed route (user ? '/home' : '/'), or record history length on mount.",
+    "Fix BottomNav label wrapping on mobile with 8 or 9 items.",
+    "Optional: allow unblocking an admin target (only reject when blocked is true). Change the church index.html title."
+  ],
+  "critical_code_review_comments": [
+    "ChurchPage iframe has no sandbox or allow attributes. This is fine for same-origin, but consider allow='autoplay; fullscreen' for the live-service videos.",
+    "Church Supabase is a placeholder. The kids dashboard and church login pages will show errors, as expected (not tested in depth)."
+  ],
+  "updated_files": ["/app/backend/tests/test_church_admin_guard.py"],
+  "success_rate": {"backend": "87.5% (7/8, the only failure is the /igreja deep-link check)", "frontend": "~85%"},
+  "seed_data_creation": "A temporary TEST_ admin user was created and deleted inside the test",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run pytest tests/test_church_admin_guard.py. test_igreja_deep_link_serves_church should pass once the dev-server rewrite is in place. /church is a public route. The church menu inside the iframe has these links: INÍCIO, ESTUDO, CULTOS AO VIVO, MISSÕES, MINISTÉRIOS, PEDIDOS DE ORAÇÃO, INFANTIL, PAINEL INFANTIL, CANTINA, CÉLULAS, FAMÍLIA PASTORAL.",
+  "rca of the issue": "Blank iframe on reload: CRA webpack-dev-server historyApiFallback rewrites every unknown path to /index.html (the main app). Files in public/igreja are only served by exact path, so /igreja/estudo gets the main bundle inside the iframe. Repro: open /church, click ESTUDO, then run location.reload() inside the iframe and it goes blank. Or run curl $URL/igreja/estudo and see the title 'Watizat'."
+}

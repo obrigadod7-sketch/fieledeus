@@ -1,0 +1,20 @@
+{
+  "summary": "Frontend retest of /jobs tabs and /map regression (logged in as chattest@example.com). All tabs (search, platforms, offers, seekers) switch with no crash or white screen, and there were 0 page errors. Platforms view shows 8 platform buttons. Clicking Indeed opens a new tab (https://fr.indeed.com/jobs?q=emprego&l=Brasil). Clicking search-all with an empty input shows the toast 'Digite algo para buscar'. With 'garçom' typed, it opens 3 tabs (Indeed, LinkedIn, France Travail) and shows a success toast. The Offers and Seekers views each render jobs-empty-state (no posts in DB). /map still renders data-testid=google-map with markers.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Jobs > Plataformas", "issues": ["The platforms are French sites (fr.indeed, France Travail, Leboncoin, APEC), but the default location is 'Brasil' and the default query is 'emprego' (Portuguese). So the platform URLs get l=Brasil, which gives poor results on French job boards. Consider defaulting to France/Paris, or translating the query the same way searchExternalJobs does with translateSearchTerm."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": ["Optional: in generateSearchUrl, apply translateSearchTerm and a France-appropriate default location for the French platforms"],
+  "critical_code_review_comments": ["JobsPage.js is about 757 lines (over 700). Consider moving the platforms and offers/seekers blocks into separate components.", "The search and location inputs had no data-testid. Added jobs-search-input and jobs-location-input."],
+  "updated_files": ["/app/frontend/src/pages/JobsPage.js (added data-testid to the 2 search inputs only)"],
+  "success_rate": {"backend": "N/A (skipped)", "frontend": "100%"},
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Login at /auth with email-input, password-input, submit-button. Jobs tabs: jobs-tab-{search,platforms,offers,seekers}. Views: jobs-platforms-view, jobs-{offers|seekers}-view, jobs-empty-state, jobs-post-{id}. The inputs are now jobs-search-input and jobs-location-input. The RAPIDAPI_KEY 503 on Buscar Vagas is expected."
+}

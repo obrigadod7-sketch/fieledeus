@@ -1,0 +1,39 @@
+{
+  "summary": "Tested all 8 requested features on backend and frontend. Backend: 16/16 pytest pass in test_assoc_admin_block.py. Covered: rejection of role 'admin', duplicate email (case-insensitive), short password, invalid email (422 with a detail array), volunteer and association self-register, the /api/associations list (needs auth; blocked associations are hidden and come back after unblock), assoc1 can propose appointments, and block/unblock. Block/unblock checks: login returns 403 'Conta bloqueada', the old token gets 401, a wrong password still gets 401, blocking yourself gets 400, an unknown user 404, a non-admin 403, and unblock restores login and token. Also covered: admin/stats has 8 weekly buckets plus the new counters; admin/appointments has no history or _id field and returns 403 for non-admins; scheduling regression (propose -> migrant reschedule -> helper accept). Frontend (Playwright, 1920x1080, no pageerrors anywhere): /volunteer-register shows a toast for invalid email and for short password and stays on step 1; a duplicate helper1 email shows the toast 'Este e-mail já está cadastrado' at the final submit, returns to step 1 and does not go white; a valid flow goes to /volunteers. AuthPage: wrong credentials show a toast and the form stays; both register links exist; the landing page has association-register-button. /association-register submits, shows a toast, lands on /home with the token stored, and the new association is listed on /associations. assoc1 sees chat-schedule-btn in the chat with migrant1. The feed shows a filled teal Conversar pill (rgb(42,157,143) with white text) that navigates to /direct-chat/<userId>. chat-next-appointment-bar shows 'Encontro: 28/10/2026 · 14:00 – 15:00 Confirmado' for both helper1 and migrant1, and upcoming-appointments appear on /home (migrant and helper) and on /volunteers. Admin: bottom-nav Admin opens /admin, which shows extra stats and the weekly chart; the associations tab Bloquear/Reativar works; the appointments tab search and status filter work (cancelled 2, accepted 3); the users tab block shows the 'Bloqueado' badge, the blocked user's UI login shows the 'Conta bloqueada...' toast, and unblock shows 'Conta reativada' and login works again. All test users were unblocked at the end (blocked_users=0).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/auth/login", "issue": "The 401 detail is the English 'Invalid credentials', and the toast shows it as-is in a PT-BR app. Use 'E-mail ou senha incorretos'."},
+      {"endpoint": "PUT /api/admin/users/{id}/block", "issue": "An admin can block another admin, and the body is an untyped dict. Use a Pydantic model and consider forbidding blocking other admins."},
+      {"endpoint": "POST /api/auth/login", "issue": "No brute-force lockout after repeated failed attempts (from the playbook checklist)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/volunteers", "issues": ["The 'Quero Ajudar' category modal opens automatically on every visit, including right after registration, and covers the new 'Próximos encontros' box until the user closes it."]},
+      {"screen": "/volunteer-register", "issues": ["The top-left back link reads 'back' in English (a missing translation key)."]},
+      {"screen": "/admin users table", "issues": ["The block/unblock button is icon-only (it has a title but no aria-label or visible text). Consider adding a label for clarity."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_assoc_admin_block.py", "/app/test_reports/pytest/pytest_iter9.xml"],
+  "action_items": [
+    "Translate the login 401 message ('Invalid credentials') to PT-BR",
+    "Do not auto-open the 'Quero Ajudar' modal on /volunteers each visit, or at least not right after registration, because it hides upcoming-appointments",
+    "Translate the 'back' link on VolunteerRegisterPage",
+    "Optional: use a Pydantic body for the block endpoint, prevent blocking other admins, and add a login lockout"
+  ],
+  "critical_code_review_comments": [
+    "AdminDashboard.js is 1567 lines and DirectChatPage.js is 709. Split them into components.",
+    "Duplicate email is only detected at the final step-4 submit of the volunteer wizard. The page handles this by jumping back to step 1 (works), but an early availability check would be nicer.",
+    "Once an appointment is accepted, neither party can reschedule it (awaiting_user_id is null); they can only cancel. This is intentional turn-taking, but confirm it matches the product intent.",
+    "The admin_stats weekly buckets compare ISO strings. This only works while created_at is always stored as an isoformat string with a consistent offset."
+  ],
+  "updated_files": ["/app/frontend/src/pages/VolunteerRegisterPage.js (added data-testids: vol-name/email/password-input, vol-area-<v>, vol-availability-input, vol-category-<v>, vol-prev/next/submit-btn)", "/app/backend/tests/test_assoc_admin_block.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "Created TEST_-prefixed users: test_vol_*, test_assoc_*, test_blk*, test_volui_*, test_assocui_* (association 'TEST Associação UI', Lyon) and test_blkui_*. All are unblocked. Created helper1->migrant1 appointments on 28/10/2026 and 29/10/2026 (accepted) and cancelled the test proposals.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "The server date is Oct 2026. Volunteer wizard testids are listed above (step 2 needs vol-area-legal, step 4 needs vol-availability-input plus vol-category-food). Admin testids: admin-tab-{overview|users|associations|appointments}, admin-user-block-<id>, admin-association-block-<id>, admin-appointments-search, admin-appointments-status-filter (a native select). The block button triggers a browser confirm dialog, so accept it in Playwright. Run pytest from /app with REACT_APP_BACKEND_URL exported (pytest.ini enables xdist)."
+}

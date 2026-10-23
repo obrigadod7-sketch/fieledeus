@@ -1,0 +1,21 @@
+{
+  "summary": "Frontend only. Admin login (admin@fieledeus.com) -> /admin loads with 7 tabs (overview, users, associations, appointments, posts, housing, ads), each opens without page errors. admin-church-dashboard-link exists (href /igreja/#/dashboard, target _blank, text 'Abrir painel do site da Igreja'); clicking it opens a new tab that shows the church DashboardLayout with nav Home/Assistant/Membros/Aluno/Kids. Every nav link routes correctly (/dashboard/assistant, /membros, /aluno, /kids with the nested Kids Dashboard, Home), and all are placeholder pages as expected. No blank page, no JS errors. /church iframe renders after the rebuild: the menu includes ESTUDO and clicking CÉLULAS scrolls the page (scrollY 1208). The church JS chunk starts with the /* eslint-disable */ banner.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [{"screen": "/igreja/#/dashboard", "issues": ["Placeholder-only pages ('UI placeholder.'). Expected per the original repo, but the user may expect real content."]}]
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "The church /igreja/#/dashboard can be opened directly without authentication (ProtectedRoute/ProtectedTeamRoute are placeholders). Anyone with the URL can open it. That is acceptable only while the pages hold no real data."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A", "frontend": "100%"},
+  "test_credentials": "admin@fieledeus.com / Admin@123 (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "none",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "App login is at /auth (not /login), with testids email-input, password-input and submit-button. The /church page embeds /igreja/ in an iframe. The church dashboard uses a HashRouter at /igreja/#/dashboard/*."
+}

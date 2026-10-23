@@ -1,0 +1,23 @@
+{
+  "summary": "Iteration 12 frontend retest of the HashRouter anchor fix (main.tsx capture click handler) in the /church iframe. ALL PASS. The built bundle in /app/frontend/public/igreja contains the handler. Menu CÉLULAS and FAMÍLIA PASTORAL scroll to #celulas and #pastoral on the home page with no 404. When clicked from ESTUDO or CANTINA, they navigate to '#/' first and then scroll; celulas top=0. On mobile 390px, CÉLULAS clicked from Estudo via the hamburger menu also works. All 6 hero anchors stay on their page and scroll with no 404: Cantina #horarios, Estudo #agenda, Missões #participar, CultosAoVivo #catalogo, MinisterioJovens #atividades, Kids #turmas. External links (PEDIDOS DE ORAÇÃO) open in a new tab and the iframe stays on /igreja/. The new tab shows chrome-error only because the external domain does not resolve from the test container. 'Abrir em nova aba' on #/missoes opened /igreja/#/missoes. Regression: routes /, estudo, cultos-ao-vivo, missoes, ministerios, kids, kids/dashboard, cantina and ministerio-dos-jovens render with no 404. Menu clicks work (ESTUDO, MISSÕES, CANTINA, INÍCIO). Reload in the iframe keeps #/estudo. church-back-btn goes to / when logged out and to /home when logged in (migrant1).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Church iframe anchor scroll", "issues": ["Minor: scrollIntoView(block:'start') does not offset for the sticky church header, so the top of the target section can sit under the header. Consider adding scroll-margin-top to the section ids."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "main.tsx handler: if an id exists neither on the current page nor on home, it navigates to home anyway and silently retries for 2s. That is acceptable, but a scoped ScrollLink component would be more explicit than a global document listener.",
+    "Navigating to the home page then scrolling leaves the hash as '#/', so the section position is not deep-linkable. This is acceptable."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "skipped", "frontend": "100%"},
+  "seed_data_creation": "none",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Get the church iframe via element_handle().content_frame(). The login page is /auth, not /login. Anchor checks: click a[href='#id'] in the frame, then check that body innerText does not contain 'Oops! Page not found' and read getBoundingClientRect().top for the target id."
+}
