@@ -560,8 +560,8 @@ async def ai_chat(message_data: AIMessage, current_user: User = Depends(get_curr
     try:
         # Verificar se a chave OpenAI está configurada
         providers = [
-            (os.environ.get('OPENROUTER_API_KEY'), "https://openrouter.ai/api/v1", os.environ.get('OPENROUTER_MODEL', 'openai/gpt-4o-mini')),
-            (os.environ.get('GROQ_API_KEY'), "https://api.groq.com/openai/v1", os.environ.get('GROQ_MODEL', 'llama-3.3-70b-versatile')),
+            (os.environ.get('OPENROUTER_API_KEY'), "https://openrouter.ai/api/v1", os.environ.get('OPENROUTER_MODEL', 'google/gemma-4-31b-it:free')),
+            (os.environ.get('GROQ_API_KEY'), "https://api.groq.com/openai/v1", os.environ.get('GROQ_MODEL', 'openai/gpt-oss-120b')),
             (os.environ.get('OPENAI_API_KEY'), None, 'gpt-4o-mini'),
         ]
         providers = [p for p in providers if p[0]]
