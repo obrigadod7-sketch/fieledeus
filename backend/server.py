@@ -2,9 +2,6 @@ from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
-from starlette.middleware.gzip import GZipMiddleware
-from fastapi.responses import Response, RedirectResponse
-import base64
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
@@ -15,7 +12,10 @@ import uuid
 from datetime import datetime, timezone, timedelta
 import bcrypt
 import jwt
-from openai import AsyncOpenAI
+try:
+    from openai import AsyncOpenAI
+except ImportError:
+    AsyncOpenAI = None
 from pdf_processor import WatizatPDFProcessor
 from auto_responses import get_auto_response, format_auto_response_post
 from help_locations import HELP_LOCATIONS, get_all_help_locations, get_help_locations_by_category
@@ -64,7 +64,6 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"]
 )
-app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 api_router = APIRouter(prefix="/api")
 
@@ -81,7 +80,7 @@ pdf_processor = WatizatPDFProcessor()
 class User(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    email: str
+    email: EmailStr
     name: str
     display_name: Optional[str] = None
     use_display_name: bool = False
@@ -90,11 +89,7 @@ class User(BaseModel):
     bio: Optional[str] = None
     languages: List[str] = Field(default_factory=list)
     categories: List[str] = Field(default_factory=list)
-    avatar_version: Optional[int] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class AvatarUpload(BaseModel):
-    image: str
 
 class UserRegister(BaseModel):
     email: EmailStr
@@ -118,15 +113,9 @@ class UserRegister(BaseModel):
     linkedin: Optional[str] = None
     location: Optional[dict] = None  # {lat: float, lng: float, address: str}
     show_location: bool = False  # Se quer mostrar localização no feed
-    website: Optional[str] = None
-    description: Optional[str] = None
-    registration_number: Optional[str] = None
-    responsible_name: Optional[str] = None
-    address: Optional[str] = None
-    city: Optional[str] = None
 
 class UserLogin(BaseModel):
-    email: str
+    email: EmailStr
     password: str
 
 class Post(BaseModel):
@@ -149,7 +138,6 @@ class PostCreate(BaseModel):
     description: str
     location: Optional[dict] = None
     images: Optional[List[str]] = Field(default_factory=list)
-    video_id: Optional[str] = None
 
 class PostComment(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -184,7 +172,7 @@ class AdvertisementCreate(BaseModel):
 
 
 class PostCommentCreate(BaseModel):
-    comment: str = Field(min_length=1, max_length=2000)
+    comment: str
 
 class Service(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -263,40 +251,19 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         user_id = payload.get('user_id')
         
         user = await db.users.find_one({'id': user_id}, {'_id': 0})
-        if not user or user.get('blocked'):
+        if not user:
             raise HTTPException(status_code=401, detail="User not found")
-        return User(**(await ensure_admin_role(user)))
+        return User(**user)
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-ADMIN_EMAILS = {e.strip().lower() for e in (os.environ.get('ADMIN_EMAILS', '') + ',' + os.environ.get('ADMIN_EMAIL', '')).split(',') if e.strip()}
-
-
-async def ensure_admin_role(user: dict):
-    if (user.get('email') or '').lower() in ADMIN_EMAILS and user.get('role') != 'admin':
-        await db.users.update_one({'id': user['id']}, {'$set': {'role': 'admin'}})
-        user['role'] = 'admin'
-    return user
-
-
-def email_query(email: str):
-    return {'$regex': f'^{re.escape(email.strip())}$', '$options': 'i'}
-
-
 @api_router.post("/auth/register")
 async def register(user_data: UserRegister):
-    user_data.email = user_data.email.strip().lower()
-    if user_data.role not in ('migrant', 'helper', 'volunteer', 'association'):
-        raise HTTPException(status_code=400, detail="Tipo de conta inválido")
-    if len(user_data.password) < 6:
-        raise HTTPException(status_code=400, detail="A senha deve ter pelo menos 6 caracteres")
-    if not user_data.name.strip():
-        raise HTTPException(status_code=400, detail="Informe o nome")
-    existing = await db.users.find_one({'email': email_query(user_data.email)}, {'_id': 0})
+    existing = await db.users.find_one({'email': user_data.email}, {'_id': 0})
     if existing:
-        raise HTTPException(status_code=400, detail="Este e-mail já está cadastrado")
+        raise HTTPException(status_code=400, detail="Email already registered")
     
     hashed_pw = bcrypt.hashpw(user_data.password.encode(), bcrypt.gensalt())
     
@@ -333,39 +300,26 @@ async def register(user_data: UserRegister):
         user_dict['location'] = user_data.location
         user_dict['show_location'] = user_data.show_location
     
-    if user_data.role == 'association':
-        user_dict.update({
-            'organization': user_data.organization or user_data.name,
-            'responsible_name': user_data.responsible_name,
-            'phone': user_data.phone, 'website': user_data.website,
-            'bio': user_data.description, 'registration_number': user_data.registration_number,
-            'help_categories': user_data.help_categories or [],
-            'location': user_data.location or ({'address': ', '.join(filter(None, [user_data.address, user_data.city]))} if (user_data.address or user_data.city) else None),
-            'city': user_data.city, 'show_location': True, 'blocked': False,
-        })
-
     if user_data.role == 'helper':
         user_dict['help_categories'] = user_data.help_categories or []
         user_dict['location'] = user_data.location
         user_dict['show_location'] = user_data.show_location
     
     await db.users.insert_one(user_dict)
-    user.role = (await ensure_admin_role(user_dict))['role']
+    
     token = create_token(user.id, user.email)
     return {'token': token, 'user': user}
 
 @api_router.post("/auth/login")
 async def login(credentials: UserLogin):
-    user_data = await db.users.find_one({'email': email_query(credentials.email)}, {'_id': 0})
+    user_data = await db.users.find_one({'email': credentials.email}, {'_id': 0})
     
     if not user_data:
-        raise HTTPException(status_code=401, detail="E-mail ou senha incorretos")
+        raise HTTPException(status_code=401, detail="Invalid credentials")
     
     if not bcrypt.checkpw(credentials.password.encode(), user_data['password'].encode()):
-        raise HTTPException(status_code=401, detail="E-mail ou senha incorretos")
-    if user_data.get('blocked'):
-        raise HTTPException(status_code=403, detail="Conta bloqueada. Fale com a administração.")
-    await ensure_admin_role(user_data)
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
     user_data.pop('password')
     if isinstance(user_data['created_at'], str):
         user_data['created_at'] = datetime.fromisoformat(user_data['created_at'])
@@ -378,41 +332,6 @@ async def login(credentials: UserLogin):
 @api_router.get("/profile")
 async def get_profile(current_user: User = Depends(get_current_user)):
     return current_user
-
-AVATAR_MAX_BYTES = 600_000
-AVATAR_MIMES = {'image/jpeg', 'image/png', 'image/webp'}
-
-@api_router.put("/profile/avatar")
-async def upload_avatar(payload: AvatarUpload, current_user: User = Depends(get_current_user)):
-    if len(payload.image) > 820_000:
-        raise HTTPException(status_code=413, detail='Imagem muito grande')
-    header, _, data = payload.image.partition(',')
-    mime = header[5:].split(';')[0] if header.startswith('data:') else ''
-    if mime not in AVATAR_MIMES or not data:
-        raise HTTPException(status_code=400, detail='Formato de imagem inválido')
-    try:
-        raw = base64.b64decode(data, validate=True)
-    except Exception:
-        raise HTTPException(status_code=400, detail='Imagem inválida')
-    if len(raw) > AVATAR_MAX_BYTES:
-        raise HTTPException(status_code=413, detail='Imagem muito grande')
-    version = int(datetime.now(timezone.utc).timestamp() * 1000)
-    await db.avatars.update_one({'user_id': current_user.id}, {'$set': {'data': raw, 'mime': mime, 'version': version}}, upsert=True)
-    await db.users.update_one({'id': current_user.id}, {'$set': {'avatar_version': version}})
-    return {'avatar_version': version}
-
-@api_router.delete("/profile/avatar")
-async def delete_avatar(current_user: User = Depends(get_current_user)):
-    await db.avatars.delete_one({'user_id': current_user.id})
-    await db.users.update_one({'id': current_user.id}, {'$unset': {'avatar_version': ''}})
-    return {'avatar_version': None}
-
-@api_router.get("/users/{user_id}/avatar")
-async def get_avatar(user_id: str):
-    doc = await db.avatars.find_one({'user_id': user_id}, {'_id': 0, 'data': 1, 'mime': 1})
-    if not doc:
-        raise HTTPException(status_code=404, detail='Sem foto')
-    return Response(content=bytes(doc['data']), media_type=doc['mime'], headers={'Cache-Control': 'public, max-age=31536000, immutable'})
 
 @api_router.put("/profile")
 async def update_profile(updates: dict, current_user: User = Depends(get_current_user)):
@@ -445,8 +364,6 @@ async def create_post(post_data: PostCreate, current_user: User = Depends(get_cu
     post_dict = post.model_dump()
     post_dict['created_at'] = post_dict['created_at'].isoformat()
     post_dict['images'] = post_data.images or []
-    if post_data.video_id and await db.files.find_one({'id': post_data.video_id, 'user_id': current_user.id}, {'_id': 1}):
-        post_dict['video_url'] = f"/api/videos/{post_data.video_id}"
     
     await db.posts.insert_one(post_dict)
     
@@ -469,8 +386,6 @@ async def create_post(post_data: PostCreate, current_user: User = Depends(get_cu
 
 @api_router.post("/posts/{post_id}/comments")
 async def add_comment(post_id: str, comment_data: PostCommentCreate, current_user: User = Depends(get_current_user)):
-    if not await db.posts.find_one({'id': post_id}, {'_id': 1}):
-        raise HTTPException(status_code=404, detail='Post não encontrado')
     comment = PostComment(
         post_id=post_id,
         user_id=current_user.id,
@@ -485,104 +400,80 @@ async def add_comment(post_id: str, comment_data: PostCommentCreate, current_use
 
 @api_router.get("/posts/{post_id}/comments")
 async def get_comments(post_id: str):
-    comments = await db.comments.find({'post_id': post_id}, {'_id': 0}).sort('created_at', 1).to_list(500)
-    ids = list({c['user_id'] for c in comments})
-    users = {u['id']: u async for u in db.users.find({'id': {'$in': ids}}, {'_id': 0, 'id': 1, 'name': 1, 'role': 1, 'avatar_version': 1})}
+    comments = await db.comments.find({'post_id': post_id}, {'_id': 0}).sort('created_at', 1).to_list(1000)
+    
     for comment in comments:
-        user = users.get(comment['user_id'])
+        if isinstance(comment['created_at'], str):
+            comment['created_at'] = datetime.fromisoformat(comment['created_at'])
+        
+        user = await db.users.find_one({'id': comment['user_id']}, {'_id': 0, 'password': 0, 'email': 0})
         if user:
-            comment['user'] = {'id': user['id'], 'name': user['name'], 'role': user['role'], 'avatar_version': user.get('avatar_version')}
+            comment['user'] = {'name': user['name'], 'role': user['role']}
     
     return comments
 
 @api_router.get("/posts")
-async def get_posts(
-    type: Optional[str] = None,
-    category: Optional[str] = None,
-    user_id: Optional[str] = None,
-    limit: int = 10,
-    skip: int = 0,
-    current_user: User = Depends(get_current_user)
-):
-    # Filtros aplicados no banco (antes eram aplicados em Python após carregar 100 posts com imagens base64)
-    limit = max(1, min(limit, 50))
-    skip = max(0, skip)
-    conditions = [{'is_auto_response': {'$ne': True}}]
+async def get_posts(type: Optional[str] = None, category: Optional[str] = None, current_user: User = Depends(get_current_user)):
+    query = {}
     if type:
-        conditions.append({'type': type})
-    if user_id:
-        conditions.append({'user_id': user_id})
+        query['type'] = type
     if category:
-        conditions.append({'$or': [{'category': category}, {'categories': category}]})
-
-    if current_user.role in ['volunteer', 'helper', 'association']:
-        user_data = await db.users.find_one({'id': current_user.id}, {'_id': 0, 'help_categories': 1})
-        help_cats = (user_data or {}).get('help_categories') or []
-        if help_cats:
-            conditions.append({'$or': [
-                {'type': {'$ne': 'need'}},
-                {'category': {'$in': help_cats}},
-                {'categories': {'$in': help_cats}}
-            ]})
-
-    # Imagens base64 NÃO vão no JSON do feed; são servidas por /posts/{id}/images/{idx}
-    pipeline = [
-        {'$match': {'$and': conditions}},
-        {'$sort': {'created_at': -1}},
-        {'$skip': skip},
-        {'$limit': limit + 1},
-        {'$addFields': {'image_count': {'$size': {'$ifNull': ['$images', []]}}}},
-        {'$project': {'_id': 0, 'images': 0}}
-    ]
-    posts = await db.posts.aggregate(pipeline).to_list(limit + 1)
-    has_more = len(posts) > limit
-    posts = posts[:limit]
-
-    post_ids = [p['id'] for p in posts]
-    user_ids = list({p['user_id'] for p in posts if p.get('user_id') != 'system'})
+        # Buscar posts que tenham a categoria (principal ou nas múltiplas)
+        query['$or'] = [
+            {'category': category},
+            {'categories': category}
+        ]
+    
+    posts = await db.posts.find(query, {'_id': 0}).sort('created_at', -1).to_list(100)
+    
+    # Se o usuário é voluntário, marcar posts que ele pode ajudar baseado nas categorias
+    user_data = await db.users.find_one({'id': current_user.id}, {'_id': 0})
+    user_help_categories = user_data.get('help_categories', []) if user_data else []
+    
+    # Batch fetch all unique user_ids to avoid N+1 queries
+    user_ids = list(set(post['user_id'] for post in posts if post['user_id'] != 'system'))
     users_dict = {}
     if user_ids:
-        async for u in db.users.find({'id': {'$in': user_ids}}, {'_id': 0, 'id': 1, 'name': 1, 'display_name': 1, 'use_display_name': 1, 'role': 1, 'avatar_version': 1}):
-            users_dict[u['id']] = u
-    comment_counts = {}
-    if post_ids:
-        async for c in db.comments.aggregate([
-            {'$match': {'post_id': {'$in': post_ids}}},
-            {'$group': {'_id': '$post_id', 'n': {'$sum': 1}}}
-        ]):
-            comment_counts[c['_id']] = c['n']
-
+        users_cursor = db.users.find({'id': {'$in': user_ids}}, {'_id': 0, 'password': 0, 'email': 0})
+        async for user in users_cursor:
+            users_dict[user['id']] = user
+    
+    filtered_posts = []
     for post in posts:
-        if post.get('user_id') == 'system':
+        if isinstance(post['created_at'], str):
+            post['created_at'] = datetime.fromisoformat(post['created_at'])
+        
+        if post['user_id'] == 'system':
             post['user'] = {'name': 'Watizat Assistant', 'role': 'assistant'}
         else:
-            u = users_dict.get(post.get('user_id'))
-            if u:
-                name = u.get('display_name') if u.get('use_display_name') and u.get('display_name') else u.get('name')
-                post['user'] = {'id': u['id'], 'name': name, 'role': u.get('role'), 'avatar_version': u.get('avatar_version')}
-        if not post.get('categories'):
+            user = users_dict.get(post['user_id'])
+            if user:
+                display_name = user.get('display_name') if user.get('use_display_name') else user['name']
+                post['user'] = {'name': display_name, 'role': user['role']}
+        
+        # Garantir que posts tenham campo categories
+        if 'categories' not in post or not post['categories']:
             post['categories'] = [post['category']] if post.get('category') else []
-        post['image_urls'] = [f"/api/posts/{post['id']}/images/{i}" for i in range(post.pop('image_count', 0))]
-        post['comment_count'] = comment_counts.get(post['id'], 0)
-        post['can_help'] = True
-
-    return {'posts': posts, 'has_more': has_more, 'next_skip': skip + len(posts)}
-
-
-@api_router.get("/posts/{post_id}/images/{idx}")
-async def get_post_image(post_id: str, idx: int):
-    doc = await db.posts.find_one({'id': post_id}, {'_id': 0, 'images': {'$slice': [idx, 1]}})
-    if not doc or not doc.get('images'):
-        raise HTTPException(status_code=404, detail='Imagem não encontrada')
-    img = doc['images'][0]
-    headers = {'Cache-Control': 'public, max-age=604800, immutable'}
-    if isinstance(img, str) and img.startswith('data:'):
-        header, _, data = img.partition(',')
-        mime = header[5:].split(';')[0] or 'image/jpeg'
-        return Response(content=base64.b64decode(data), media_type=mime, headers=headers)
-    if isinstance(img, str) and img.startswith('http'):
-        return RedirectResponse(img)
-    raise HTTPException(status_code=404, detail='Imagem inválida')
+        
+        # Se é voluntário ou helper e o post é do tipo "need" (precisa de ajuda)
+        # só mostrar se alguma categoria do post está nas categorias que ele pode ajudar
+        if current_user.role in ['volunteer', 'helper']:
+            if post['type'] == 'need':
+                post_categories = post.get('categories', [post.get('category')])
+                # Se não tem categorias definidas ou alguma categoria do post está nas dele
+                if not user_help_categories or any(cat in user_help_categories for cat in post_categories):
+                    post['can_help'] = True
+                    filtered_posts.append(post)
+            else:
+                # Posts de oferta (type='offer') todos podem ver
+                post['can_help'] = True
+                filtered_posts.append(post)
+        else:
+            # Migrantes e outros usuários veem todos os posts
+            post['can_help'] = True
+            filtered_posts.append(post)
+    
+    return filtered_posts
 
 @api_router.get("/services")
 async def get_services(category: Optional[str] = None):
@@ -597,14 +488,9 @@ async def get_services(category: Optional[str] = None):
 async def ai_chat(message_data: AIMessage, current_user: User = Depends(get_current_user)):
     try:
         # Verificar se a chave OpenAI está configurada
-        providers = [
-            (os.environ.get('OPENROUTER_API_KEY'), "https://openrouter.ai/api/v1", os.environ.get('OPENROUTER_MODEL', 'google/gemma-4-31b-it:free')),
-            (os.environ.get('GROQ_API_KEY'), "https://api.groq.com/openai/v1", os.environ.get('GROQ_MODEL', 'openai/gpt-oss-120b')),
-            (os.environ.get('OPENAI_API_KEY'), None, 'gpt-4o-mini'),
-        ]
-        providers = [p for p in providers if p[0]]
+        openai_key = os.environ.get('OPENAI_API_KEY')
         
-        if not providers:
+        if not openai_key:
             # Retornar resposta baseada no guia Watizat sem IA
             pdf_processor.load_index()
             relevant_chunks = pdf_processor.search(message_data.message, k=3)
@@ -652,28 +538,22 @@ Estamos aqui para ajudar!"""
         {context}
         """
         
-        # OpenRouter -> Groq -> OpenAI (fallback em caso de erro)
-        ai_response = None
-        last_error = None
-        for key, base_url, model in providers:
-            try:
-                client_ai = AsyncOpenAI(api_key=key, base_url=base_url) if base_url else AsyncOpenAI(api_key=key)
-                response = await client_ai.chat.completions.create(
-                    model=model,
-                    messages=[
-                        {"role": "system", "content": system_message},
-                        {"role": "user", "content": message_data.message}
-                    ],
-                    temperature=0.7,
-                    max_tokens=1000
-                )
-                ai_response = response.choices[0].message.content
-                break
-            except Exception as e:
-                last_error = e
-                logging.warning(f"AI provider {base_url or 'openai'} failed: {e}")
-        if ai_response is None:
-            raise last_error
+        # Usar OpenAI diretamente
+        openai_client = AsyncOpenAI(
+            api_key=openai_key
+        )
+        
+        response = await openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": message_data.message}
+            ],
+            temperature=0.7,
+            max_tokens=1000
+        )
+        
+        ai_response = response.choices[0].message.content
         
         chat_record = {
             'id': str(uuid.uuid4()),
@@ -742,19 +622,6 @@ async def admin_stats(current_user: User = Depends(get_current_user)):
     # Posts por tipo
     needs_count = await db.posts.count_documents({'type': 'need'})
     offers_count = await db.posts.count_documents({'type': 'offer'})
-    now = datetime.now(timezone.utc)
-    week_start = (now - timedelta(days=now.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
-    weekly = []
-    for i in range(7, -1, -1):
-        a = (week_start - timedelta(weeks=i)).isoformat()
-        b = (week_start - timedelta(weeks=i - 1)).isoformat()
-        rng = {'created_at': {'$gte': a, '$lt': b}}
-        weekly.append({
-            'week': (week_start - timedelta(weeks=i)).strftime('%d/%m'),
-            'users': await db.users.count_documents(rng),
-            'posts': await db.posts.count_documents(rng),
-            'appointments': await db.appointments.count_documents(rng),
-        })
     
     return {
         'total_users': total_users,
@@ -765,14 +632,7 @@ async def admin_stats(current_user: User = Depends(get_current_user)):
         'total_messages': total_messages,
         'posts_by_category': posts_by_category,
         'needs_count': needs_count,
-        'offers_count': offers_count,
-        'total_helpers': await db.users.count_documents({'role': 'helper'}),
-        'total_associations': await db.users.count_documents({'role': 'association'}),
-        'blocked_users': await db.users.count_documents({'blocked': True}),
-        'total_appointments': await db.appointments.count_documents({}),
-        'accepted_appointments': await db.appointments.count_documents({'status': 'accepted'}),
-        'pending_appointments': await db.appointments.count_documents({'status': {'$in': ['pending', 'rescheduled']}}),
-        'weekly': weekly,
+        'offers_count': offers_count
     }
 
 @api_router.get("/admin/users")
@@ -852,7 +712,7 @@ async def admin_update_user_role(user_id: str, role_data: dict, current_user: Us
         raise HTTPException(status_code=403, detail="Admin only")
     
     new_role = role_data.get('role')
-    if new_role not in ['migrant', 'volunteer', 'helper', 'association', 'admin']:
+    if new_role not in ['migrant', 'volunteer', 'helper', 'admin']:
         raise HTTPException(status_code=400, detail="Invalid role")
     
     result = await db.users.update_one({'id': user_id}, {'$set': {'role': new_role}})
@@ -987,7 +847,7 @@ async def can_chat_with_user(other_user_id: str, current_user: User = Depends(ge
         return {'can_chat': True, 'reason': 'allowed'}
     
     # Voluntários e helpers só podem conversar com migrantes se tiverem categorias compatíveis
-    if current_user.role in ['volunteer', 'helper', 'association'] and other_user.get('role') == 'migrant':
+    if current_user.role in ['volunteer', 'helper'] and other_user.get('role') == 'migrant':
         helper_categories = current_user_data.get('help_categories', []) if current_user_data else []
         
         if not helper_categories:
@@ -1588,7 +1448,7 @@ async def search_jobs(
     """Busca vagas de emprego usando JSearch API (Indeed, LinkedIn, etc.)"""
     
     if not RAPIDAPI_KEY:
-        raise HTTPException(status_code=503, detail="Busca de vagas indisponível: configure RAPIDAPI_KEY")
+        raise HTTPException(status_code=500, detail="API key não configurada")
     
     # Verificar cache primeiro (evitar muitas requisições)
     cache_key = f"jobs_{query}_{location}_{page}_{date_posted}"
@@ -1705,7 +1565,7 @@ async def get_job_details(job_id: str):
     """Obtém detalhes de uma vaga específica"""
     
     if not RAPIDAPI_KEY:
-        raise HTTPException(status_code=503, detail="Busca de vagas indisponível: configure RAPIDAPI_KEY")
+        raise HTTPException(status_code=500, detail="API key não configurada")
     
     headers = {
         "X-RapidAPI-Key": RAPIDAPI_KEY,
@@ -2265,8 +2125,6 @@ async def update_housing_status(
     
     return {'message': f'Status atualizado para {new_status}'}
 
-from features import build_router
-api_router.include_router(build_router(db, get_current_user))
 app.include_router(api_router)
 
 # Health check na raiz para o Render
@@ -2293,51 +2151,6 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
-
-@app.on_event("startup")
-async def create_indexes():
-    try:
-        await db.posts.create_index([('created_at', -1)])
-        await db.posts.create_index('id', unique=True)
-        await db.posts.create_index([('type', 1), ('created_at', -1)])
-        await db.posts.create_index('user_id')
-        await db.users.create_index('id', unique=True)
-        await db.users.create_index('email', unique=True)
-        await db.comments.create_index([('post_id', 1), ('created_at', 1)])
-        await db.messages.create_index([('from_user_id', 1), ('to_user_id', 1)])
-        await db.avatars.create_index('user_id', unique=True)
-        await db.appointments.create_index('id', unique=True)
-        await db.appointments.create_index([('proposer_id', 1), ('invitee_id', 1)])
-        await db.files.create_index('id', unique=True)
-        await db.password_reset_tokens.create_index('expires_at', expireAfterSeconds=0)
-    except Exception as e:
-        logger.warning(f"Index creation skipped: {e}")
-    await seed_admin()
-
-
-async def seed_admin():
-    # Admin do painel vem de ADMIN_EMAIL / ADMIN_PASSWORD (idempotente)
-    email = os.environ.get('ADMIN_EMAIL')
-    password = os.environ.get('ADMIN_PASSWORD')
-    if not email or not password:
-        return
-    email = email.strip().lower()
-    existing = await db.users.find_one({'email': email}, {'_id': 0, 'id': 1, 'password': 1, 'role': 1})
-    if existing is None:
-        admin = User(email=email, name='Administrador', role='admin', languages=['pt']).model_dump()
-        admin['password'] = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
-        admin['created_at'] = admin['created_at'].isoformat()
-        await db.users.insert_one(admin)
-        logger.info(f"Admin criado: {email}")
-        return
-    updates = {}
-    if existing.get('role') != 'admin':
-        updates['role'] = 'admin'
-    if not existing.get('password') or not bcrypt.checkpw(password.encode(), existing['password'].encode()):
-        updates['password'] = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
-    if updates:
-        await db.users.update_one({'email': email}, {'$set': updates})
-        logger.info(f"Admin atualizado: {email}")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():

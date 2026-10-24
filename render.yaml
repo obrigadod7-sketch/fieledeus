@@ -1,59 +1,57 @@
 services:
+  # Backend Service
   - type: web
     name: watizat-backend
     runtime: python
-    rootDir: backend
-    buildCommand: pip install --upgrade pip && pip install -r requirements_render.txt
-    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT --workers 2 --proxy-headers
-    healthCheckPath: /api/
+    env: python
+    buildCommand: cd backend && pip install -r requirements.txt
+    startCommand: cd backend && uvicorn server:app --host 0.0.0.0 --port $PORT --workers 2
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.9
-      - key: PYTHONUNBUFFERED
-        value: "1"
       - key: MONGO_URL
         sync: false
       - key: DB_NAME
         value: watizat_db
       - key: JWT_SECRET
         generateValue: true
-      - key: ADMIN_EMAIL
-        sync: false
-      - key: ADMIN_PASSWORD
-        sync: false
-      - key: ADMIN_EMAILS
-        value: mecjohnson97@gmail.com
+      - key: EMERGENT_LLM_KEY
+        value: sk-emergent-b8cEdA5822d14C0638
       - key: CORS_ORIGINS
         value: "*"
-      - key: OPENAI_API_KEY
-        sync: false
-      - key: EMERGENT_LLM_KEY
-        sync: false
-      - key: RAPIDAPI_KEY
-        sync: false
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: PYTHONUNBUFFERED
+        value: "1"
+    healthCheckPath: /api
+    numInstances: 1
+    maxInstanceCount: 1
 
+  # Frontend Service
   - type: web
     name: watizat-frontend
-    runtime: static
-    rootDir: frontend
-    buildCommand: npm install && npm run build
-    staticPublishPath: build
-    headers:
-      - path: /static/*
-        name: Cache-Control
-        value: public, max-age=31536000, immutable
+    runtime: node
+    env: node
+    buildCommand: cd frontend && npm install && GENERATE_SOURCEMAP=false npm run build
+    staticPublishPath: ./frontend/build
     routes:
+      - type: rewrite
+        source: /api/*
+        destination: https://watizat-backend.onrender.com/api/*
       - type: rewrite
         source: /*
         destination: /index.html
     envVars:
       - key: REACT_APP_BACKEND_URL
-        sync: false
+        fromService:
+          type: web
+          name: watizat-backend
+          envVarKey: RENDER_EXTERNAL_URL
       - key: NODE_VERSION
-        value: 22.16.0
+        value: 18.x
+      - key: NODE_ENV
+        value: production
       - key: GENERATE_SOURCEMAP
         value: "false"
       - key: CI
         value: "false"
-      - key: DISABLE_ESLINT_PLUGIN
-        value: "true"
+    numInstances: 1
+    maxInstanceCount: 1
