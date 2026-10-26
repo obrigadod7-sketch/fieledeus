@@ -1,0 +1,38 @@
+{
+  "summary": "Frontend-only test of /jobs white-screen fix and /map Google Maps fix (logged in as chattest@example.com). MAP: fully working - real Google Map renders (data-testid=google-map), 64 location markers, no google-map-error, no Google Maps key errors in console (only Marker deprecation warning + expected headless Geolocation error), clicking a marker opens details dialog, list below map renders. JOBS: page no longer goes white - header, search, location presets, 12 category chips (Todos, Construção, Limpeza...) render and category click works (shows Sugestões). BUT tabs Plataformas / Serviços / Procuram render an EMPTY content area: JobsPage.js only has a `viewMode === 'search'` render block; no blocks for 'platforms', 'offers', 'seekers'. searchAllPlatforms/searchOnPlatform/displayData are defined but never used, so the 'search across platforms' button does not exist in UI. 'Buscar Vagas' calls backend /api/jobs search which returns 503 'configure RAPIDAPI_KEY' (shown as toast; no crash).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/jobs/search (external jobs)", "issue": "Returns 503 'Busca de vagas indisponível: configure RAPIDAPI_KEY' - RAPIDAPI_KEY missing in backend/.env, so 'Buscar Vagas' and the Garçom/Faxineira quick terms always return 0 results"}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "JobsPage tabs Plataformas / Serviços / Procuram", "issue": "Clicking these tabs shows a blank content area. JSX only renders `{viewMode === 'search' && ...}` (line ~477); the platforms grid (JOB_PLATFORMS with searchOnPlatform + 'Buscar em todas' button calling searchAllPlatforms) and offers/seekers list (displayData) were lost when the file was restored", "selector": "button:has-text('Plataformas'), button:has-text('Serviços'), button:has-text('Procuram')", "priority": "HIGH"}
+    ],
+    "integration_issues": [
+      {"flow": "Search across platforms", "issue": "No UI button calls searchAllPlatforms(); feature unreachable. Buscar Vagas button hits RapidAPI-backed endpoint -> 503", "affected_selectors": []}
+    ],
+    "design_issues": [
+      {"screen": "JobsPage", "issues": ["Very few data-testid attributes (tabs, category chips, search input/button lack them)"]},
+      {"screen": "MapPage", "issues": ["google.maps.Marker deprecation warning - consider AdvancedMarkerElement (non-blocking)"]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "JobsPage.js: re-add render blocks for viewMode 'platforms' (list JOB_PLATFORMS with onClick searchOnPlatform + a 'Buscar em todas' button calling searchAllPlatforms) and for 'offers'/'seekers' (render displayData cards with openJobDetails or similar)",
+    "Either configure RAPIDAPI_KEY in backend/.env or default viewMode/fallback to platforms when /api jobs search returns 503",
+    "Add data-testid to JobsPage tabs, category chips, search input and buttons"
+  ],
+  "critical_code_review_comments": [
+    "JobsPage.js: searchAllPlatforms, searchOnPlatform, displayData are dead code - indicates truncated JSX",
+    "GoogleMapComponent: useJsApiLoader fine; consider memoizing center to avoid recenter on re-render"
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "skipped", "frontend": "Map 100%; Jobs ~55% (render + categories OK, 3 of 4 tabs empty, platform search missing)"},
+  "test_credentials": "chattest@example.com / Teste123! (from /app/memory/test_credentials.md) - works",
+  "seed_data_creation": "none",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Map verified working with Google key. Retest JobsPage tabs Plataformas/Serviços/Procuram content and platform search window.open after main agent fix."
+}

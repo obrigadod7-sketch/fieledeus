@@ -1,0 +1,41 @@
+{
+  "summary": "Iteration 5: tested landing i18n (PT/FR/EN/ES), profile photo upload/remove/persist and its propagation (feed post cards, comments, direct-chat header), avatar backend endpoints, and how /jobs, /volunteers, /chat, /direct-chat and /profile look at 390px and 1920px. Everything requested works. Pytest: 39/39 passed, including the new test_avatar.py.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "PUT /api/profile/avatar", "issue": "AvatarUpload.image has no max_length, so a very large payload is fully base64-decoded before the 600KB check runs. Add Field(max_length=~820_000) to reject it early with 413/422."},
+      {"endpoint": "GET /api/jobs/search, POST /api/jobs/sync-to-map", "issue": "Returns 500 when RAPIDAPI_KEY is missing (already known). 503 with a detail message would be more accurate. /jobs triggers this on page load, so the console logs 500s."},
+      {"endpoint": "POST /api/auth/login", "issue": "No brute-force lockout (playbook item 4). Bearer tokens are used, not httpOnly cookies. This was already the case."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "/volunteers help-request list", "issue": "Author avatars in the list are still green-gradient initial circles ('M') and ignore avatar_version, even though Maria has a photo. Use <Avatar/> here for consistency with the feed/chat.", "affected_selectors": ["[data-testid=volunteers-page]"]}
+    ],
+    "design_issues": [
+      {"screen": "/volunteers", "issues": ["No data-testid on the category buttons, 'Quero Ajudar Alguém', 'Criar oferta pública' or the help-request cards (only volunteers-page has one).", "Author circles and the 'Precisa de ajuda' text use an emerald green that is outside the sage #2A9D8F palette.", "The first category button in the dialog gets a black focus outline when the dialog opens (auto-focus). A teal focus ring would match better."]},
+      {"screen": "/profile (migrant)", "issues": ["The heading reads 'Categorias que você ajuda' for a migrant user, which reads wrong. At 1920px the 'Perfil' header title is left-aligned and does not line up with the centered card."]},
+      {"screen": "Landing", "issues": ["The chosen language is not saved (localStorage i18nextLng is null), so it resets to PT on reload."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_avatar.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "Optional: add max_length to AvatarUpload.image",
+    "Optional: use <Avatar userId version> for authors in the VolunteersPage list and add data-testids to its interactive elements",
+    "Optional: save the language choice (i18next languageDetector/localStorage)",
+    "Optional: return 503 instead of 500 from the jobs endpoints when RAPIDAPI_KEY is missing"
+  ],
+  "critical_code_review_comments": [
+    "AvatarUploader: the error path calls res.json() unconditionally. If the ingress returns an HTML 413, this throws and the generic toast is shown, which is acceptable.",
+    "JobsPage.js (1073 lines), DirectChatPage.js (597) and VolunteersPage.js (633) are large. Consider splitting them.",
+    "The avatar GET sets Cache-Control immutable for one year. That is fine because the ?v= version busts the cache, but after a DELETE an old cached URL still serves the image until the version changes. The UI never requests it then, so this is acceptable."
+  ],
+  "updated_files": ["/app/backend/tests/test_avatar.py"],
+  "success_rate": {"backend": "100% (39/39)", "frontend": "100% of requested flows"},
+  "test_credentials": "maria@teste.com / Teste123!, admin@fieledeus.com / FielAdmin2026! (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "Maria now has a test avatar (orange square with a teal circle, 400px). Added one comment 'TEST_ comentário avatar' on Maria's post 26a04a86-bf52-432c-a5e0-232d7614b3b1.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "test_avatar.py covers 401/400/422/413, upload→GET image→DELETE→404, and posts/comments avatar_version. It leaves Maria with a 1x1 PNG at the end, and the later UI tests replaced that with the jpg. /volunteers opens the 'Quero Ajudar' dialog automatically (showModal defaults to true). The landing language pill highlight uses a CSS transition, so wait about 300ms before taking a screenshot."
+}
