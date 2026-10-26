@@ -3,6 +3,7 @@ import { Send, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, authHeaders, ROLES } from './feedConfig';
 import Avatar from '../Avatar';
+import EmojiPicker from '../EmojiPicker';
 
 export default function PostComments({ postId, token, onAdded }) {
   const [items, setItems] = useState(null);
@@ -58,7 +59,8 @@ export default function PostComments({ postId, token, onAdded }) {
           ))}
         </ul>
       )}
-      <div className="mt-3 flex gap-2">
+      <div className="mt-3 flex items-center gap-2">
+        <EmojiPicker onPick={(em) => setText((t) => t + em)} testId={`post-comment-emoji-${postId}`} />
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}

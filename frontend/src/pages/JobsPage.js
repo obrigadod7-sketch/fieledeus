@@ -199,7 +199,7 @@ export default function JobsPage() {
 
   const resultsRef = useRef(null);
 
-  const searchExternalJobs = async (query, location, page = 1) => {
+  const searchExternalJobs = async (query, location, page = 1, scroll = false) => {
     setSearchLoading(true);
     try {
       const translatedQuery = translateSearchTerm(query || 'emprego');
@@ -221,7 +221,7 @@ export default function JobsPage() {
         setCurrentPage(page);
         setViewMode('search');
         if (data.jobs?.length > 0) {
-          setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+          if (scroll) setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
           toast.success(`${data.jobs.length} vagas encontradas!`);
         } else {
           toast.info('Nenhuma vaga encontrada. Tente outros termos.');
@@ -245,7 +245,7 @@ export default function JobsPage() {
       toast.error('Digite algo para buscar');
       return;
     }
-    void searchExternalJobs(sanitizedQuery, sanitizedLocation, 1);
+    void searchExternalJobs(sanitizedQuery, sanitizedLocation, 1, true);
     setViewMode('search');
   };
 
@@ -510,7 +510,7 @@ export default function JobsPage() {
                       key={term}
                       onClick={() => {
                         setSearchQuery(term);
-                        void searchExternalJobs(term, locationQuery);
+                        void searchExternalJobs(term, locationQuery, 1, true);
                       }}
                       className="px-3 py-1 bg-[#E9F5F3] text-[#1F7A6F] rounded-full text-sm hover:bg-[#BFE3DD]"
                     >

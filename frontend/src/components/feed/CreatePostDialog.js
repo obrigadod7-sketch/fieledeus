@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
-import { ImagePlus, MapPin, X, Loader2 } from 'lucide-react';
+import { ImagePlus, MapPin, X, Loader2, Video } from 'lucide-react';
+import EmojiPicker from '../EmojiPicker';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { CATEGORIES, API, authHeaders } from './feedConfig';
@@ -9,6 +10,8 @@ const empty = (role) => ({ type: role === 'migrant' ? 'need' : 'offer', category
 
 export default function CreatePostDialog({ open, onOpenChange, user, token, onCreated }) {
   const fileRef = useRef(null);
+  const videoRef = useRef(null);
+  const [video, setVideo] = useState(null);
   const [post, setPost] = useState(empty(user?.role));
   const [submitting, setSubmitting] = useState(false);
   const set = (patch) => setPost((p) => ({ ...p, ...patch }));
@@ -24,6 +27,15 @@ export default function CreatePostDialog({ open, onOpenChange, user, token, onCr
     } catch {
       toast.error('Não foi possível ler a imagem');
     }
+  };
+
+  const addVideo = (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('video/')) return toast.error('Escolha um arquivo de vídeo');
+    if (file.size > 50 * 1024 * 1024) return toast.error('Vídeo muito grande (máximo 50MB)');
+    setVideo({ file, preview: URL.createObjectURL(file) });
   };
 
   const getLocation = () => {
@@ -45,8 +57,16 @@ export default function CreatePostDialog({ open, onOpenChange, user, token, onCr
         body: JSON.stringify(post),
       });
       if (!res.ok) throw new Error();
+      if (video) {
+        const created = await res.json();
+        const fd = new FormData();
+        fd.append('file', video.file);
+        const vr = await fetch(`${API}/api/posts/${created.id}/video`, { method: 'POST', headers: authHeaders(token), body: fd });
+        if (!vr.ok) toast.error('Post publicado, mas o vídeo não foi enviado');
+      }
       toast.success('Publicado com sucesso!');
       setPost(empty(user?.role));
+      setVideo(null);
       onOpenChange(false);
       onCreated();
     } catch {
@@ -84,19 +104,34 @@ export default function CreatePostDialog({ open, onOpenChange, user, token, onCr
 
           <div>
             <p className="feed-label">Título</p>
-            <input value={post.title} onChange={(e) => set({ title: e.target.value })} placeholder="Ex: Preciso de roupas de inverno" className="feed-input w-full" data-testid="create-post-title-input" />
+            <div className="flex items-center gap-1">
+              <input value={post.title} onChange={(e) => set({ title: e.target.value })} placeholder="Ex: Preciso de roupas de inverno" className="feed-input w-full" data-testid="create-post-title-input" />
+              <EmojiPicker onPick={(em) => setPost((p) => ({ ...p, title: p.title + em }))} testId="create-post-title-emoji-button" />
+            </div>
           </div>
 
           <div>
             <p className="feed-label">Detalhes</p>
             <textarea value={post.description} onChange={(e) => set({ description: e.target.value })} rows={4} placeholder="Tamanhos, quantidades, quando precisa…" className="feed-input w-full resize-none" data-testid="create-post-description-input" />
+            <div className="mt-1 flex items-center gap-1 text-xs text-[#8C827A]">
+              <EmojiPicker onPick={(em) => setPost((p) => ({ ...p, description: p.description + em }))} testId="create-post-emoji-button" /> Adicionar emoji
+            </div>
           </div>
 
           <div className="flex gap-2">
             <button onClick={() => fileRef.current?.click()} className="feed-ghost border border-[#E8E2D9]" data-testid="create-post-add-image"><ImagePlus size={16} /> Foto</button>
+            <button onClick={() => videoRef.current?.click()} className="feed-ghost border border-[#E8E2D9]" data-testid="create-post-add-video"><Video size={16} /> Vídeo</button>
             <button onClick={getLocation} className="feed-ghost border border-[#E8E2D9]" data-testid="create-post-add-location"><MapPin size={16} /> {post.location ? 'Localização ok' : 'Localização'}</button>
             <input ref={fileRef} type="file" accept="image/*" onChange={addImage} className="hidden" data-testid="create-post-file-input" />
+            <input ref={videoRef} type="file" accept="video/*" onChange={addVideo} className="hidden" data-testid="create-post-video-input" />
           </div>
+
+          {video && (
+            <div className="relative overflow-hidden rounded-xl bg-black" data-testid="create-post-video-preview">
+              <video src={video.preview} controls className="max-h-56 w-full" />
+              <button onClick={() => setVideo(null)} className="absolute right-2 top-2 rounded-full bg-black/60 p-1 text-white" data-testid="create-post-remove-video"><X size={14} /></button>
+            </div>
+          )}
 
           {post.images.length > 0 && (
             <div className="flex flex-wrap gap-2">
@@ -111,7 +146,7 @@ export default function CreatePostDialog({ open, onOpenChange, user, token, onCr
         </div>
 
         <button onClick={submit} disabled={submitting} className="feed-cta feed-cta-gold mt-2 w-full" data-testid="create-post-submit-btn">
-          {submitting ? <><Loader2 size={18} className="animate-spin" /> Publicando…</> : 'Publicar agora'}
+          {submitting ? <><Loader2 size={18} className="animate-spin" /> {video ? 'Enviando vídeo…' : 'Publicando…'}</> : 'Publicar agora'}
         </button>
       </DialogContent>
     </Dialog>

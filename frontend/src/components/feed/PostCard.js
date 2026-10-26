@@ -53,6 +53,10 @@ export default function PostCard({ post, token, currentUserId, onChat, index = 0
         </div>
       )}
 
+      {post.video_url && (
+        <video src={`${API}${post.video_url}`} controls playsInline preload="metadata" className="mt-4 max-h-[28rem] w-full rounded-xl bg-black" data-testid={`post-video-${post.id}`} />
+      )}
+
       <div className="mt-4 flex flex-wrap items-center gap-1.5">
         {(post.categories || []).map((c) => {
           const cat = getCategory(c);

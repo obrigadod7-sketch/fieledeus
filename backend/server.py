@@ -24,6 +24,12 @@ from urllib.parse import urlparse
 import aiohttp
 import re
 import random
+import json
+import hashlib
+from fastapi import UploadFile, File, Request
+from motor.motor_asyncio import AsyncIOMotorGridFSBucket
+from bson import ObjectId
+from emergentintegrations.llm.chat import LlmChat, UserMessage
 from email_service import send_email, reset_code_email
 
 ROOT_DIR = Path(__file__).parent
@@ -268,6 +274,10 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 def email_query(email: str):
     return {'$regex': f'^{re.escape(email.strip())}$', '$options': 'i'}
 
+def is_admin_email(email: str) -> bool:
+    admins = {e.strip().lower() for e in os.environ.get('ADMIN_EMAILS', '').split(',') if e.strip()}
+    return (email or '').strip().lower() in admins
+
 
 @api_router.post("/auth/register")
 async def register(user_data: UserRegister):
@@ -281,7 +291,7 @@ async def register(user_data: UserRegister):
     user = User(
         email=user_data.email,
         name=user_data.name,
-        role=user_data.role,
+        role='admin' if is_admin_email(user_data.email) else user_data.role,
         languages=user_data.languages
     )
     
@@ -332,6 +342,9 @@ async def login(credentials: UserLogin):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
     user_data.pop('password')
+    if is_admin_email(user_data['email']) and user_data.get('role') != 'admin':
+        user_data['role'] = 'admin'
+        await db.users.update_one({'id': user_data['id']}, {'$set': {'role': 'admin'}})
     if isinstance(user_data['created_at'], str):
         user_data['created_at'] = datetime.fromisoformat(user_data['created_at'])
     
@@ -526,6 +539,7 @@ async def get_posts(
         if not post.get('categories'):
             post['categories'] = [post['category']] if post.get('category') else []
         post['image_urls'] = [f"/api/posts/{post['id']}/images/{i}" for i in range(post.pop('image_count', 0))]
+        post['video_url'] = f"/api/posts/{post['id']}/video" if post.get('has_video') else None
         post['comment_count'] = comment_counts.get(post['id'], 0)
         post['can_help'] = True
 
@@ -2333,6 +2347,143 @@ async def respond_appointment(message_id: str, data: AppointmentRespond, current
         'appointment_update': {'ref_id': message_id, 'status': status_value}
     })
     return {'id': message_id, 'status': status_value}
+
+# ==================== POST VIDEOS ====================
+
+VIDEO_MAX_BYTES = 50 * 1024 * 1024
+video_bucket = AsyncIOMotorGridFSBucket(db, bucket_name='post_videos')
+
+@api_router.post("/posts/{post_id}/video")
+async def upload_post_video(post_id: str, file: UploadFile = File(...), current_user: User = Depends(get_current_user)):
+    post = await db.posts.find_one({'id': post_id, 'user_id': current_user.id}, {'_id': 0, 'id': 1, 'video_file_id': 1})
+    if not post:
+        raise HTTPException(status_code=404, detail='Post não encontrado')
+    if not (file.content_type or '').startswith('video/'):
+        raise HTTPException(status_code=400, detail='Envie um arquivo de vídeo')
+    data = await file.read(VIDEO_MAX_BYTES + 1)
+    if len(data) > VIDEO_MAX_BYTES:
+        raise HTTPException(status_code=413, detail='Vídeo muito grande (máximo 50MB)')
+    if post.get('video_file_id'):
+        try:
+            await video_bucket.delete(ObjectId(post['video_file_id']))
+        except Exception:
+            pass
+    file_id = await video_bucket.upload_from_stream(post_id, data, metadata={'mime': file.content_type, 'post_id': post_id})
+    await db.posts.update_one({'id': post_id}, {'$set': {'has_video': True, 'video_file_id': str(file_id), 'video_mime': file.content_type, 'video_size': len(data)}})
+    return {'video_url': f"/api/posts/{post_id}/video"}
+
+@api_router.get("/posts/{post_id}/video")
+async def get_post_video(post_id: str, request: Request):
+    post = await db.posts.find_one({'id': post_id, 'has_video': True}, {'_id': 0, 'video_file_id': 1, 'video_mime': 1, 'video_size': 1})
+    if not post:
+        raise HTTPException(status_code=404, detail='Vídeo não encontrado')
+    size = post['video_size']
+    stream = await video_bucket.open_download_stream(ObjectId(post['video_file_id']))
+    headers = {'Accept-Ranges': 'bytes', 'Cache-Control': 'public, max-age=604800'}
+    rng = request.headers.get('range')
+    m = re.match(r'bytes=(\d*)-(\d*)', rng or '')
+    if m and (m.group(1) or m.group(2)):
+        start = int(m.group(1)) if m.group(1) else max(0, size - int(m.group(2)))
+        end = int(m.group(2)) if m.group(1) and m.group(2) else size - 1
+        end = min(end, size - 1)
+        if start > end:
+            raise HTTPException(status_code=416, detail='Range inválido')
+        stream.seek(start)
+        chunk = await stream.read(end - start + 1)
+        headers['Content-Range'] = f'bytes {start}-{end}/{size}'
+        return Response(content=chunk, status_code=206, media_type=post['video_mime'], headers=headers)
+    return Response(content=await stream.read(), media_type=post['video_mime'], headers=headers)
+
+# ==================== PROFILE PHOTOS ====================
+
+PROFILE_PHOTOS_MAX = 6
+
+class ProfilePhotoIn(BaseModel):
+    image: str
+
+@api_router.post("/profile/photos")
+async def add_profile_photo(payload: ProfilePhotoIn, current_user: User = Depends(get_current_user)):
+    if await db.profile_photos.count_documents({'user_id': current_user.id}) >= PROFILE_PHOTOS_MAX:
+        raise HTTPException(status_code=400, detail=f'Máximo de {PROFILE_PHOTOS_MAX} fotos')
+    header, _, data = payload.image.partition(',')
+    mime = header[5:].split(';')[0] if header.startswith('data:') else ''
+    if mime not in AVATAR_MIMES or not data:
+        raise HTTPException(status_code=400, detail='Formato de imagem inválido')
+    try:
+        raw = base64.b64decode(data, validate=True)
+    except Exception:
+        raise HTTPException(status_code=400, detail='Imagem inválida')
+    if len(raw) > 2_000_000:
+        raise HTTPException(status_code=413, detail='Imagem muito grande')
+    photo_id = str(uuid.uuid4())
+    await db.profile_photos.insert_one({'id': photo_id, 'user_id': current_user.id, 'data': raw, 'mime': mime, 'created_at': datetime.now(timezone.utc).isoformat()})
+    return {'id': photo_id, 'url': f"/api/profile-photos/{photo_id}"}
+
+@api_router.get("/users/{user_id}/photos")
+async def list_profile_photos(user_id: str, current_user: User = Depends(get_current_user)):
+    docs = await db.profile_photos.find({'user_id': user_id}, {'_id': 0, 'id': 1}).sort('created_at', 1).to_list(PROFILE_PHOTOS_MAX)
+    return [{'id': d['id'], 'url': f"/api/profile-photos/{d['id']}"} for d in docs]
+
+@api_router.get("/profile-photos/{photo_id}")
+async def get_profile_photo(photo_id: str):
+    doc = await db.profile_photos.find_one({'id': photo_id}, {'_id': 0, 'data': 1, 'mime': 1})
+    if not doc:
+        raise HTTPException(status_code=404, detail='Foto não encontrada')
+    return Response(content=bytes(doc['data']), media_type=doc['mime'], headers={'Cache-Control': 'public, max-age=31536000, immutable'})
+
+@api_router.delete("/profile/photos/{photo_id}")
+async def delete_profile_photo(photo_id: str, current_user: User = Depends(get_current_user)):
+    res = await db.profile_photos.delete_one({'id': photo_id, 'user_id': current_user.id})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail='Foto não encontrada')
+    return {'ok': True}
+
+# ==================== AUTO TRANSLATION ====================
+
+LANG_NAMES = {'pt': 'Brazilian Portuguese', 'fr': 'French', 'en': 'English', 'es': 'Spanish'}
+
+class TranslateIn(BaseModel):
+    texts: List[str] = Field(max_length=150)
+    lang: str
+
+def _tkey(text: str) -> str:
+    return hashlib.sha256(text.encode()).hexdigest()
+
+async def _llm_translate(texts: List[str], lang: str) -> List[str]:
+    chat = LlmChat(
+        api_key=os.environ['EMERGENT_LLM_KEY'],
+        session_id=f"translate-{uuid.uuid4()}",
+        system_message=(f"You translate user interface texts and user posts of a migrant-help app into {LANG_NAMES[lang]}. "
+                        "You receive a JSON array of strings. Return ONLY a JSON array of the same length with each item translated, "
+                        "keeping order, emojis, numbers, punctuation, line breaks, URLs, e-mails and proper names. "
+                        "If an item is already in the target language, return it unchanged.")
+    ).with_model("openai", "gpt-5.4-mini")
+    raw = await chat.send_message(UserMessage(text=json.dumps(texts, ensure_ascii=False)))
+    start, end = raw.find('['), raw.rfind(']')
+    out = json.loads(raw[start:end + 1])
+    if not isinstance(out, list) or len(out) != len(texts):
+        raise ValueError('bad translation length')
+    return [str(o) for o in out]
+
+@api_router.post("/translate")
+async def translate_texts(data: TranslateIn):
+    if data.lang not in LANG_NAMES:
+        raise HTTPException(status_code=400, detail='Idioma inválido')
+    texts = [t[:3000] for t in data.texts]
+    keys = [_tkey(t) for t in texts]
+    cached = {d['key']: d['text'] async for d in db.translations.find({'lang': data.lang, 'key': {'$in': keys}}, {'_id': 0, 'key': 1, 'text': 1})}
+    missing = list({k: t for k, t in zip(keys, texts) if k not in cached}.items())
+    for i in range(0, len(missing), 40):
+        batch = missing[i:i + 40]
+        try:
+            translated = await _llm_translate([t for _, t in batch], data.lang)
+        except Exception as e:
+            logging.warning(f"Translation failed: {e}")
+            continue
+        for (k, _), tr in zip(batch, translated):
+            cached[k] = tr
+            await db.translations.update_one({'lang': data.lang, 'key': k}, {'$set': {'text': tr}}, upsert=True)
+    return {'translations': [cached.get(k, t) for k, t in zip(keys, texts)]}
 
 app.include_router(api_router)
 

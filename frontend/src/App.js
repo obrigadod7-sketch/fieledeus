@@ -7,6 +7,7 @@ import './App.css';
 // Páginas críticas - carregadas imediatamente
 import LandingPage from './pages/LandingPage';
 import AuthPage from './pages/AuthPage';
+import AutoTranslate from './components/AutoTranslate';
 
 // Páginas com lazy loading - carregadas sob demanda
 const HomePage = React.lazy(() => import('./pages/HomePage'));
@@ -91,6 +92,7 @@ function App() {
 
   return (
     <AuthContext.Provider value={{ user, token, login, logout }}>
+      <AutoTranslate />
       <BrowserRouter>
         <Suspense fallback={<LoadingComponent />}>
           <Routes>

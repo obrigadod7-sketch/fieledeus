@@ -6,6 +6,8 @@ import { Label } from '../components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import BottomNav from '../components/BottomNav';
 import AvatarUploader from '../components/AvatarUploader';
+import ProfilePhotos from '../components/ProfilePhotos';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 import { User, Mail, Globe, LogOut, Edit, Check, Heart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -311,6 +313,13 @@ export default function ProfilePage() {
               <p className="text-textSecondary leading-relaxed">{user.bio}</p>
             </div>
           )}
+
+          <ProfilePhotos />
+
+          <div className="border-t border-gray-100 pt-6">
+            <h3 className="font-bold text-textPrimary mb-3">Idioma do aplicativo</h3>
+            <LanguageSwitcher />
+          </div>
 
           <div className="border-t border-gray-100 pt-6">
             <Button
