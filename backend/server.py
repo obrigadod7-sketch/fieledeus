@@ -24,6 +24,7 @@ from urllib.parse import urlparse
 import aiohttp
 import re
 import random
+import asyncio
 import json
 import hashlib
 from fastapi import UploadFile, File, Request
@@ -2465,24 +2466,36 @@ async def _llm_translate(texts: List[str], lang: str) -> List[str]:
         raise ValueError('bad translation length')
     return [str(o) for o in out]
 
+_translate_hits: dict = {}
+
 @api_router.post("/translate")
-async def translate_texts(data: TranslateIn):
+async def translate_texts(data: TranslateIn, request: Request):
     if data.lang not in LANG_NAMES:
         raise HTTPException(status_code=400, detail='Idioma inválido')
+    ip = (request.headers.get('x-forwarded-for') or (request.client.host if request.client else '')).split(',')[0].strip()
+    now_ts = datetime.now(timezone.utc).timestamp()
+    hits = [t for t in _translate_hits.get(ip, []) if now_ts - t < 60]
+    if len(hits) >= 60:
+        raise HTTPException(status_code=429, detail='Muitas solicitações')
+    _translate_hits[ip] = hits + [now_ts]
     texts = [t[:3000] for t in data.texts]
     keys = [_tkey(t) for t in texts]
     cached = {d['key']: d['text'] async for d in db.translations.find({'lang': data.lang, 'key': {'$in': keys}}, {'_id': 0, 'key': 1, 'text': 1})}
     missing = list({k: t for k, t in zip(keys, texts) if k not in cached}.items())
-    for i in range(0, len(missing), 40):
-        batch = missing[i:i + 40]
+    batches = [missing[i:i + 30] for i in range(0, len(missing), 30)]
+
+    async def run(batch):
         try:
             translated = await _llm_translate([t for _, t in batch], data.lang)
         except Exception as e:
             logging.warning(f"Translation failed: {e}")
-            continue
-        for (k, _), tr in zip(batch, translated):
+            return
+        for (k, src), tr in zip(batch, translated):
             cached[k] = tr
-            await db.translations.update_one({'lang': data.lang, 'key': k}, {'$set': {'text': tr}}, upsert=True)
+            if tr.strip() != src.strip():
+                await db.translations.update_one({'lang': data.lang, 'key': k}, {'$set': {'text': tr}}, upsert=True)
+
+    await asyncio.gather(*(run(b) for b in batches))
     return {'translations': [cached.get(k, t) for k, t in zip(keys, texts)]}
 
 app.include_router(api_router)
