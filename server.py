@@ -3,11 +3,11 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-BACKEND = ROOT / 'backend'
-BACKEND_SERVER = BACKEND / 'server.py'
+BACKEND_DIR = ROOT / 'backend'
+BACKEND_SERVER = BACKEND_DIR / 'server.py'
 
-if str(BACKEND) not in sys.path:
-    sys.path.insert(0, str(BACKEND))
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
 
 if not BACKEND_SERVER.exists():
     raise FileNotFoundError(f'Backend app not found at {BACKEND_SERVER}')
