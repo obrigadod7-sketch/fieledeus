@@ -1,4 +1,141 @@
-@api_router.post("/ai/chat")
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from dotenv import load_dotenv
+from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware.gzip import GZipMiddleware
+from fastapi.responses import Response, RedirectResponse
+import base64
+from motor.motor_asyncio import AsyncIOMotorClient
+import os
+import logging
+from pathlib import Path
+from pydantic import BaseModel, Field, ConfigDict, EmailStr
+from typing import List, Optional
+import uuid
+from datetime import datetime, timezone, timedelta
+import bcrypt
+import jwt
+from openai import AsyncOpenAI
+import math
+from urllib.parse import urlparse
+import aiohttp
+import re
+import random
+import asyncio
+import json
+import hashlib
+from motor.motor_asyncio import AsyncIOMotorGridFSBucket
+from bson import ObjectId
+
+try:
+    from emergentintegrations.llm.chat import LlmChat, UserMessage
+except ModuleNotFoundError:
+    LlmChat = None
+    UserMessage = None
+
+ROOT_DIR = Path(__file__).resolve().parent
+load_dotenv(ROOT_DIR / '.env')
+
+MONGO_URL = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
+DB_NAME = os.environ.get('DB_NAME', 'watizat_db')
+JWT_SECRET = os.environ.get('JWT_SECRET', 'dev-secret-key')
+
+client = AsyncIOMotorClient(MONGO_URL)
+db = client[DB_NAME]
+
+app = FastAPI(title='Watizat API', version='1.0.0')
+api_router = APIRouter(prefix='/api')
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=['*'],
+    allow_credentials=True,
+    allow_methods=['*'],
+    allow_headers=['*'],
+)
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+security = HTTPBearer(auto_error=False)
+
+
+class User(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    email: str
+    name: str
+    role: str = 'user'
+    language: str = 'pt'
+
+
+class AIMessage(BaseModel):
+    message: str
+    language: str = 'pt'
+
+
+class UserRegister(BaseModel):
+    email: EmailStr
+    password: str
+    name: str
+
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+
+async def get_current_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+) -> User:
+    if credentials is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Missing credentials')
+
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
+        user_id = payload.get('sub') or payload.get('user_id')
+        if not user_id:
+            raise HTTPException(status_code=401, detail='Invalid token')
+
+        user = await db.users.find_one({'_id': user_id})
+        if not user:
+            raise HTTPException(status_code=401, detail='User not found')
+
+        return User(
+            id=str(user.get('_id', user_id)),
+            email=user.get('email', ''),
+            name=user.get('name', 'User'),
+            role=user.get('role', 'user'),
+            language=user.get('language', 'pt'),
+        )
+    except jwt.PyJWTError as exc:
+        raise HTTPException(status_code=401, detail='Invalid token') from exc
+
+
+@app.get('/')
+async def root():
+    return {'status': 'ok', 'message': 'Watizat API is running'}
+
+
+@app.get('/api')
+async def api_root():
+    return {'status': 'ok', 'message': 'Watizat API is running', 'api_endpoint': '/api'}
+
+
+@app.get('/health')
+async def health():
+    try:
+        await db.command('ping')
+        return {'status': 'healthy', 'database': 'connected'}
+    except Exception as exc:
+        return {'status': 'unhealthy', 'database': 'disconnected', 'error': str(exc)}
+
+
+@api_router.get('/health')
+async def api_health():
+    return {'status': 'ok', 'message': 'Watizat API is healthy'}
+
+
+@api_router.post('/ai/chat')
 async def ai_chat(message_data: AIMessage, current_user: User = Depends(get_current_user)):
     try:
         question = (message_data.message or '').strip()
@@ -20,52 +157,23 @@ async def ai_chat(message_data: AIMessage, current_user: User = Depends(get_curr
         ]
         providers = [p for p in providers if p[0]]
 
-        pdf_processor.load_index()
-        relevant_chunks = pdf_processor.search(question, k=5)
-        guide_context = '\n\n'.join(relevant_chunks) if relevant_chunks else 'Sem informações específicas no guia Watizat.'
-
         system_message = (
-            f"Você é o assistente virtual do Watizat, uma plataforma de ajuda para pessoas em diferentes regiões. "
-            f"Responda em {language_name}. "
-            "Seu objetivo é ajudar a pessoa a entender o problema, encontrar uma solução prática e agir com clareza. "
-            "Você pode responder dúvidas sobre moradia, trabalho, alimentação, saúde, documentos, educação, apoio emocional, transporte, voluntariado, segurança, integração, comunicação, tecnologia, direitos e uso da plataforma. "
-            "Não se limite a Paris; também ajude pessoas no Brasil, na Europa e em outras regiões. "
-            "Se a pessoa não mencionar uma cidade ou país, responda de forma útil e geral, mas peça a região quando for importante para um detalhe específico. "
-            "Sempre seja empático, direto e útil. "
-            "Estruture a resposta em 3 partes: 1) diagnóstico breve, 2) ação prática passo a passo, 3) próximo passo recomendado. "
+            f"Você é o assistente virtual do Watizat. Responda em {language_name}. "
+            "Ajude a pessoa a entender o problema, sugerir ações práticas e orientar o próximo passo. "
+            "Pode responder sobre moradia, alimentação, trabalho, saúde, direitos, documentos, educação, integração, voluntariado, transporte e uso da plataforma. "
+            "Não se limite a Paris; ajude também em Europa, Brasil e outras regiões. "
             "Se a pergunta for urgente, priorize segurança, documentação e contatos importantes. "
-            "Se a pergunta não estiver no guia, responda com orientação generalista, sem inventar regras ou informações oficiais. "
-            "Se o assunto for uso da plataforma, explique como criar pedido de ajuda, buscar voluntários, conversar com alguém, usar filtros e navegar nas áreas do app. "
-            "Também pode ajudar a transformar um problema em um plano de ação claro e realista para o usuário."
+            "Responda com empatia, clareza e solução prática."
         )
 
         if not providers:
-            fallback_lines = []
-            if relevant_chunks:
-                fallback_lines.append('Com base no guia Watizat, aqui está um caminho útil:')
-                for chunk in relevant_chunks[:3]:
-                    summary = chunk.strip().replace('\n', ' ')
-                    fallback_lines.append(f'• {summary[:400]}{"..." if len(summary) > 400 else ""}')
-            fallback_lines.append('')
-            fallback_lines.append('Se quiser, eu também posso te ajudar a:')
-            fallback_lines.append('• encontrar uma solução prática para seu caso;')
-            fallback_lines.append('• indicar o próximo passo mais importante;')
-            fallback_lines.append('• sugerir como usar a plataforma para pedir ajuda ou oferecer apoio;')
-            fallback_lines.append('• orientar em relação à sua região e ao tipo de problema que você está enfrentando.')
-            context_response = '\n'.join(fallback_lines)
-            chat_record = {
-                'id': str(uuid.uuid4()),
-                'user_id': current_user.id,
-                'message': question,
-                'response': context_response,
-                'language': language,
-                'ai_enabled': False,
-                'created_at': datetime.now(timezone.utc).isoformat(),
-            }
-            await db.ai_chats.insert_one(chat_record)
-            return {'response': context_response, 'sources': relevant_chunks[:2] if relevant_chunks else [], 'ai_enabled': False}
+            fallback = (
+                'Estou pronto para ajudar com a sua situação. '
+                'Descreva o problema, a região e o tipo de ajuda que você precisa, '
+                'e eu posso sugerir uma solução prática, passos imediatos e o próximo melhor passo.'
+            )
+            return {'response': fallback, 'sources': [], 'ai_enabled': False}
 
-        system_message += f"\n\nContexto do guia Watizat relevante:\n{guide_context}"
         ai_response = None
         last_error = None
         for key, base_url, model in providers:
@@ -82,24 +190,22 @@ async def ai_chat(message_data: AIMessage, current_user: User = Depends(get_curr
                 )
                 ai_response = response.choices[0].message.content
                 break
-            except Exception as e:
-                last_error = e
-                logging.warning(f'AI provider {base_url or "openai"} failed: {e}')
+            except Exception as exc:
+                last_error = exc
+                logging.warning('AI provider failed: %s', exc)
 
         if ai_response is None:
-            raise last_error
+            raise last_error or RuntimeError('No AI provider available')
 
-        chat_record = {
-            'id': str(uuid.uuid4()),
-            'user_id': current_user.id,
-            'message': question,
-            'response': ai_response,
-            'language': language,
-            'ai_enabled': True,
-            'created_at': datetime.now(timezone.utc).isoformat(),
-        }
-        await db.ai_chats.insert_one(chat_record)
-        return {'response': ai_response, 'sources': relevant_chunks[:2] if relevant_chunks else [], 'ai_enabled': True}
-    except Exception as e:
-        logging.error(f'AI Chat error: {str(e)}')
-        raise HTTPException(status_code=500, detail='Error processing message')
+        return {'response': ai_response, 'sources': [], 'ai_enabled': True}
+    except Exception as exc:
+        logging.exception('AI Chat error')
+        raise HTTPException(status_code=500, detail=f'Error processing message: {str(exc)}')
+
+
+app.include_router(api_router)
+
+
+if __name__ == '__main__':
+    import uvicorn
+    uvicorn.run('server:app', host='0.0.0.0', port=int(os.environ.get('PORT', 8000)), reload=False)
