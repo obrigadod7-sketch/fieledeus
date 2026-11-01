@@ -4,7 +4,30 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import BottomNav from '../components/BottomNav';
-import { Search, MapPin, Star, Clock, MessageCircle, Plus, Filter, Briefcase, Wrench, Home, Car, Utensils, Heart, GraduationCap, Monitor, Baby, Flower2, Package, MoreHorizontal, ExternalLink, Globe, Target } from 'lucide-react';
+import {
+  Search,
+  MapPin,
+  Star,
+  Clock,
+  MessageCircle,
+  Plus,
+  Filter,
+  Briefcase,
+  Wrench,
+  Home,
+  Car,
+  Utensils,
+  Heart,
+  GraduationCap,
+  Monitor,
+  Baby,
+  Flower2,
+  Package,
+  MoreHorizontal,
+  ExternalLink,
+  Globe,
+  Target
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { requestLocationPermission } from '../utils/geolocation';
@@ -34,6 +57,25 @@ const SERVICE_CATEGORIES = [
   { value: 'logistics', label: 'Logística', icon: Package },
   { value: 'other', label: 'Outros', icon: MoreHorizontal }
 ];
+
+const renderCategoryIcon = (icon, size = 20, className = '') => {
+  if (!icon) return null;
+
+  if (typeof icon === 'string') {
+    return (
+      <span
+        className={`inline-flex items-center justify-center ${className}`}
+        style={{ fontSize: `${size}px`, lineHeight: 1 }}
+        aria-hidden="true"
+      >
+        {icon}
+      </span>
+    );
+  }
+
+  const IconComponent = icon;
+  return <IconComponent size={size} className={className} aria-hidden="true" />;
+};
 
 const SEARCH_SUGGESTIONS = {
   construction: ['pedreiro', 'eletricista', 'pintor', 'encanador'],
@@ -377,7 +419,7 @@ export default function JobsPage() {
                   data-testid="jobs-location-input"
                 />
               </div>
-              <Button 
+              <Button
                 onClick={handleSearch}
                 disabled={searchLoading}
                 className="h-12 px-6 rounded-xl bg-[#C8894F] hover:bg-[#B67A43] text-white font-bold"
@@ -443,16 +485,16 @@ export default function JobsPage() {
           </div>
 
           <div className="flex gap-2 mb-4 overflow-x-auto">
-            <button onClick={() => setViewMode('search')} data-testid="jobs-tab-search" className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${viewMode === 'search' ? 'bg-[#2A9D8F] text-white' : 'bg-[#F1EBE1] text-[#5C524B] hover:bg-[#E8E2D9]'}`}>
+            <button onClick={() => setViewMode('search')} data-testid="jobs-tab-search" className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${viewMode === 'search' ? 'bg-[#2A9D8F] text-white' : 'bg-white text-[#5C524B] border'}`}>
               Vagas ({externalJobs.length})
             </button>
-            <button onClick={() => setViewMode('platforms')} data-testid="jobs-tab-platforms" className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${viewMode === 'platforms' ? 'bg-[#2A9D8F] text-white' : 'bg-[#F1EBE1] text-[#5C524B] hover:bg-[#E8E2D9]'}`}>
+            <button onClick={() => setViewMode('platforms')} data-testid="jobs-tab-platforms" className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${viewMode === 'platforms' ? 'bg-[#2A9D8F] text-white' : 'bg-white text-[#5C524B] border'}`}>
               Plataformas
             </button>
-            <button onClick={() => setViewMode('offers')} data-testid="jobs-tab-offers" className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${viewMode === 'offers' ? 'bg-primary text-white' : 'bg-[#F1EBE1] text-[#5C524B] hover:bg-[#E8E2D9]'}`}>
+            <button onClick={() => setViewMode('offers')} data-testid="jobs-tab-offers" className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${viewMode === 'offers' ? 'bg-[#2A9D8F] text-white' : 'bg-white text-[#5C524B] border'}`}>
               Serviços ({jobOffers.length})
             </button>
-            <button onClick={() => setViewMode('seekers')} data-testid="jobs-tab-seekers" className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${viewMode === 'seekers' ? 'bg-green-600 text-white' : 'bg-[#F1EBE1] text-[#5C524B] hover:bg-[#E8E2D9]'}`}>
+            <button onClick={() => setViewMode('seekers')} data-testid="jobs-tab-seekers" className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${viewMode === 'seekers' ? 'bg-[#2A9D8F] text-white' : 'bg-white text-[#5C524B] border'}`}>
               Procuram ({jobSeekers.length})
             </button>
           </div>
@@ -466,7 +508,7 @@ export default function JobsPage() {
                   onClick={() => setSelectedCategory(cat.value)}
                   className={`flex flex-col items-center gap-1 min-w-[60px] p-2 rounded-xl transition-all ${selectedCategory === cat.value ? 'bg-primary text-white' : 'bg-white text-[#5C524B] hover:bg-[#F1EBE1]'}`}
                 >
-                  <IconComponent size={20} />
+                  {renderCategoryIcon(IconComponent, 20, 'shrink-0')}
                   <span className="text-xs font-medium whitespace-nowrap">{cat.label}</span>
                 </button>
               );
@@ -511,13 +553,13 @@ export default function JobsPage() {
             ) : (
               <div className="space-y-3">
                 {externalJobs.map((job) => (
-                  <div role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} key={job.id} className="bg-white rounded-2xl p-4 shadow-sm border border-[#ECE5DA] hover:shadow-md transition-all cursor-pointer" onClick={() => openJobDetails(job)}>
+                  <div role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} key={job.id} className="bg-white rounded-2xl border p-4 shadow-sm cursor-pointer hover:shadow-md transition-shadow" onClick={() => openJobDetails(job)}>
                     <div className="flex gap-4">
                       <div className="flex-shrink-0">
                         {job.company_logo ? (
                           <img src={job.company_logo} alt={job.company} className="w-14 h-14 rounded-xl object-cover border" onError={(e) => { e.target.style.display = 'none'; }} />
                         ) : (
-                          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#2A9D8F] to-[#1F7A6F] flex items-center justify-center text-white text-xl font-bold">{job.company?.charAt(0) || '?'}</div>
+                          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#2A9D8F] to-[#1F7A6F] flex items-center justify-center text-white text-xl font-bold">{job.company?.charAt(0) || 'J'}</div>
                         )}
                       </div>
 
@@ -570,7 +612,7 @@ export default function JobsPage() {
             </Button>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {JOB_PLATFORMS.map(platform => (
-                <button key={platform.id} onClick={() => searchOnPlatform(platform)} className="flex items-center justify-between bg-white border rounded-2xl p-4 hover:border-[#2A9D8F] hover:shadow-md transition-all text-left" data-testid={`jobs-platform-${platform.id}`}>
+                <button key={platform.id} onClick={() => searchOnPlatform(platform)} className="flex items-center justify-between bg-white border rounded-2xl p-4 hover:border-[#2A9D8F] hover:shadow-md transition-all">
                   <span className="font-semibold text-[#2C221E]">{platform.name}</span>
                   <ExternalLink size={16} className="text-[#2A9D8F]" />
                 </button>
@@ -666,4 +708,3 @@ export default function JobsPage() {
     </div>
   );
 }
-
