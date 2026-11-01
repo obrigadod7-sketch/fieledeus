@@ -1,13 +1,20 @@
-import sys
+import importlib.util
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-BACKEND = ROOT / 'backend'
+BACKEND_SERVER = ROOT / 'backend' / 'server.py'
 
-if str(BACKEND) not in sys.path:
-    sys.path.insert(0, str(BACKEND))
+if not BACKEND_SERVER.exists():
+    raise FileNotFoundError(f'Backend app not found at {BACKEND_SERVER}')
 
-from server import app  # noqa: F401
+spec = importlib.util.spec_from_file_location('watizat_backend_server', BACKEND_SERVER)
+if spec is None or spec.loader is None:
+    raise ImportError(f'Could not load backend app from {BACKEND_SERVER}')
+
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+app = module.app
 
 if __name__ == '__main__':
     import uvicorn
