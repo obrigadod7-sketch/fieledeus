@@ -12,7 +12,12 @@ import { requestLocationPermission } from '../utils/geolocation';
 const LOCATION_PRESETS = [
   { value: 'Paris', label: 'Paris' },
   { value: 'França', label: 'França' },
-  { value: 'Brasil', label: 'Todo o Brasil' }
+  { value: 'Portugal', label: 'Portugal' },
+  { value: 'Alemanha', label: 'Alemanha' },
+  { value: 'Espanha', label: 'Espanha' },
+  { value: 'Reino Unido', label: 'Reino Unido' },
+  { value: 'Remote', label: 'Home Office' },
+  { value: 'Brasil', label: 'Brasil' }
 ];
 
 const SERVICE_CATEGORIES = [
@@ -45,12 +50,12 @@ const SEARCH_SUGGESTIONS = {
 };
 
 const JOB_PLATFORMS = [
-  { id: 'indeed', name: 'Indeed', baseUrl: 'https://fr.indeed.com/jobs' },
+  { id: 'indeed', name: 'Indeed', baseUrl: 'https://www.indeed.com/jobs' },
   { id: 'linkedin', name: 'LinkedIn', baseUrl: 'https://www.linkedin.com/jobs/search' },
   { id: 'pole_emploi', name: 'France Travail', baseUrl: 'https://candidat.francetravail.fr/offres/recherche' },
   { id: 'hellowork', name: 'HelloWork', baseUrl: 'https://www.hellowork.com/fr-fr/emploi/recherche.html' },
-  { id: 'welcometothejungle', name: 'Welcome to the Jungle', baseUrl: 'https://www.welcometothejungle.com/fr/jobs' },
-  { id: 'monster', name: 'Monster', baseUrl: 'https://www.monster.fr/emploi/recherche' },
+  { id: 'welcometothejungle', name: 'Welcome to the Jungle', baseUrl: 'https://www.welcometothejungle.com/jobs' },
+  { id: 'monster', name: 'Monster', baseUrl: 'https://www.monster.com/jobs/search' },
   { id: 'apec', name: 'APEC', baseUrl: 'https://www.apec.fr/candidat/recherche-emploi.html/emploi' },
   { id: 'leboncoin', name: 'Leboncoin', baseUrl: 'https://www.leboncoin.fr/offres_d_emploi' }
 ];
@@ -67,13 +72,12 @@ export default function JobsPage() {
   const [externalJobs, setExternalJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchLoading, setSearchLoading] = useState(false);
-  const [showCreateOffer, setShowCreateOffer] = useState(false);
   const [viewMode, setViewMode] = useState('search');
-  const [showAllPlatforms, setShowAllPlatforms] = useState(false);
   const [totalJobs, setTotalJobs] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedJob, setSelectedJob] = useState(null);
   const [showJobDetails, setShowJobDetails] = useState(false);
+  const [remoteOnly, setRemoteOnly] = useState(false);
 
   const jobSearchTranslations = {
     'garçom': 'serveur', 'garcom': 'serveur', 'garçon': 'serveur',
@@ -120,7 +124,20 @@ export default function JobsPage() {
 
   const normalizeLocationValue = (value) => {
     if (!value || !value.trim()) return 'Brasil';
-    return value.trim();
+    const clean = value.trim();
+    if (clean.toLowerCase() === 'remote' || clean.toLowerCase() === 'home office' || clean.toLowerCase() === 'home-office') return 'Worldwide';
+    return clean;
+  };
+
+  const buildJobSearchRequest = (query, locationValue) => {
+    const normalizedLocation = normalizeLocationValue(locationValue || locationQuery || 'Brasil');
+    return {
+      query: query || 'emprego',
+      location: remoteOnly ? 'Worldwide' : normalizedLocation,
+      country: remoteOnly ? '' : normalizedLocation,
+      remote_only: remoteOnly,
+      page: 1
+    };
   };
 
   const useMyLocation = async () => {
@@ -139,16 +156,15 @@ export default function JobsPage() {
         return;
       }
 
-      const resolvedLocation = location.address
-        ? location.address.split(',').slice(0, 2).join(', ')
-        : 'Minha localização';
-
+      const resolvedLocation = location.address ? location.address.split(',').slice(0, 2).join(', ') : 'Minha localização';
       const nextValue = normalizeLocationValue(resolvedLocation);
       setLocationQuery(nextValue);
+      setRemoteOnly(false);
       toast.success(`Busca configurada para: ${nextValue}`);
 
       if (searchQuery.trim()) {
-        void searchExternalJobs(searchQuery, nextValue, 1);
+        const request = buildJobSearchRequest(searchQuery, nextValue);
+        void searchExternalJobs(request.query, request.location, request.page, true, request.country, request.remote_only);
       }
     } catch (err) {
       console.error('Error getting user location:', err);
@@ -158,21 +174,27 @@ export default function JobsPage() {
 
   const handleLocationPreset = (newLocation) => {
     const value = normalizeLocationValue(newLocation);
-    setLocationQuery(value);
+    const isRemote = value === 'Worldwide' || newLocation === 'Remote' || newLocation === 'Home Office';
+    setLocationQuery(isRemote ? 'Worldwide' : value);
+    setRemoteOnly(isRemote);
+
     if (searchQuery.trim()) {
-      void searchExternalJobs(searchQuery, value, 1);
+      const request = buildJobSearchRequest(searchQuery, value);
+      void searchExternalJobs(request.query, request.location, request.page, true, request.country, request.remote_only);
     }
   };
 
   useEffect(() => {
     void fetchJobs();
-    void searchExternalJobs('emprego', 'Brasil');
+    const initialRequest = buildJobSearchRequest('emprego', 'Brasil');
+    void searchExternalJobs(initialRequest.query, initialRequest.location, 1, false, initialRequest.country, initialRequest.remote_only);
   }, []);
 
   useEffect(() => {
     if (selectedCategory !== 'all') {
       const categoryQuery = SEARCH_SUGGESTIONS[selectedCategory]?.[0] || selectedCategory;
-      void searchExternalJobs(categoryQuery, normalizeLocationValue(locationQuery));
+      const request = buildJobSearchRequest(categoryQuery, locationQuery);
+      void searchExternalJobs(request.query, request.location, 1, false, request.country, request.remote_only);
     }
   }, [selectedCategory]);
 
@@ -199,21 +221,21 @@ export default function JobsPage() {
 
   const resultsRef = useRef(null);
 
-  const searchExternalJobs = async (query, location, page = 1, scroll = false) => {
+  const searchExternalJobs = async (query, location, page = 1, scroll = false, country = '', remote = false) => {
     setSearchLoading(true);
     try {
       const translatedQuery = translateSearchTerm(query || 'emprego');
-      const normalizedLocation = normalizeLocationValue(location || 'Brasil');
+      const normalizedLocation = normalizeLocationValue(location || locationQuery || 'Brasil');
       const params = new URLSearchParams({
         query: translatedQuery,
-        location: normalizedLocation,
+        location: remote ? 'Worldwide' : normalizedLocation,
         page: page.toString(),
-        date_posted: 'all'
+        date_posted: 'all',
+        remote_only: String(Boolean(remote)),
+        country: remote ? '' : normalizedLocation
       });
 
-      const response = await fetch(
-        `${process.env.REACT_APP_BACKEND_URL}/api/jobs/search?${params}`
-      );
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/jobs/search?${params}`);
       if (response.ok) {
         const data = await response.json();
         setExternalJobs(data.jobs || []);
@@ -224,7 +246,7 @@ export default function JobsPage() {
           if (scroll) setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
           toast.success(`${data.jobs.length} vagas encontradas!`);
         } else {
-          toast.info('Nenhuma vaga encontrada. Tente outros termos.');
+          toast.info('Nenhuma vaga encontrada. Tente outros termos ou troque o país/estado.');
         }
       } else {
         const error = await response.json();
@@ -245,7 +267,8 @@ export default function JobsPage() {
       toast.error('Digite algo para buscar');
       return;
     }
-    void searchExternalJobs(sanitizedQuery, sanitizedLocation, 1, true);
+    const request = buildJobSearchRequest(sanitizedQuery, sanitizedLocation);
+    void searchExternalJobs(request.query, request.location, 1, true, request.country, request.remote_only);
     setViewMode('search');
   };
 
@@ -324,19 +347,14 @@ export default function JobsPage() {
         <div className="container mx-auto max-w-4xl px-4 py-4">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-xl font-bold text-[#2C221E]">Buscar Emprego</h1>
-            <Button
-              onClick={() => navigate('/home')}
-              variant="outline"
-              size="sm"
-              className="rounded-full"
-            >
+            <Button onClick={() => navigate('/home')} variant="outline" size="sm" className="rounded-full">
               <Plus size={16} className="mr-1" />
               Publicar
             </Button>
           </div>
 
           <div className="bg-gradient-to-r from-[#2A9D8F] to-[#1F7A6F] rounded-2xl p-4 mb-4">
-            <p className="text-white text-sm mb-3 font-medium">Busque vagas na sua região ou em todo o Brasil</p>
+            <p className="text-white text-sm mb-3 font-medium">Busque vagas na sua região, em qualquer país ou em home office</p>
             <div className="flex flex-col sm:flex-row gap-2">
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A89E95]" size={18} />
@@ -352,7 +370,7 @@ export default function JobsPage() {
               <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A89E95]" size={18} />
                 <Input
-                  placeholder="Cidade, bairro ou Brasil"
+                  placeholder="Cidade, país ou Home Office"
                   value={locationQuery}
                   onChange={(e) => setLocationQuery(e.target.value)}
                   className="pl-10 rounded-xl bg-white h-12 w-full sm:w-44"
@@ -383,12 +401,22 @@ export default function JobsPage() {
                 <Target size={12} className="mr-1" />
                 {locationLoading ? 'Buscando região...' : 'Usar meu GPS'}
               </Button>
+              <button
+                type="button"
+                onClick={() => setRemoteOnly(!remoteOnly)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                  remoteOnly ? 'bg-white text-[#1F7A6F] ring-2 ring-white/80' : 'bg-white/15 text-white hover:bg-white/25'
+                }`}
+              >
+                Home Office
+              </button>
               {LOCATION_PRESETS.map((preset) => (
                 <button
                   key={preset.value}
+                  type="button"
                   onClick={() => handleLocationPreset(preset.value)}
                   className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                    locationQuery === preset.value
+                    locationQuery === preset.value || (preset.value === 'Remote' && remoteOnly)
                       ? 'bg-white text-[#1F7A6F] ring-2 ring-white/80'
                       : 'bg-white/15 text-white hover:bg-white/25'
                   }`}
@@ -415,44 +443,16 @@ export default function JobsPage() {
           </div>
 
           <div className="flex gap-2 mb-4 overflow-x-auto">
-            <button
-              onClick={() => setViewMode('search')} data-testid="jobs-tab-search"
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                viewMode === 'search'
-                  ? 'bg-[#2A9D8F] text-white'
-                  : 'bg-[#F1EBE1] text-[#5C524B] hover:bg-[#E8E2D9]'
-              }`}
-            >
+            <button onClick={() => setViewMode('search')} data-testid="jobs-tab-search" className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${viewMode === 'search' ? 'bg-[#2A9D8F] text-white' : 'bg-[#F1EBE1] text-[#5C524B] hover:bg-[#E8E2D9]'}`}>
               Vagas ({externalJobs.length})
             </button>
-            <button
-              onClick={() => setViewMode('platforms')} data-testid="jobs-tab-platforms"
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                viewMode === 'platforms'
-                  ? 'bg-[#2A9D8F] text-white'
-                  : 'bg-[#F1EBE1] text-[#5C524B] hover:bg-[#E8E2D9]'
-              }`}
-            >
+            <button onClick={() => setViewMode('platforms')} data-testid="jobs-tab-platforms" className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${viewMode === 'platforms' ? 'bg-[#2A9D8F] text-white' : 'bg-[#F1EBE1] text-[#5C524B] hover:bg-[#E8E2D9]'}`}>
               Plataformas
             </button>
-            <button
-              onClick={() => setViewMode('offers')} data-testid="jobs-tab-offers"
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                viewMode === 'offers'
-                  ? 'bg-primary text-white'
-                  : 'bg-[#F1EBE1] text-[#5C524B] hover:bg-[#E8E2D9]'
-              }`}
-            >
+            <button onClick={() => setViewMode('offers')} data-testid="jobs-tab-offers" className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${viewMode === 'offers' ? 'bg-primary text-white' : 'bg-[#F1EBE1] text-[#5C524B] hover:bg-[#E8E2D9]'}`}>
               Serviços ({jobOffers.length})
             </button>
-            <button
-              onClick={() => setViewMode('seekers')} data-testid="jobs-tab-seekers"
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                viewMode === 'seekers'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-[#F1EBE1] text-[#5C524B] hover:bg-[#E8E2D9]'
-              }`}
-            >
+            <button onClick={() => setViewMode('seekers')} data-testid="jobs-tab-seekers" className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${viewMode === 'seekers' ? 'bg-green-600 text-white' : 'bg-[#F1EBE1] text-[#5C524B] hover:bg-[#E8E2D9]'}`}>
               Procuram ({jobSeekers.length})
             </button>
           </div>
@@ -464,11 +464,7 @@ export default function JobsPage() {
                 <button
                   key={cat.value}
                   onClick={() => setSelectedCategory(cat.value)}
-                  className={`flex flex-col items-center gap-1 min-w-[60px] p-2 rounded-xl transition-all ${
-                    selectedCategory === cat.value
-                      ? 'bg-primary text-white'
-                      : 'bg-white text-[#5C524B] hover:bg-[#F1EBE1]'
-                  }`}
+                  className={`flex flex-col items-center gap-1 min-w-[60px] p-2 rounded-xl transition-all ${selectedCategory === cat.value ? 'bg-primary text-white' : 'bg-white text-[#5C524B] hover:bg-[#F1EBE1]'}`}
                 >
                   <IconComponent size={20} />
                   <span className="text-xs font-medium whitespace-nowrap">{cat.label}</span>
@@ -483,34 +479,27 @@ export default function JobsPage() {
         {viewMode === 'search' && (
           <div className="space-y-4 scroll-mt-2" ref={resultsRef} data-testid="jobs-results-section">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-[#2C221E]">
-                {totalJobs > 0 ? `${totalJobs} vagas encontradas` : 'Resultados da busca'}
-              </h2>
-              {externalJobs.length > 0 && (
-                <span className="text-sm text-[#8C827A]">
-                  Página {currentPage}
-                </span>
-              )}
+              <h2 className="text-lg font-bold text-[#2C221E]">{totalJobs > 0 ? `${totalJobs} vagas encontradas` : 'Resultados da busca'}</h2>
+              {externalJobs.length > 0 && <span className="text-sm text-[#8C827A]">Página {currentPage}</span>}
             </div>
 
             {searchLoading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2A9D8F] mx-auto mb-4"></div>
-                <p className="text-[#5C524B]">Buscando vagas na região {locationQuery || 'Brasil'}...</p>
+                <p className="text-[#5C524B]">Buscando vagas na região {remoteOnly ? 'Home Office' : locationQuery || 'Brasil'}...</p>
               </div>
             ) : externalJobs.length === 0 ? (
               <div className="text-center py-12 bg-white rounded-2xl">
                 <h3 className="font-bold text-[#2C221E] mb-2">Busque por vagas</h3>
-                <p className="text-[#8C827A] mb-4">
-                  Digite um cargo ou área de interesse para encontrar vagas disponíveis
-                </p>
+                <p className="text-[#8C827A] mb-4">Digite um cargo ou área de interesse para encontrar vagas disponíveis em vários países ou em home office.</p>
                 <div className="flex flex-wrap justify-center gap-2">
                   {['Garçom', 'Faxineira', 'Motorista', 'Cozinheiro', 'Eletricista'].map(term => (
                     <button
                       key={term}
                       onClick={() => {
                         setSearchQuery(term);
-                        void searchExternalJobs(term, locationQuery, 1, true);
+                        const request = buildJobSearchRequest(term, locationQuery);
+                        void searchExternalJobs(request.query, request.location, 1, true, request.country, request.remote_only);
                       }}
                       className="px-3 py-1 bg-[#E9F5F3] text-[#1F7A6F] rounded-full text-sm hover:bg-[#BFE3DD]"
                     >
@@ -520,103 +509,55 @@ export default function JobsPage() {
                 </div>
               </div>
             ) : (
-              <>
-                <div className="space-y-3">
-                  {externalJobs.map((job) => (
-                    <div role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }}
-                      key={job.id}
-                      className="bg-white rounded-2xl p-4 shadow-sm border border-[#ECE5DA] hover:shadow-md transition-all cursor-pointer"
-                      onClick={() => openJobDetails(job)}
-                    >
-                      <div className="flex gap-4">
-                        <div className="flex-shrink-0">
-                          {job.company_logo ? (
-                            <img 
-                              src={job.company_logo} 
-                              alt={job.company}
-                              className="w-14 h-14 rounded-xl object-cover border"
-                              onError={(e) => { e.target.style.display = 'none'; }}
-                            />
-                          ) : (
-                            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#2A9D8F] to-[#1F7A6F] flex items-center justify-center text-white text-xl font-bold">
-                              {job.company?.charAt(0) || '?'}
-                            </div>
-                          )}
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <h3 className="font-bold text-[#2C221E] line-clamp-1">{job.title}</h3>
-                            {job.is_remote && (
-                              <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs whitespace-nowrap">
-                                Remoto
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-sm text-[#5C524B] mt-1">{job.company}</p>
-                          <div className="flex flex-wrap items-center gap-2 mt-2 text-xs text-[#8C827A]">
-                            <span className="flex items-center gap-1">
-                              <MapPin size={12} />
-                              {job.location || 'Brasil'}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Clock size={12} />
-                              {getTimeAgo(job.date_posted)}
-                            </span>
-                            {job.employment_type && (
-                              <span className="px-2 py-0.5 bg-[#F1EBE1] rounded-full">
-                                {job.employment_type}
-                              </span>
-                            )}
-                            {job.source && (
-                              <span className="px-2 py-0.5 bg-[#F7F4EE] text-[#1F7A6F] rounded-full">
-                                via {job.source}
-                              </span>
-                            )}
-                          </div>
-                          {(job.salary_min || job.salary_max) && (
-                            <div className="mt-2 text-sm font-medium text-green-600">
-                              {job.salary_min && `${job.salary_min.toLocaleString()}`}
-                              {job.salary_min && job.salary_max && ' - '}
-                              {job.salary_max && `${job.salary_max.toLocaleString()}`}
-                              {job.salary_currency && ` ${job.salary_currency}`}
-                            </div>
-                          )}
-                          {job.description && (
-                            <p className="mt-2 text-sm text-[#5C524B] line-clamp-2">
-                              {job.description.replace(/<[^>]*>/g, '').substring(0, 150)}...
-                            </p>
-                          )}
-                        </div>
+              <div className="space-y-3">
+                {externalJobs.map((job) => (
+                  <div role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} key={job.id} className="bg-white rounded-2xl p-4 shadow-sm border border-[#ECE5DA] hover:shadow-md transition-all cursor-pointer" onClick={() => openJobDetails(job)}>
+                    <div className="flex gap-4">
+                      <div className="flex-shrink-0">
+                        {job.company_logo ? (
+                          <img src={job.company_logo} alt={job.company} className="w-14 h-14 rounded-xl object-cover border" onError={(e) => { e.target.style.display = 'none'; }} />
+                        ) : (
+                          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#2A9D8F] to-[#1F7A6F] flex items-center justify-center text-white text-xl font-bold">{job.company?.charAt(0) || '?'}</div>
+                        )}
                       </div>
-                      <div className="mt-3 flex gap-2">
-                        <Button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            window.open(job.url, '_blank');
-                          }}
-                          className="flex-1 rounded-xl bg-[#2A9D8F] hover:bg-[#238578]"
-                          size="sm"
-                        >
-                          <ExternalLink size={14} className="mr-1" />
-                          Candidatar-se
-                        </Button>
-                        <Button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openJobDetails(job);
-                          }}
-                          variant="outline"
-                          className="rounded-xl"
-                          size="sm"
-                        >
-                          Ver mais
-                        </Button>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="font-bold text-[#2C221E] line-clamp-1">{job.title}</h3>
+                          {job.is_remote && (
+                            <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs whitespace-nowrap">Remoto</span>
+                          )}
+                        </div>
+                        <p className="text-sm text-[#5C524B] mt-1">{job.company}</p>
+                        <div className="flex flex-wrap items-center gap-2 mt-2 text-xs text-[#8C827A]">
+                          <span className="flex items-center gap-1"><MapPin size={12} />{job.location || 'Brasil'}</span>
+                          <span className="flex items-center gap-1"><Clock size={12} />{getTimeAgo(job.date_posted)}</span>
+                          {job.employment_type && <span className="px-2 py-0.5 bg-[#F1EBE1] rounded-full">{job.employment_type}</span>}
+                          {job.source && <span className="px-2 py-0.5 bg-[#F7F4EE] text-[#1F7A6F] rounded-full">via {job.source}</span>}
+                        </div>
+                        {(job.salary_min || job.salary_max) && (
+                          <div className="mt-2 text-sm font-medium text-green-600">
+                            {job.salary_min && `${job.salary_min.toLocaleString()}`}
+                            {job.salary_min && job.salary_max && ' - '}
+                            {job.salary_max && `${job.salary_max.toLocaleString()}`}
+                            {job.salary_currency && ` ${job.salary_currency}`}
+                          </div>
+                        )}
+                        {job.description && <p className="mt-2 text-sm text-[#5C524B] line-clamp-2">{job.description.replace(/<[^>]*>/g, '').substring(0, 150)}...</p>}
                       </div>
                     </div>
-                  ))}
-                </div>
-              </>
+                    <div className="mt-3 flex gap-2">
+                      <Button onClick={(e) => { e.stopPropagation(); window.open(job.url, '_blank'); }} className="flex-1 rounded-xl bg-[#2A9D8F] hover:bg-[#238578]" size="sm">
+                        <ExternalLink size={14} className="mr-1" />
+                        Candidatar-se
+                      </Button>
+                      <Button onClick={(e) => { e.stopPropagation(); openJobDetails(job); }} variant="outline" className="rounded-xl" size="sm">
+                        Ver mais
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         )}
@@ -629,12 +570,7 @@ export default function JobsPage() {
             </Button>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {JOB_PLATFORMS.map(platform => (
-                <button
-                  key={platform.id}
-                  onClick={() => searchOnPlatform(platform)}
-                  className="flex items-center justify-between bg-white border rounded-2xl p-4 hover:border-[#2A9D8F] hover:shadow-md transition-all text-left"
-                  data-testid={`jobs-platform-${platform.id}`}
-                >
+                <button key={platform.id} onClick={() => searchOnPlatform(platform)} className="flex items-center justify-between bg-white border rounded-2xl p-4 hover:border-[#2A9D8F] hover:shadow-md transition-all text-left" data-testid={`jobs-platform-${platform.id}`}>
                   <span className="font-semibold text-[#2C221E]">{platform.name}</span>
                   <ExternalLink size={16} className="text-[#2A9D8F]" />
                 </button>
@@ -650,9 +586,7 @@ export default function JobsPage() {
             ) : displayData.length === 0 ? (
               <div className="text-center py-12 bg-white rounded-2xl border" data-testid="jobs-empty-state">
                 <Briefcase size={40} className="mx-auto text-[#8C827A] mb-3" />
-                <p className="text-[#5C524B]">
-                  {viewMode === 'offers' ? 'Nenhuma oferta de serviço publicada ainda.' : 'Ninguém procurando trabalho no momento.'}
-                </p>
+                <p className="text-[#5C524B]">{viewMode === 'offers' ? 'Nenhuma oferta de serviço publicada ainda.' : 'Ninguém procurando trabalho no momento.'}</p>
               </div>
             ) : (
               displayData.map(post => (
@@ -675,37 +609,23 @@ export default function JobsPage() {
         )}
       </div>
 
-      <Dialog open={showJobDetails} onOpenChange={(open) => {
-        setShowJobDetails(open);
-        if (!open) setSelectedJob(null);
-      }}>
+      <Dialog open={showJobDetails} onOpenChange={(open) => { setShowJobDetails(open); if (!open) setSelectedJob(null); }}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold flex items-center gap-2">
-              {selectedJob?.title}
-            </DialogTitle>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">{selectedJob?.title}</DialogTitle>
           </DialogHeader>
 
           {selectedJob && (
             <div className="space-y-4">
               <div className="flex items-center gap-4 p-4 bg-[#F7F4EE] rounded-xl">
                 {selectedJob.company_logo ? (
-                  <img 
-                    src={selectedJob.company_logo} 
-                    alt={selectedJob.company}
-                    className="w-16 h-16 rounded-xl object-cover"
-                  />
+                  <img src={selectedJob.company_logo} alt={selectedJob.company} className="w-16 h-16 rounded-xl object-cover" />
                 ) : (
-                  <div className="w-16 h-16 rounded-xl bg-[#2A9D8F] flex items-center justify-center text-white text-2xl font-bold">
-                    {selectedJob.company?.charAt(0)}
-                  </div>
+                  <div className="w-16 h-16 rounded-xl bg-[#2A9D8F] flex items-center justify-center text-white text-2xl font-bold">{selectedJob.company?.charAt(0)}</div>
                 )}
                 <div>
                   <h3 className="font-bold text-lg">{selectedJob.company}</h3>
-                  <p className="text-[#5C524B] flex items-center gap-1">
-                    <MapPin size={14} />
-                    {selectedJob.location || 'Brasil'}
-                  </p>
+                  <p className="text-[#5C524B] flex items-center gap-1"><MapPin size={14} />{selectedJob.location || 'Brasil'}</p>
                 </div>
               </div>
 
@@ -719,36 +639,23 @@ export default function JobsPage() {
               {(selectedJob.salary_min || selectedJob.salary_max) && (
                 <div className="p-3 bg-yellow-50 rounded-xl">
                   <p className="text-xs text-[#8C827A]">Salário</p>
-                  <p className="font-medium text-green-600">
-                    {selectedJob.salary_min?.toLocaleString()} - {selectedJob.salary_max?.toLocaleString()} {selectedJob.salary_currency}
-                  </p>
+                  <p className="font-medium text-green-600">{selectedJob.salary_min?.toLocaleString()} - {selectedJob.salary_max?.toLocaleString()} {selectedJob.salary_currency}</p>
                 </div>
               )}
 
               {selectedJob.description && (
                 <div>
                   <h4 className="font-bold mb-2">Descrição da Vaga</h4>
-                  <div className="text-sm text-[#5C524B] whitespace-pre-line">
-                    {selectedJob.description.replace(/<[^>]*>/g, '').substring(0, 2000)}
-                  </div>
+                  <div className="text-sm text-[#5C524B] whitespace-pre-line">{selectedJob.description.replace(/<[^>]*>/g, '').substring(0, 2000)}</div>
                 </div>
               )}
 
               <div className="flex gap-3 pt-4 border-t">
-                <Button
-                  onClick={() => window.open(selectedJob.url, '_blank')}
-                  className="flex-1 rounded-xl bg-[#2A9D8F] hover:bg-[#238578]"
-                >
+                <Button onClick={() => window.open(selectedJob.url, '_blank')} className="flex-1 rounded-xl bg-[#2A9D8F] hover:bg-[#238578]">
                   <ExternalLink size={16} className="mr-2" />
                   Candidatar-se Agora
                 </Button>
-                <Button
-                  onClick={() => setShowJobDetails(false)}
-                  variant="outline"
-                  className="rounded-xl"
-                >
-                  Fechar
-                </Button>
+                <Button onClick={() => setShowJobDetails(false)} variant="outline" className="rounded-xl">Fechar</Button>
               </div>
             </div>
           )}
@@ -759,3 +666,4 @@ export default function JobsPage() {
     </div>
   );
 }
+
