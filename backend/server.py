@@ -3,35 +3,17 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.gzip import GZipMiddleware
-from fastapi.responses import Response, RedirectResponse
-import base64
-from motor.motor_asyncio import AsyncIOMotorClient
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from typing import Optional
 import os
 import logging
-from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict, EmailStr
-from typing import List, Optional
 import uuid
+from pathlib import Path
 from datetime import datetime, timezone, timedelta
 import bcrypt
 import jwt
 from openai import AsyncOpenAI
-import math
-from urllib.parse import urlparse
-import aiohttp
-import re
-import random
-import asyncio
-import json
-import hashlib
-from motor.motor_asyncio import AsyncIOMotorGridFSBucket
-from bson import ObjectId
-
-try:
-    from emergentintegrations.llm.chat import LlmChat, UserMessage
-except ModuleNotFoundError:
-    LlmChat = None
-    UserMessage = None
+from motor.motor_asyncio import AsyncIOMotorClient
 
 ROOT_DIR = Path(__file__).resolve().parent
 load_dotenv(ROOT_DIR / '.env')
@@ -67,15 +49,20 @@ class User(BaseModel):
     language: str = 'pt'
 
 
-class AIMessage(BaseModel):
-    message: str
-    language: str = 'pt'
-
-
 class UserRegister(BaseModel):
     email: EmailStr
     password: str
     name: str
+    role: str = 'migrant'
+    languages: Optional[list[str]] = None
+    need_categories: Optional[list[str]] = None
+    help_categories: Optional[list[str]] = None
+    location: Optional[dict] = None
+    show_location: bool = False
+    professional_area: Optional[str] = None
+    professional_specialties: Optional[list[str]] = None
+    availability: Optional[str] = None
+    experience: Optional[str] = None
 
 
 class UserLogin(BaseModel):
@@ -83,11 +70,39 @@ class UserLogin(BaseModel):
     password: str
 
 
+class AIMessage(BaseModel):
+    message: str
+    language: str = 'pt'
+
+
+async def get_db_user(email: str):
+    email = (email or '').strip().lower()
+    return await db.users.find_one({'email': email})
+
+
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+
+def verify_password(password: str, hashed: str) -> bool:
+    return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+
+
+def create_token(user_id: str, email: str) -> str:
+    payload = {
+        'sub': user_id,
+        'user_id': user_id,
+        'email': email,
+        'exp': datetime.now(timezone.utc) + timedelta(days=30),
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm='HS256')
+
+
 async def get_current_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
 ) -> User:
     if credentials is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Missing credentials')
+        raise HTTPException(status_code=401, detail='Missing credentials')
 
     token = credentials.credentials
     try:
@@ -109,6 +124,9 @@ async def get_current_user(
         )
     except jwt.PyJWTError as exc:
         raise HTTPException(status_code=401, detail='Invalid token') from exc
+    except Exception as exc:
+        logging.exception('get_current_user failed')
+        raise HTTPException(status_code=401, detail=f'Authentication failed: {str(exc)}') from exc
 
 
 @app.get('/')
@@ -135,6 +153,72 @@ async def api_health():
     return {'status': 'ok', 'message': 'Watizat API is healthy'}
 
 
+@api_router.post('/auth/register')
+async def register(user_data: UserRegister):
+    email = user_data.email.lower().strip()
+    existing = await get_db_user(email)
+    if existing:
+        raise HTTPException(status_code=400, detail='Email already registered')
+
+    user_doc = {
+        '_id': str(uuid.uuid4()),
+        'email': email,
+        'name': user_data.name.strip(),
+        'password': hash_password(user_data.password),
+        'role': user_data.role,
+        'languages': user_data.languages or ['pt'],
+        'need_categories': user_data.need_categories or [],
+        'help_categories': user_data.help_categories or [],
+        'location': user_data.location,
+        'show_location': bool(user_data.show_location),
+        'professional_area': user_data.professional_area,
+        'professional_specialties': user_data.professional_specialties or [],
+        'availability': user_data.availability,
+        'experience': user_data.experience,
+        'created_at': datetime.now(timezone.utc).isoformat(),
+    }
+
+    await db.users.insert_one(user_doc)
+    token = create_token(user_doc['_id'], email)
+
+    user = User(
+        id=user_doc['_id'],
+        email=email,
+        name=user_data.name.strip(),
+        role=user_data.role,
+        language='pt',
+    )
+
+    return {'token': token, 'user': user.model_dump()}
+
+
+@api_router.post('/auth/login')
+async def login(credentials: UserLogin):
+    email = credentials.email.lower().strip()
+    user = await get_db_user(email)
+    if not user:
+        raise HTTPException(status_code=401, detail='Invalid credentials')
+
+    if not verify_password(credentials.password, user['password']):
+        raise HTTPException(status_code=401, detail='Invalid credentials')
+
+    token = create_token(str(user['_id']), email)
+    user_payload = User(
+        id=str(user['_id']),
+        email=email,
+        name=user.get('name', 'User'),
+        role=user.get('role', 'user'),
+        language=user.get('language', 'pt'),
+    )
+
+    return {'token': token, 'user': user_payload.model_dump()}
+
+
+@api_router.get('/auth/me')
+async def get_me(current_user: User = Depends(get_current_user)):
+    return {'user': current_user.model_dump()}
+
+
 @api_router.post('/ai/chat')
 async def ai_chat(message_data: AIMessage, current_user: User = Depends(get_current_user)):
     try:
@@ -151,26 +235,32 @@ async def ai_chat(message_data: AIMessage, current_user: User = Depends(get_curr
         }.get(language, 'português')
 
         providers = [
-            (os.environ.get('OPENROUTER_API_KEY'), 'https://openrouter.ai/api/v1', os.environ.get('OPENROUTER_MODEL', 'google/gemma-4-31b-it:free')),
-            (os.environ.get('GROQ_API_KEY'), 'https://api.groq.com/openai/v1', os.environ.get('GROQ_MODEL', 'openai/gpt-oss-120b')),
+            (
+                os.environ.get('OPENROUTER_API_KEY'),
+                'https://openrouter.ai/api/v1',
+                os.environ.get('OPENROUTER_MODEL', 'google/gemma-4-31b-it:free'),
+            ),
+            (
+                os.environ.get('GROQ_API_KEY'),
+                'https://api.groq.com/openai/v1',
+                os.environ.get('GROQ_MODEL', 'openai/gpt-oss-120b'),
+            ),
             (os.environ.get('OPENAI_API_KEY'), None, 'gpt-4o-mini'),
         ]
         providers = [p for p in providers if p[0]]
 
         system_message = (
-            f"Você é o assistente virtual do Watizat. Responda em {language_name}. "
-            "Ajude a pessoa a entender o problema, sugerir ações práticas e orientar o próximo passo. "
-            "Pode responder sobre moradia, alimentação, trabalho, saúde, direitos, documentos, educação, integração, voluntariado, transporte e uso da plataforma. "
-            "Não se limite a Paris; ajude também em Europa, Brasil e outras regiões. "
-            "Se a pergunta for urgente, priorize segurança, documentação e contatos importantes. "
-            "Responda com empatia, clareza e solução prática."
+            f'Você é o assistente virtual do Watizat. Responda em {language_name}. '
+            'Ajude a pessoa a entender o problema, sugerir ações práticas e orientar o próximo passo. '
+            'Pode responder sobre moradia, alimentação, trabalho, saúde, documentos, educação, integração, voluntariado e uso da plataforma. '
+            'Não se limite a Paris; ajude também na Europa, no Brasil e em outras regiões. '
+            'Responda com empatia, clareza e solução prática.'
         )
 
         if not providers:
             fallback = (
-                'Estou pronto para ajudar com a sua situação. '
-                'Descreva o problema, a região e o tipo de ajuda que você precisa, '
-                'e eu posso sugerir uma solução prática, passos imediatos e o próximo melhor passo.'
+                'Estou pronto para ajudar com sua situação. '
+                'Descreva sua região e o que você precisa, e eu posso te orientar com um próximo passo prático.'
             )
             return {'response': fallback, 'sources': [], 'ai_enabled': False}
 
@@ -200,7 +290,7 @@ async def ai_chat(message_data: AIMessage, current_user: User = Depends(get_curr
         return {'response': ai_response, 'sources': [], 'ai_enabled': True}
     except Exception as exc:
         logging.exception('AI Chat error')
-        raise HTTPException(status_code=500, detail=f'Error processing message: {str(exc)}')
+        raise HTTPException(status_code=500, detail=f'Error processing message: {str(exc)}') from exc
 
 
 app.include_router(api_router)
