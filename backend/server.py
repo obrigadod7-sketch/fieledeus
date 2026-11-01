@@ -12,6 +12,7 @@ from pathlib import Path
 from datetime import datetime, timezone, timedelta
 import bcrypt
 import jwt
+from bson import ObjectId
 from openai import AsyncOpenAI
 from motor.motor_asyncio import AsyncIOMotorClient
 
@@ -101,32 +102,43 @@ def create_token(user_id: str, email: str) -> str:
 async def get_current_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
 ) -> User:
-    if credentials is None:
+    if credentials is None or not credentials.credentials:
         raise HTTPException(status_code=401, detail='Missing credentials')
 
-    token = credentials.credentials
+    token = credentials.credentials.strip()
+
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
-        user_id = payload.get('sub') or payload.get('user_id')
-        if not user_id:
-            raise HTTPException(status_code=401, detail='Invalid token')
-
-        user = await db.users.find_one({'_id': user_id})
-        if not user:
-            raise HTTPException(status_code=401, detail='User not found')
-
-        return User(
-            id=str(user.get('_id', user_id)),
-            email=user.get('email', ''),
-            name=user.get('name', 'User'),
-            role=user.get('role', 'user'),
-            language=user.get('language', 'pt'),
-        )
     except jwt.PyJWTError as exc:
+        logging.warning('Invalid JWT: %s', exc)
         raise HTTPException(status_code=401, detail='Invalid token') from exc
+
+    user_id = payload.get('sub') or payload.get('user_id')
+    if not user_id:
+        raise HTTPException(status_code=401, detail='Invalid token')
+
+    user = None
+    try:
+        user = await db.users.find_one({'_id': str(user_id)})
+        if not user:
+            try:
+                user = await db.users.find_one({'_id': ObjectId(str(user_id))})
+            except Exception:
+                user = None
     except Exception as exc:
-        logging.exception('get_current_user failed')
-        raise HTTPException(status_code=401, detail=f'Authentication failed: {str(exc)}') from exc
+        logging.exception('Mongo lookup failed in get_current_user')
+        raise HTTPException(status_code=503, detail='Database unavailable') from exc
+
+    if not user:
+        raise HTTPException(status_code=401, detail='User not found')
+
+    return User(
+        id=str(user.get('_id', user_id)),
+        email=user.get('email', ''),
+        name=user.get('name', 'User'),
+        role=user.get('role', 'user'),
+        language=user.get('language', 'pt'),
+    )
 
 
 @app.get('/')
