@@ -1,0 +1,147 @@
+{
+  "project_name": "Watizat / fieledeus - Community Help Platform",
+  "archetype": "Sereno e Acolhedor (Warm Serene & Welcoming)",
+  "theme": "light",
+  "language": "pt",
+  "instructions_to_main_agent": {
+    "summary": "Redesign the Home Feed page (/home / HomePage.js) for Watizat / fieledeus, a community platform for migrants in France. Maintain mobile-first responsive design, serene warm aesthetics, performance fixes for post loading, and strict usage of lucide-react icons instead of emojis.",
+    "root_cause_analysis_slow_posts": [
+      "1. N+1 Query Overhead: Backend previously fetched author details for each post sequentially rather than in batch, leading to network latency spikes.",
+      "2. Heavy Base64 Payload: Posts with inline FileReader base64 image strings were serialized without size limits or compression, resulting in multi-megabyte API payloads.",
+      "3. Unpaginated Client Requests: The frontend requested all posts at once (to_list(100)) without limit/skip pagination or client-side caching.",
+      "4. UI Rendering Bottlenecks: Absence of skeleton loaders created perceptual lag (white screen / text jump) while waiting for heavy post queries."
+    ],
+    "required_performance_fixes": [
+      "Implement client-side pagination with a 'Carregar mais' button and skip/limit parameters.",
+      "Use Skeleton loading components (<Skeleton className='h-32 w-full rounded-2xl' />) while fetching feed items.",
+      "Apply image compression/resizing on client upload (max 1024px width/height, max 800KB payload per image) or fallback safely.",
+      "Ensure fast batch hydration of user details and comments with lean JSON payloads in backend API calls."
+    ],
+    "layout_and_key_sections": {
+      "top_welcome_strip": "A gentle top bar displaying 'Olá, {user.name}! Bem-vindo ao Watizat' with quick relief badges, emergency SOS button (tel:112) with pulsing alert styling, and WhatsApp button 'Fale comigo' (https://wa.me/5514996078465).",
+      "primary_ctas": "Two prominent pill buttons side-by-side: 'Preciso de ajuda' (Opens Create Post Dialog) and 'Quero ajudar' (Navigates to /volunteers).",
+      "category_filters": "Horizontal scrollable bar of 10 category chips with Lucide icons (Alimentação, Apoio Jurídico, Saúde, Moradia, Trabalho, Educação, Apoio Social, Roupas, Móveis, Transporte). Active chip uses warm amber gold or deep sage fill.",
+      "type_filters": "Secondary pill filter bar (Todos / Precisa de ajuda / Oferece ajuda / Vagas de emprego).",
+      "post_feed_cards": "Cards with author avatar, name, role badge (Migrante, Voluntário, Helper), relative time ago ('há 2 horas'), category & type badges, title, detailed text, image thumbnail grid with lightbox dialog, location indicator, inline comments accordion with comment input, and a 'Conversar' button linking to direct message.",
+      "desktop_left_sidebar": "Left column on lg:screens containing RozgarLine/JSearch job opportunities, donation campaigns, motivational support quote cards, and quick emergency contacts.",
+      "create_post_dialog": "Clean dialog containing 10-category grid selection with Lucide icons, title input, description textarea, photo upload preview, location toggle, and submit button with spinner.",
+      "bottom_navigation": "Existing BottomNav component integrated seamlessly at screen bottom for mobile users."
+    },
+    "iconography_rules": {
+      "strict_rule": "DO NOT use raw emoji characters like 🍽️, ⚖️, 🏥, 🏠, 💼, 🆘 in UI text or buttons. ALWAYS use Lucide-react components (Utensils, Scale, HeartPulse, Home, Briefcase, GraduationCap, Users, Shirt, Armchair, Truck, PhoneCall, MessageCircle, Plus, MapPin, Clock, Send, X, Filter, Sparkles, ShieldAlert, Search).",
+      "mappings": {
+        "food": "Utensils",
+        "legal": "Scale",
+        "health": "HeartPulse",
+        "housing": "Home",
+        "work": "Briefcase",
+        "education": "GraduationCap",
+        "social": "Users",
+        "clothes": "Shirt",
+        "furniture": "Armchair",
+        "transport": "Truck",
+        "sos": "ShieldAlert",
+        "chat": "MessageCircle",
+        "location": "MapPin"
+      }
+    }
+  },
+  "typography": {
+    "font_family_heading": "Outfit, system-ui, sans-serif",
+    "font_family_body": "Plus Jakarta Sans, Inter, system-ui, sans-serif",
+    "h1": "text-2xl sm:text-3xl font-bold tracking-tight text-amber-950",
+    "h2": "text-xl sm:text-2xl font-semibold text-amber-900",
+    "h3": "text-lg font-semibold text-stone-800",
+    "body": "text-sm sm:text-base text-stone-700 leading-relaxed",
+    "caption": "text-xs text-stone-500 font-medium"
+  },
+  "colors": {
+    "background": "#FDFBF7",
+    "surface": "#FFFFFF",
+    "surface_subtle": "#F7F4EE",
+    "border_subtle": "#E8E2D9",
+    "primary": {
+      "DEFAULT": "#D4A373",
+      "hover": "#C39263",
+      "foreground": "#FFFFFF",
+      "light": "#FEFAE0"
+    },
+    "secondary": {
+      "DEFAULT": "#2A9D8F",
+      "hover": "#238578",
+      "foreground": "#FFFFFF",
+      "light": "#E9F5F3"
+    },
+    "accent_warm": {
+      "DEFAULT": "#E76F51",
+      "light": "#FDF0ED"
+    },
+    "text": {
+      "primary": "#2C221E",
+      "secondary": "#5C524B",
+      "muted": "#8C827A"
+    },
+    "category_badges": {
+      "food": "bg-emerald-50 text-emerald-800 border-emerald-200",
+      "legal": "bg-sky-50 text-sky-800 border-sky-200",
+      "health": "bg-rose-50 text-rose-800 border-rose-200",
+      "housing": "bg-purple-50 text-purple-800 border-purple-200",
+      "work": "bg-amber-50 text-amber-800 border-amber-200",
+      "education": "bg-indigo-50 text-indigo-800 border-indigo-200",
+      "social": "bg-pink-50 text-pink-800 border-pink-200",
+      "clothes": "bg-orange-50 text-orange-800 border-orange-200",
+      "furniture": "bg-teal-50 text-teal-800 border-teal-200",
+      "transport": "bg-cyan-50 text-cyan-800 border-cyan-200"
+    }
+  },
+  "surface_styles": {
+    "card": "bg-white border border-stone-200/80 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200",
+    "welcome_banner": "bg-gradient-to-r from-amber-100/80 via-amber-50 to-stone-100 border border-amber-200/60 rounded-2xl p-4 sm:p-5 shadow-sm",
+    "glass_header": "bg-white/90 backdrop-blur-md border-b border-stone-200/80 sticky top-0 z-30",
+    "cta_button_primary": "bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-full shadow-md hover:shadow-lg transition-all",
+    "cta_button_secondary": "bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-full shadow-md hover:shadow-lg transition-all"
+  },
+  "image_urls": {
+    "food_aid": "https://images.pexels.com/photos/6646882/pexels-photo-6646882.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    "community_support": "https://images.pexels.com/photos/6995220/pexels-photo-6995220.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    "volunteer_portrait_1": "https://images.pexels.com/photos/8543401/pexels-photo-8543401.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    "volunteer_portrait_2": "https://images.pexels.com/photos/8543365/pexels-photo-8543365.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    "community_warm": "https://images.unsplash.com/photo-1596450514537-fae68a81346b?crop=entropy&cs=srgb&fm=jpg&w=800",
+    "paris_cafe_support": "https://images.unsplash.com/photo-1769981750272-2376deb0f4c7?crop=entropy&cs=srgb&fm=jpg&w=800"
+  },
+  "testing_attributes": {
+    "data_testids": [
+      "home-page",
+      "welcome-banner",
+      "sos-emergency-btn",
+      "whatsapp-talk-btn",
+      "i-need-help-cta",
+      "i-want-to-help-cta",
+      "category-chip-all",
+      "category-chip-{category_name}",
+      "type-filter-all",
+      "type-filter-need",
+      "type-filter-offer",
+      "type-filter-job",
+      "post-card-{post_id}",
+      "post-author-{post_id}",
+      "post-chat-button-{post_id}",
+      "post-comments-toggle-{post_id}",
+      "post-comment-input-{post_id}",
+      "post-comment-submit-{post_id}",
+      "create-post-dialog",
+      "create-post-title-input",
+      "create-post-description-input",
+      "create-post-submit-btn",
+      "load-more-posts-btn",
+      "sidebar-advertisements"
+    ]
+  },
+  "UNIVERSAL GUIDELINES FOR MAIN AGENT": [
+    "Do NOT use dark color gradients. Maintain serene welcoming light background (#FDFBF7).",
+    "Avoid generic centered layouts; use clean asymmetrical grids for feed and sidebar.",
+    "Do NOT use transition: all; target specific interactive properties like transition: color, background-color, transform.",
+    "Add data-testid attributes to every button, filter chip, modal element, and input.",
+    "Replace ALL emojis with clean Lucide icons throughout the component."
+  ]
+}

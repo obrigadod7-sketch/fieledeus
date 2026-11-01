@@ -1,0 +1,38 @@
+{
+  "summary": "Tested the feed fix and the new home page, both backend and frontend. Backend: 13/13 pytest pass (paged response {posts, has_more, next_skip}, no overlap between pages, limit capped at 50, type/category/user_id filters, no images/_id in the feed JSON, image_urls, comment_count, user{name,role}, image endpoint returns binary PNG and 404s, create→feed top, comments→count). Frontend (desktop 1920 and mobile 390): login with maria@teste.com → /home shows 10 post cards; 'Carregar mais' → 12 cards and the button disappears; all 11 category chips and 4 type filters refetch correctly with empty state where expected; reload shows the feed right away; create post with image via the dialog → appears at top with the image loaded; comment add → counter shows '1 comentário'; /volunteers, /jobs and /direct-chat/:id render with the new response shape. No horizontal overflow on mobile. The original bug (published posts not appearing) is fixed.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/jobs/search", "issue": "Returns 500 'API key não configurada' because RAPIDAPI_KEY is not set in backend/.env. This existed before and is unrelated to the feed, but /jobs logs two 500 console errors. Should return 503 or an empty list, and the key needs to be set on Render."},
+      {"endpoint": "POST /api/posts/{post_id}/comments", "issue": "Does not check that the post exists, and accepts an empty comment string (no min_length on the Pydantic model)."},
+      {"endpoint": "GET /api/posts/{id}/images/{idx}", "issue": "The backend sends Cache-Control: public, max-age=604800 (checked on localhost), but the preview ingress replaces it with no-store. This is expected in preview; check the header on Render."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/home", "issues": ["The 'Login bem-sucedido' toast covers the 'Olá, Maria.' greeting at the top for a few seconds (cosmetic)", "Seeded post images are plain tan placeholders that look like loading skeletons; use real images for a better first impression"]},
+      {"screen": "/jobs, /direct-chat", "issues": ["These pages still use the old blue/emoji style, which does not match the new 'Sereno e acolhedor' home (inconsistent look)"]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_feed_posts.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "Optional: make /api/jobs/search fail gracefully (503 or empty list) when RAPIDAPI_KEY is missing, and set the key in the Render env",
+    "Optional: validate that the comment is non-empty and that the post exists in add_comment",
+    "Optional: JobsPage filters p.category === 'work' only on the client, so posts where 'work' appears only in categories[] are dropped; use the server-filtered result directly"
+  ],
+  "critical_code_review_comments": [
+    "server.py is 2198 lines; it should be split into routers (posts, jobs, housing, admin)",
+    "get_comments runs N+1 user lookups; batch them with $in the same way get_posts does",
+    "The image endpoint is unauthenticated (needed for <img>). Acceptable, but post images are public to anyone who has the id",
+    "Stale files HomePage.backup.js, HomePage.old.js, HomePage.old2.js and Home.jsx remain in pages/ and should be removed"
+  ],
+  "updated_files": ["/app/backend/tests/test_feed_posts.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "maria@teste.com / Teste123! (migrant), from /app/memory/test_credentials.md",
+  "seed_data_creation": "None kept. TEST_ posts and comments were deleted afterwards; 12 seeded posts remain.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: REACT_APP_BACKEND_URL=<url> pytest /app/backend/tests/test_feed_posts.py. The feed uses data-testids post-card-{id}, load-more-posts-btn, category-chip-*, type-filter-*, feed-empty, i-need-help-cta, create-post-*, post-comments-toggle/input/submit-{id}. The auth page uses email-input, password-input, submit-button."
+}

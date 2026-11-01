@@ -1,0 +1,27 @@
+{
+  "summary": "Ran the Render npm build check and a UI regression smoke test. Clean npm build: /app/frontend was copied to /app/.npmcheck without node_modules, build, yarn.lock or package-lock.json. On Node 20.20.2 with npm 10.8.2, `npm install` succeeded (1497 packages) and `CI=false REACT_APP_BACKEND_URL=https://example.onrender.com npm run build` compiled successfully. It produced build/index.html, and the bundle contains the backend URL. The resolved ajv is 8.20.0 at the top level, which ajv-keywords@5/schema-utils@4 need. The temp folder was deleted. UI smoke test (mobile viewport): the landing need-help-card and want-to-help-card go to /auth?role=migrant and /auth?role=helper, by mouse click and by keyboard Enter. Login as maria@teste.com works. /home showed 10 post cards, and load-more raised that to 12. /jobs, /volunteers, /nearby, /housing and /profile all render with no page errors. On /volunteers, the request card (role=button) opens /direct-chat/{user_id} and 'Criar oferta pública' opens the offer modal. On /jobs, the 'Ver no mapa completo' card goes to /nearby. Job and service list cards could not be clicked because there is no data (RAPIDAPI_KEY is missing, which was already known).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/jobs", "issues": ["The 'API key não configurada' error banner overlaps the 'Buscar Emprego' header. This was already the case because RAPIDAPI_KEY is not set."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "render.yaml frontend buildCommand is 'yarn install && yarn build' with NODE_VERSION 20.18.0, but the Render service actually runs 'npm install && npm run build' on Node 22. Make them match: either point the Render dashboard at render.yaml/yarn, or update render.yaml.",
+    "No package-lock.json is committed, so npm builds on Render are not reproducible (ajv resolved to 8.20.0 here). Consider committing a lockfile for whichever package manager Render uses.",
+    "Optional: the onKeyDown handlers on role=button divs do not call preventDefault for the Space key, so pressing Space also scrolls the page."
+  ],
+  "critical_code_review_comments": [
+    "frontend/.npmrc has strict-ssl=false, which turns off TLS verification for npm installs (including on Render). Remove it unless it is really needed.",
+    "Several pages are over 700 lines (JobsPage.js is 1074). The same inline onKeyDown keyboard handler is repeated 16 times; move it into a shared helper."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "skipped", "frontend": "100%"},
+  "seed_data_creation": "none",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "The clean npm build passes on Node 20. Node 22 was not available locally, so it was not tested. The temp folder /app/.npmcheck was removed. Clickable divs on the landing page, /volunteers and the /jobs map card all work. Job/service cards in /jobs need data (RAPIDAPI_KEY or service posts) before they can be tested."
+}

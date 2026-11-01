@@ -1,0 +1,41 @@
+{
+  "summary": "Iteration 9: tested auto-translation (pt/fr/en/es on Profile + Landing switchers, Home/Profile/Jobs/Chat/Housing/Map/Volunteers, placeholders, dialogs, user posts, toasts, restore to pt), post video upload/streaming (real in-browser webm uploaded via UI, played back readyState=4, Range 206/416), emoji pickers (title, description, comment), profile photos (multi upload, viewer, remove, max 6, owner-only delete, validation), Jobs scroll (only on Buscar Vagas, not on load/category chip; jobs API mocked via page.route), admin email logic (code review only) and regression of appointments + password reset (pytest). All core flows pass; no page errors/crashes while translated. Language left at pt.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/translate", "issue": "Unauthenticated and un-rate-limited: anyone can drive LLM (EMERGENT_LLM_KEY) cost with 150 x 3000-char texts per request."},
+      {"endpoint": "POST /api/translate", "issue": "LLM output cached forever with no invalidation; e.g. 'Buscar Vagas de emprego' -> es returned unchanged (LLM judged it Spanish) and is now permanently cached untranslated."},
+      {"endpoint": "GET /api/posts/{id}/video", "issue": "Non-range requests read the whole file (up to 50MB) into memory; upload also buffers the full file. Consider StreamingResponse / chunked GridFS read."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Auto translation cold start", "issue": "On uncached pages (e.g. /map with 64 services) translation takes ~8-12s because AutoTranslate sends one in-flight batch of 120 texts at a time and also translates addresses/opening hours. Works, just slow on first visit.", "affected_selectors": ["[data-testid=map-page] h1"]}
+    ],
+    "design_issues": [
+      {"screen": "Profile photo viewer dialog", "issues": ["Close (X) button has low contrast over the photo (transparent dialog)"]},
+      {"screen": "Profile photos", "issues": ["Photos are only visible on own Profile; GET /api/users/{id}/photos exists but no UI shows other users' photos (e.g. volunteer/user profile)"]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_video_photos_translate.py", "/app/backend/tests/test_appointments_password_reset.py", "/app/test_reports/pytest/pytest_iter9.xml"],
+  "action_items": [
+    "Protect /api/translate (require auth or rate-limit per IP) to avoid LLM cost abuse",
+    "Optional: do not cache translations identical to the source (or add TTL) so LLM misses can be retried",
+    "Optional: stream video responses instead of loading full file in memory",
+    "Optional: improve close-button contrast in profile photo viewer; consider showing profile photos on public user profiles"
+  ],
+  "critical_code_review_comments": [
+    "is_admin_email + register/login promotion logic is correct (case-insensitive, trims, persists role on login). Not live-tested by editing ADMIN_EMAILS (avoided touching backend/.env); mecjohnson97@gmail.com was NOT registered.",
+    "profile_photos collection has no index on user_id (count/find per request)",
+    "server.py is ~2560 lines - should be split into routers",
+    "CreatePostDialog: if video upload fails the post stays published without video (only a toast) - acceptable but no retry"
+  ],
+  "updated_files": ["/app/backend/tests/test_video_photos_translate.py"],
+  "success_rate": {"backend": "100% (27/27)", "frontend": "100% of tested flows"},
+  "seed_data_creation": "None persisted. TEST_ posts/videos/photos created during tests were cleaned up (also removed 1 orphan GridFS chunk).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Login via page.request to /api/auth/login and set localStorage token/user/lang ('pt'|'fr'|'en'|'es'). Translation cache: Mongo 'translations' + localStorage tr_cache_<lang>. Real webm can be generated in-browser via canvas.captureStream + MediaRecorder and set_input_files on create-post-video-input. Comment emoji requires clicking post-comments-toggle-<id> first. Only 1 seeded post ('Teste video 🎉' by Ana) exists in feed.",
+  "test_credentials": "anaa@teste.com / Teste123 (migrant), bruno@teste.com / Teste123 (volunteer)"
+}

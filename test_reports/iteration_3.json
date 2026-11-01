@@ -1,0 +1,31 @@
+{
+  "summary": "Tested the admin seed and dashboard login, backend and frontend. Backend: 26/26 pytest tests pass (13 new in test_admin_seed.py, plus the test_feed_posts.py regression), run serially with -n 0. Covered: admin login returns role=admin and no password field. Wrong password gives 401. The stored hash is bcrypt $2b$. /api/admin/stats, /users and /posts return 200 for the admin. For maria (migrant) all three return 403, and with no token the request is rejected. Restarting the backend through supervisor leaves exactly 1 admin document and login still works. When the admin's password and role were changed in the DB, a restart put both back (same user id, no duplicate). Frontend: admin logged in at /auth, then /admin showed the stats overview (3 users, 12 posts, 11 messages); the Usuários tab lists the 3 users and the Publicações tab lists the posts. No page errors and no API calls at 4xx/5xx. Maria's feed at /home shows 10 post cards, she has no Admin nav item, and visiting /admin redirects her to /home.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/auth/login", "issue": "Email matching is case-sensitive. seed_admin lowercases ADMIN_EMAIL, but login does not normalize the email, so 'Admin@fieledeus.com' gets 401. Register also stores the email as typed."},
+      {"endpoint": "POST /api/auth/login", "issue": "No brute-force protection: 6 or more failed attempts all return 401 with no lockout. This was already the case."}
+    ]
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": ["/app/backend/tests/test_admin_seed.py", "/app/backend/tests/test_feed_posts.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "Optional: lowercase and strip the email in /auth/login and /auth/register so they match the seeded admin email.",
+    "Optional: add login rate limiting or lockout, especially now that a known admin account exists."
+  ],
+  "critical_code_review_comments": [
+    "CORS uses allow_origins=['*'] with allow_credentials=True. Auth is a Bearer token, not cookies, so this is low risk, but it should use explicit origins.",
+    "Auth uses a Bearer JWT stored in localStorage, so no httpOnly cookies are set (a playbook check item does not apply).",
+    "If seed_admin raises (for example Mongo is unreachable), the whole startup fails because it is not wrapped in try/except, unlike the index creation.",
+    "The 'Adicionar Admin' button in the Users tab registers admins via /api/auth/register and then a role PUT. Review whether that path is admin-protected end to end (not tested here).",
+    "server.py is 2224 lines and AdminDashboard.js is 1514 lines; both should be split.",
+    "/app/auth_testing.md does not exist (the review request refers to it)."
+  ],
+  "updated_files": ["/app/backend/tests/test_admin_seed.py", "/app/memory/test_credentials.md (added admin creds)"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "admin@fieledeus.com / FielAdmin2026! (admin); maria@teste.com / Teste123! (migrant)",
+  "seed_data_creation": "None new. test_seed_resets_changed_password_and_role temporarily changes the admin's password and role in the DB, then a backend restart restores them.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Run the backend tests with `-n 0`. pytest.ini enables xdist, and the restart tests in test_admin_seed.py break parallel tests (502s). On /admin the tabs are Visão Geral, Usuários, Publicações, Hospedagem and Divulgações. The auth form may open in register mode; click toggle-auth-mode if name-input is visible."
+}

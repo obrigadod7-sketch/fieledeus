@@ -1,0 +1,35 @@
+{
+  "summary": "Tested password recovery (backend + full UI flow), chat appointments (backend validation/permissions/info-hiding + full sender/recipient UI flow) and the Jobs page scroll-to-results fix (with mocked /api/jobs/search). Backend 12/12 pytest passed. All requested UI flows passed on desktop; jobs scroll verified on desktop and mobile. Only minor UX/code-review notes found.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/appointments", "issue": "Past-date check compares against the UTC date only, so a time already in the past today is accepted (e.g. today 08:00 when it is 15:00). Users in UTC+X timezones can also be blocked from picking their own 'today' around midnight."},
+      {"endpoint": "POST /api/appointments", "issue": "Does not check can-chat permission (same as existing POST /api/messages), so any logged-in user can send a proposal to any user id."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Jobs page", "issues": ["The scroll-to-results also runs on page load (the mount search for 'emprego' Brasil) and on category change, not only after the user clicks Buscar Vagas. With results returned, the page opens already scrolled (mobile scrollY=525, desktop 243), so the search input is off-screen on first visit. Suggestion: only scroll when the user starts a search (e.g. pass a scroll flag from handleSearch)."]},
+      {"screen": "Appointment dialog", "issues": ["If the dialog is opened before the other user has loaded, the checkbox text shows 'esta pessoa' and the chat header is empty. Cosmetic only."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_appointments_password_reset.py", "/app/test_reports/pytest/pytest_appt_reset.xml"],
+  "action_items": [
+    "Optional: limit the JobsPage scrollIntoView to searches the user starts (not the mount search or category changes)",
+    "Optional: reject appointment datetimes that are already past (not only past dates), and compare in the user's timezone"
+  ],
+  "critical_code_review_comments": [
+    "get_messages hides appointment.info correctly for the recipient while the status is pending, declined or cancelled. GET /conversations only shows the message text, which has no info, so nothing leaks.",
+    "Password reset: generic response, bcrypt-hashed code, lockout after 5 attempts, 15-minute expiry and single use all work. The email address is matched case-insensitively.",
+    "server.py is ~2400 lines; consider splitting the password-reset and appointments sections into router modules."
+  ],
+  "updated_files": ["/app/backend/tests/test_appointments_password_reset.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "Created new appointments between Ana and Bruno (one 15/11/2026 15:45 video, accepted via UI; plus pytest ones, which are cleaned up). Ana's password was reset during the tests and restored to Teste123 (login verified).",
+  "test_credentials": "/app/memory/test_credentials.md is EMPTY. Used anaa@teste.com / Teste123, bruno@teste.com / Teste123 and delivered@resend.dev as given by the main agent. Please record them in the file.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Ana id 10b58743-4a13-4c2a-9ed0-395dbdb41e01, Bruno id 00d3e94f-813c-4a18-9f42-eb7be278b645. To test a reset, seed db.password_resets with a bcrypt code_hash. In the UI, intercept /api/auth/forgot-password so the seeded code is not overwritten and no real email is sent. The jobs search needs page.route mocking (RAPIDAPI_KEY is not set, so the real endpoint returns 503). The Resend sink email was sent (202 Accepted in the backend log)."
+}
