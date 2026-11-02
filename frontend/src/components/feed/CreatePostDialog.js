@@ -33,7 +33,7 @@ export default function CreatePostDialog({ open, onOpenChange, user, token, onCr
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    if (!file.type.startsWith('video/')) return toast.error('Escolha um arquivo de vídeo');
+    if (!file.type.startsWith('video/') && !/\.(mp4|mov|webm|m4v|3gp|mkv|avi)$/i.test(file.name)) return toast.error('Escolha um arquivo de vídeo');
     if (file.size > 50 * 1024 * 1024) return toast.error('Vídeo muito grande (máximo 50MB)');
     setVideo({ file, preview: URL.createObjectURL(file) });
   };
@@ -62,7 +62,10 @@ export default function CreatePostDialog({ open, onOpenChange, user, token, onCr
         const fd = new FormData();
         fd.append('file', video.file);
         const vr = await fetch(`${API}/api/posts/${created.id}/video`, { method: 'POST', headers: authHeaders(token), body: fd });
-        if (!vr.ok) toast.error('Post publicado, mas o vídeo não foi enviado');
+        if (!vr.ok) {
+          const err = await vr.json().catch(() => ({}));
+          toast.error(`Post publicado, mas o vídeo não foi enviado${err.detail ? `: ${err.detail}` : ''}`);
+        }
       }
       toast.success('Publicado com sucesso!');
       setPost(empty(user?.role));

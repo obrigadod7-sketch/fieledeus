@@ -1,5 +1,6 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
 from zoneinfo import ZoneInfo
+import mimetypes
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -2385,8 +2386,12 @@ async def upload_post_video(post_id: str, file: UploadFile = File(...), current_
     post = await db.posts.find_one({'id': post_id, 'user_id': current_user.id}, {'_id': 0, 'id': 1, 'video_file_id': 1})
     if not post:
         raise HTTPException(status_code=404, detail='Post não encontrado')
-    if not (file.content_type or '').startswith('video/'):
-        raise HTTPException(status_code=400, detail='Envie um arquivo de vídeo')
+    mime = file.content_type or ''
+    if not mime.startswith('video/'):
+        guessed = mimetypes.guess_type(file.filename or '')[0] or ''
+        if not guessed.startswith('video/'):
+            raise HTTPException(status_code=400, detail='Envie um arquivo de vídeo')
+        mime = guessed
     data = await file.read(VIDEO_MAX_BYTES + 1)
     if len(data) > VIDEO_MAX_BYTES:
         raise HTTPException(status_code=413, detail='Vídeo muito grande (máximo 50MB)')
@@ -2395,8 +2400,8 @@ async def upload_post_video(post_id: str, file: UploadFile = File(...), current_
             await video_bucket.delete(ObjectId(post['video_file_id']))
         except Exception:
             pass
-    file_id = await video_bucket.upload_from_stream(post_id, data, metadata={'mime': file.content_type, 'post_id': post_id})
-    await db.posts.update_one({'id': post_id}, {'$set': {'has_video': True, 'video_file_id': str(file_id), 'video_mime': file.content_type, 'video_size': len(data)}})
+    file_id = await video_bucket.upload_from_stream(post_id, data, metadata={'mime': mime, 'post_id': post_id})
+    await db.posts.update_one({'id': post_id}, {'$set': {'has_video': True, 'video_file_id': str(file_id), 'video_mime': mime, 'video_size': len(data)}})
     return {'video_url': f"/api/posts/{post_id}/video"}
 
 @api_router.get("/posts/{post_id}/video")
