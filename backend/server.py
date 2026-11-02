@@ -2404,7 +2404,7 @@ async def upload_post_video(post_id: str, file: UploadFile = File(...), current_
     await db.posts.update_one({'id': post_id}, {'$set': {'has_video': True, 'video_file_id': str(file_id), 'video_mime': mime, 'video_size': len(data)}})
     return {'video_url': f"/api/posts/{post_id}/video"}
 
-@api_router.get("/posts/{post_id}/video")
+@api_router.api_route("/posts/{post_id}/video", methods=["GET", "HEAD"])
 async def get_post_video(post_id: str, request: Request):
     post = await db.posts.find_one({'id': post_id, 'has_video': True}, {'_id': 0, 'video_file_id': 1, 'video_mime': 1, 'video_size': 1})
     if not post:

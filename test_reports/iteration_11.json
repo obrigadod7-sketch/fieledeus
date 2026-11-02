@@ -1,0 +1,30 @@
+{
+  "summary": "Tested post video feature end-to-end. Backend: 5/5 pytest pass (upload multipart, video_url in feed, full GET 200 with byte-exact content, Range 206 incl. suffix range, application/octet-stream + .mp4 name accepted with mime guessed to video/mp4, text file 400, >50MB 413, other user 404). Frontend: registered migrant, /home -> i-need-help-cta -> filled title/desc -> create-post-add-video with real 2s H.264 mp4 (generated with ffmpeg) -> create-post-video-preview shown -> publish -> post appears at top of feed with <video data-testid=post-video-<id>> src=REACT_APP_BACKEND_URL/api/posts/<id>/video, readyState=4, duration=2, videoWidth=320, frame renders. Empty-mime file with .mp4 name accepted by frontend. Remove-video before publish -> post created with video_url=null.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "HEAD /api/posts/{id}/video", "issue": "HEAD returns 405 (application/json). Not needed by browsers for <video>, but some clients/CDNs probe with HEAD. Optional: add api_route with methods GET,HEAD."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_post_video_upload.py", "/app/test_reports/pytest/pytest_video_upload.xml"],
+  "action_items": [
+    "Optional cleanup: post 'Teste video' (id c74e9e3f-64fb-459a-b9d2-21be357fd5b9, 20MB non-video dummy bytes from earlier curl test) shows a broken video player in the feed (MEDIA_ERR_SRC_NOT_SUPPORTED) - delete it so users don't see it",
+    "Optional: support HEAD on /api/posts/{id}/video"
+  ],
+  "critical_code_review_comments": [
+    "upload_post_video reads up to 50MB into memory per request (file.read) before writing to GridFS; acceptable for MVP but streaming in chunks would reduce memory pressure",
+    "Backend does not validate actual file content (any bytes with a video mime/extension are accepted) - leads to unplayable posts like the dummy 20MB one",
+    "CreatePostDialog: if post is created but video upload fails, user sees both an error toast and 'Publicado com sucesso!' - acceptable but slightly confusing; URL.createObjectURL preview is never revoked (minor leak)"
+  ],
+  "updated_files": ["/app/backend/tests/test_post_video_upload.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "Created TEST_vid*/TEST_novid* posts and test_vid*/test_vidui* migrant users",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Playable test mp4 generated via: pip install --target /tmp/iff imageio-ffmpeg; ffmpeg binary at /tmp/iff/imageio_ffmpeg/binaries/; test file /tmp/test.mp4 (11KB). Test file test_post_video_upload.py depends on /tmp/test.mp4 existing."
+}
