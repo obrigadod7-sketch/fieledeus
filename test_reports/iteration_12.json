@@ -1,0 +1,24 @@
+{
+  "summary": "Frontend-only test of the login 'Erro de conexão' fix (AuthPage retry loop + safe JSON parsing). Mobile viewport 390x844. 7/7 scenarios pass: landing login-button -> /auth; admin login shows 'Login bem-sucedido!' and goes to /home; wrong password shows 'E-mail ou senha incorretos'; '  LEGACY@Test.com  ' logs in; migrant registration (step 1 -> pick category -> submit) shows 'Conta criada com sucesso!' and goes to /home; one mocked 502 HTML response shows 'Conectando ao servidor, aguarde alguns segundos...' then succeeds on retry 2 and goes to /home; 4 aborted requests show 'Erro de conexão: verifique sua internet...' after about 41s with no crash and the button enabled again; 4 mocked 502s show 'Servidor indisponível, tente novamente em instantes'.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Optional UX: the retry loop waits again after the 4th (final) attempt, which adds about 16s of useless waiting. Total time before the error toast is about 41s. Skip the sleep when attempt === 3, and consider shorter backoff (e.g. 2s/4s/6s).",
+    "Optional: add data-testid to the registration category buttons (e.g. category-<id>) and to the role-volunteer option for easier testing."
+  ],
+  "critical_code_review_comments": [
+    "AuthPage.js handleSubmit: sleeping after the last attempt wastes time (see action items).",
+    "The spinner shows no attempt counter during the long retry wait. Consider showing 'tentativa X/4'."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped)", "frontend": "100%"},
+  "seed_data_creation": "Registered user test_reg_81009@example.com / Test1234 (migrant)",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Login retry was verified with Playwright page.route (fulfill 502 / abort). Category buttons in registration step 2 have no testid: use '[data-testid=auth-form] form button[type=button]'. Toasts are sonner: '[data-sonner-toast]'."
+}
