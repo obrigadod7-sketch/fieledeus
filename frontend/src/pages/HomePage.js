@@ -4,6 +4,7 @@ import { Loader2, Inbox, RefreshCw } from 'lucide-react';
 import { AuthContext } from '../App';
 import BottomNav from '../components/BottomNav';
 import WelcomeStrip from '../components/feed/WelcomeStrip';
+import MotivationTicker from '../components/feed/MotivationTicker';
 import FeedFilters from '../components/feed/FeedFilters';
 import PostCard from '../components/feed/PostCard';
 import PostSkeleton from '../components/feed/PostSkeleton';
@@ -73,6 +74,7 @@ export default function HomePage() {
 
         <main className="min-w-0 max-w-2xl flex-1 space-y-4">
           <WelcomeStrip userName={user?.name} onNeedHelp={() => setShowCreate(true)} onWantHelp={() => navigate('/volunteers')} />
+          <MotivationTicker />
 
           <div className="feed-sticky">
             <FeedFilters category={category} type={type} onCategory={setCategory} onType={setType} />

@@ -1,14 +1,14 @@
-# PRD - fieledeus (Watizat)
+# Watizat / fieledeus – PRD
 ## Problem
-Make the GitHub repo chat (/api/ai/chat) work with OpenRouter + Groq keys.
+Chat (Conversar) not sending messages, Agenda button broken, messages not reaching other user, videos not sending. Add automatic motivational messages in feed every 1 minute.
+## Root cause
+Repo commits on 2026-11-01 replaced backend/server.py with a ~300-line version (only auth + AI chat). All /api/messages, /api/appointments, /api/conversations, posts, etc. were gone.
 ## Done (2026-06)
-- Imported repo into /app; /api/ai/chat now tries OpenRouter -> Groq -> OpenAI with fallback
-- Defaults: OPENROUTER_MODEL=google/gemma-4-31b-it:free, GROQ_MODEL=openai/gpt-oss-120b
-- Verified via curl + UI (answered through Groq)
+- Restored full backend from commit d4a6412 (all routes)
+- Legacy users (created with _id only, no `id`) auto-migrated on login/auth/startup
+- emergentintegrations import optional (Render)
+- New /api/chat-media (GridFS, 25MB, range streaming) for chat photos/videos; DirectChatPage uploads via multipart
+- MotivationTicker in feed rotates message every 60s
 ## Backlog
-- OpenRouter blocked (no credits / free-model privacy policy)
-- Render markdown in chat replies; answers cut at 1000 tokens
-## Fix (2026-06)
-- JobsPage white screen: restored missing SERVICE_CATEGORIES / SEARCH_SUGGESTIONS / JOB_PLATFORMS and the Platforms/Offers/Seekers tab views
-- Map: real Google Map via REACT_APP_GOOGLE_MAPS_API_KEY (GoogleMapComponent wired into MapPage, SVG fallback without key)
-- Backlog: RAPIDAPI_KEY missing (external job search 503); French job boards get "Brasil" as location
+- P1: Unread message badges; notifications
+- P2: Admin-editable motivational messages
