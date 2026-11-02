@@ -355,7 +355,7 @@ export default function VolunteersPage() {
                             </p>
                             <MessageCircle size={18} className="text-[#2A9D8F]" />
                           </div>
-                          <span className="text-xs text-[#1F7A6F] font-medium">Precisa de ajuda</span>
+                          <span className="text-xs text-[#1F7A6F] font-medium">Procura serviço</span>
                         </div>
                       </div>
                       <p className="text-sm text-[#5C524B] mb-2 line-clamp-2">
@@ -546,7 +546,7 @@ export default function VolunteersPage() {
           <div className="relative h-40 rounded-2xl overflow-hidden">
             <img 
               src="https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=400&q=80" 
-              alt="Voluntários"
+              alt="Profissionais"
               className="w-full h-full object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end p-4">
@@ -591,7 +591,7 @@ export default function VolunteersPage() {
                   <Avatar userId={request.user?.id || request.user_id} version={request.user?.avatar_version} name={request.user?.name || 'U'} size={56} />
                   <div>
                     <p className="font-bold text-[#2C221E]">{request.user?.name}</p>
-                    <span className="text-xs text-[#1F7A6F] font-medium">Precisa de ajuda</span>
+                    <span className="text-xs text-[#1F7A6F] font-medium">Procura serviço</span>
                   </div>
                 </div>
                 <p className="text-[#5C524B] mb-4">{request.description || request.title}</p>

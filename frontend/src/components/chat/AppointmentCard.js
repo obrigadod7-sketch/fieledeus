@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
-import { CalendarCheck, Clock, MapPin, Lock } from 'lucide-react';
+import React, { useContext, useState } from 'react';
+import { AuthContext } from '../../App';
+import PixCheckout from '../billing/PixCheckout';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { CalendarCheck, Clock, MapPin, Lock, Wallet, BadgeCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../ui/button';
 import { MODES } from './AppointmentDialog';
@@ -14,6 +17,10 @@ const STATUS = {
 export default function AppointmentCard({ msg, isMine, token, onChanged }) {
   const appt = msg.appointment;
   const [busy, setBusy] = useState(false);
+  const [payOpen, setPayOpen] = useState(false);
+  const { user } = useContext(AuthContext);
+  const isPayer = appt.payer_id && appt.payer_id === user?.id;
+  const priceLabel = appt.price ? `R$ ${Number(appt.price).toFixed(2).replace('.', ',')}` : null;
   const [y, m, d] = appt.date.split('-');
   const status = STATUS[appt.status] || STATUS.pending;
   const modeLabel = MODES.find(x => x.value === appt.mode)?.label || appt.mode;
@@ -45,6 +52,19 @@ export default function AppointmentCard({ msg, isMine, token, onChanged }) {
       <div className="px-4 py-3 space-y-2 text-sm">
         <p className="flex items-center gap-2 font-semibold"><Clock size={16} className="text-[#2A9D8F]" /> {`${d}/${m}/${y}`} às {appt.time}</p>
         <p className="flex items-center gap-2"><MapPin size={16} className="text-[#2A9D8F]" /> {modeLabel}</p>
+        {priceLabel && (
+          <p className="flex items-center gap-2" data-testid="appointment-price">
+            <Wallet size={16} className="text-[#2A9D8F]" /> {priceLabel}
+            {appt.payment_status === 'paid'
+              ? <span className="ml-auto flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800" data-testid="appointment-paid-badge"><BadgeCheck size={12} /> Pago</span>
+              : <span className="ml-auto rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800" data-testid="appointment-unpaid-badge">A pagar</span>}
+          </p>
+        )}
+        {appt.status === 'accepted' && priceLabel && appt.payment_status !== 'paid' && isPayer && (
+          <Button size="sm" onClick={() => setPayOpen(true)} className="w-full rounded-full bg-[#A0703F] hover:bg-[#8a5f34]" data-testid="appointment-pay-button">
+            Pagar {priceLabel} com PIX
+          </Button>
+        )}
         {appt.info ? (
           <p className="bg-[#F7F4EE] rounded-lg p-2 whitespace-pre-wrap" data-testid="appointment-info">{appt.info}</p>
         ) : appt.has_info ? (
@@ -60,6 +80,14 @@ export default function AppointmentCard({ msg, isMine, token, onChanged }) {
           <Button size="sm" disabled={busy} variant="ghost" onClick={() => respond('cancel')} className="w-full rounded-full text-red-600 hover:bg-red-50" data-testid="appointment-cancel-button">Cancelar proposta</Button>
         )}
       </div>
+      <Dialog open={payOpen} onOpenChange={setPayOpen}>
+        <DialogContent className="max-w-sm" data-testid="appointment-pay-dialog">
+          <DialogHeader><DialogTitle>Pagar agendamento</DialogTitle></DialogHeader>
+          {payOpen && (
+            <PixCheckout createPath={`/api/appointments/${msg.id}/pix`} amount={appt.price} onPaid={() => { setPayOpen(false); onChanged?.(); }} />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -236,16 +236,16 @@ export default function AuthPage() {
     if (step === 1) return t('register');
     if (step === 2) {
       if (role === 'migrant') return 'O que você precisa?';
-      if (role === 'helper') return 'Como você quer ajudar?';
+      if (role === 'helper') return 'Quais serviços você oferece?';
     }
     if (step === 3 && role === 'helper') return 'Sua Localização';
     return t('register');
   };
 
   const getStepSubtitle = () => {
-    if (step === 2 && role === 'migrant') return 'Selecione as áreas em que você precisa de ajuda';
-    if (step === 2 && role === 'helper') return 'Selecione as áreas em que você pode oferecer ajuda';
-    if (step === 3 && role === 'helper') return 'Compartilhe sua localização para ajudar pessoas próximas';
+    if (step === 2 && role === 'migrant') return 'Selecione os serviços que você procura';
+    if (step === 2 && role === 'helper') return 'Selecione as áreas dos serviços que você oferece';
+    if (step === 3 && role === 'helper') return 'Compartilhe sua localização para atender clientes próximos';
     return null;
   };
 
@@ -278,16 +278,16 @@ export default function AuthPage() {
         {/* Conteúdo sobre a imagem */}
         <div className="relative z-10 flex flex-col justify-center items-center text-white p-12 text-center">
           <h1 className="text-4xl font-bold mb-4">
-            {role === 'migrant' ? 'Preciso de Ajuda' : 'Quero Ajudar'}
+            {role === 'migrant' ? 'Sou Cliente' : 'Sou Profissional'}
           </h1>
           <p className="text-xl text-white/90 max-w-md">
             {role === 'migrant' 
-              ? 'Encontre apoio, recursos e uma comunidade pronta para te ajudar.'
+              ? 'Encontre profissionais de confiança para o que você precisa.'
               : 'Sua solidariedade transforma vidas. Faça a diferença hoje.'}
           </p>
           <div className="mt-8 flex items-center gap-4">
             <div className="bg-white/20 backdrop-blur-sm rounded-full px-6 py-3">
-              <span className="text-lg">+500 pessoas ajudadas</span>
+              <span className="text-lg">+500 atendimentos</span>
             </div>
           </div>
         </div>
@@ -538,7 +538,7 @@ export default function AuthPage() {
                   </div>
                   <div>
                     <h3 className="font-bold text-textPrimary">Localização</h3>
-                    <p className="text-sm text-textSecondary">Ajude pessoas próximas de você</p>
+                    <p className="text-sm text-textSecondary">Atenda clientes próximos de você</p>
                   </div>
                 </div>
 
@@ -597,7 +597,7 @@ export default function AuthPage() {
                   <div>
                     <p className="font-medium text-textPrimary">Mostrar minha localização no mapa</p>
                     <p className="text-sm text-textSecondary">
-                      Pessoas que precisam de ajuda poderão ver você no mapa de ajudantes próximos
+                      Clientes poderão ver você no mapa de profissionais próximos
                     </p>
                   </div>
                 </label>

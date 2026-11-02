@@ -338,7 +338,7 @@ export default function NearbyHelpersPage() {
             <div style="text-align: center; min-width: 160px; padding: 8px; background: white; color: #1f2937;">
               <strong style="font-size: 14px;">${helper.name}</strong><br/>
               <span style="color: #6b7280; font-size: 11px;">
-                ${helper.role === 'volunteer' ? '🤝 Voluntário Profissional' : '🤝 Ajudante'}
+                ${helper.role === 'volunteer' ? '🤝 Profissional' : '🤝 Profissional'}
               </span><br/>
               <span style="font-size: 14px; margin: 4px 0; display: block;">${categories}</span>
               <span style="color: #22c55e; font-size: 12px; font-weight: bold;">📍 ${helper.distance} km</span>
@@ -529,7 +529,7 @@ export default function NearbyHelpersPage() {
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              🤝 Voluntários ({nearbyHelpers.length})
+              🤝 Profissionais ({nearbyHelpers.length})
             </button>
             <button
               onClick={() => setViewMode('locations')}
@@ -622,7 +622,7 @@ export default function NearbyHelpersPage() {
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-5 h-5 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 border-2 border-white shadow"></div>
-                <span className="text-gray-600">Voluntários</span>
+                <span className="text-gray-600">Profissionais</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-5 h-5 rounded-lg bg-green-500 border-2 border-white shadow"></div>
@@ -769,7 +769,7 @@ export default function NearbyHelpersPage() {
                         </span>
                       </div>
                       <p className="text-sm text-gray-600">
-                        {helper.role === 'volunteer' ? '🤝 Voluntário Profissional' : '🤝 Ajudante'}
+                        {helper.role === 'volunteer' ? '🤝 Profissional' : '🤝 Profissional'}
                       </p>
                       <div className="flex flex-wrap gap-1 mt-2">
                         {helper.help_categories?.slice(0, 4).map(cat => {

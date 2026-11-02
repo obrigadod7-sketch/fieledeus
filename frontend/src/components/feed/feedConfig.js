@@ -16,15 +16,15 @@ export const CATEGORIES = [
 ];
 
 export const TYPES = {
-  need: { label: 'Precisa de ajuda', badge: 'bg-[#FDF0ED] text-[#B4462B] border-[#F5C9BC]' },
-  offer: { label: 'Oferece ajuda', badge: 'bg-[#E9F5F3] text-[#1F7A6F] border-[#BFE3DD]' },
+  need: { label: 'Procura serviço', badge: 'bg-[#FDF0ED] text-[#B4462B] border-[#F5C9BC]' },
+  offer: { label: 'Oferece serviço', badge: 'bg-[#E9F5F3] text-[#1F7A6F] border-[#BFE3DD]' },
   job: { label: 'Vaga de emprego', badge: 'bg-[#FEFAE0] text-[#8A5A2B] border-[#EBD9B4]' },
 };
 
 export const ROLES = {
-  migrant: 'Migrante',
-  volunteer: 'Voluntário',
-  helper: 'Ajudante',
+  migrant: 'Cliente',
+  volunteer: 'Profissional',
+  helper: 'Profissional',
   admin: 'Admin',
   assistant: 'Assistente',
 };

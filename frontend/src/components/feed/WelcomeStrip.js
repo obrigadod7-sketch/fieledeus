@@ -32,10 +32,10 @@ export default function WelcomeStrip({ userName, onNeedHelp, onWantHelp }) {
       </div>
       <div className="mt-4 grid grid-cols-2 gap-2.5">
         <button onClick={onNeedHelp} className="feed-cta feed-cta-gold" data-testid="i-need-help-cta">
-          <Plus size={18} /> Preciso de ajuda
+          <Plus size={18} /> Preciso de um serviço
         </button>
         <button onClick={onWantHelp} className="feed-cta feed-cta-sage" data-testid="i-want-to-help-cta">
-          <HandHeart size={18} /> Quero ajudar
+          <HandHeart size={18} /> Oferecer serviço
         </button>
       </div>
     </section>
