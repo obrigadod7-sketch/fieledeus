@@ -12,3 +12,8 @@ Repo commits on 2026-11-01 replaced backend/server.py with a ~300-line version (
 ## Backlog
 - P1: Unread message badges; notifications
 - P2: Admin-editable motivational messages
+
+## Paid version (paused, 2026-06)
+User asked to make app paid (R$19,90/mês subscription via PIX Mercado Pago + professionals charge per booking, 10% fee, texts volunteer->profissional, migrant->cliente).
+Implemented then reverted at user's request so they can save the free version to GitHub first.
+Full patch saved at /root/paid_version.patch (apply with `cd /app && git apply /root/paid_version.patch`). Needs MP_ACCESS_TOKEN, MP_WEBHOOK_SECRET.

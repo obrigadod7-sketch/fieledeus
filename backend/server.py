@@ -35,7 +35,6 @@ try:
 except ImportError:
     LlmChat = None
     UserMessage = None
-from billing import build_billing
 from email_service import send_email, reset_code_email
 
 ROOT_DIR = Path(__file__).parent
@@ -104,7 +103,6 @@ class User(BaseModel):
     languages: List[str] = Field(default_factory=list)
     categories: List[str] = Field(default_factory=list)
     avatar_version: Optional[int] = None
-    service_price: Optional[float] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class AvatarUpload(BaseModel):
@@ -297,8 +295,6 @@ async def normalize_legacy_user(doc: dict) -> dict:
     doc.pop('_id', None)
     return doc
 
-billing_router, ensure_subscribed = build_billing(db, get_current_user)
-
 def email_query(email: str):
     return {'$regex': f'^{re.escape(email.strip())}$', '$options': 'i'}
 
@@ -423,16 +419,8 @@ async def get_avatar(user_id: str):
 
 @api_router.put("/profile")
 async def update_profile(updates: dict, current_user: User = Depends(get_current_user)):
-    allowed_fields = ['name', 'bio', 'location', 'languages', 'categories', 'help_categories', 'need_categories', 'display_name', 'use_display_name', 'service_price']
+    allowed_fields = ['name', 'bio', 'location', 'languages', 'categories', 'help_categories', 'need_categories', 'display_name', 'use_display_name']
     update_data = {k: v for k, v in updates.items() if k in allowed_fields}
-    if 'service_price' in update_data:
-        try:
-            price = round(float(update_data['service_price'] or 0), 2)
-        except (TypeError, ValueError):
-            raise HTTPException(status_code=400, detail='Preço inválido')
-        if price < 0 or price > 100000:
-            raise HTTPException(status_code=400, detail='Preço inválido')
-        update_data['service_price'] = price
     
     await db.users.update_one({'id': current_user.id}, {'$set': update_data})
     
@@ -873,7 +861,6 @@ class DirectMessageCreate(BaseModel):
 
 @api_router.post("/messages")
 async def send_message(msg_data: DirectMessageCreate, current_user: User = Depends(get_current_user)):
-    await ensure_subscribed(current_user)
     message = DirectMessage(
         from_user_id=current_user.id,
         to_user_id=msg_data.to_user_id,
@@ -2331,22 +2318,12 @@ class AppointmentRespond(BaseModel):
 
 @api_router.post("/appointments")
 async def create_appointment(data: AppointmentCreate, current_user: User = Depends(get_current_user)):
-    await ensure_subscribed(current_user)
     if data.mode not in APPOINTMENT_MODES:
         raise HTTPException(status_code=400, detail='Modo inválido')
     if not data.acknowledged:
         raise HTTPException(status_code=400, detail='Confirme que entendeu as condições')
-    other = await db.users.find_one({'id': data.to_user_id}, {'_id': 0, 'id': 1, 'role': 1, 'service_price': 1})
-    if data.to_user_id == current_user.id or not other:
+    if data.to_user_id == current_user.id or not await db.users.find_one({'id': data.to_user_id}, {'_id': 1}):
         raise HTTPException(status_code=404, detail='Usuário não encontrado')
-    pro_roles = ('volunteer', 'helper')
-    if other.get('role') in pro_roles:
-        professional_id, payer_id, price = other['id'], current_user.id, other.get('service_price')
-    elif current_user.role in pro_roles:
-        professional_id, payer_id, price = current_user.id, other['id'], current_user.service_price
-    else:
-        professional_id, payer_id, price = None, None, None
-    pricing = {'price': price, 'professional_id': professional_id, 'payer_id': payer_id, 'payment_status': 'unpaid'} if price else {}
     try:
         when = datetime.fromisoformat(f"{data.date}T{data.time}")
     except ValueError:
@@ -2362,7 +2339,7 @@ async def create_appointment(data: AppointmentCreate, current_user: User = Depen
         'media': [],
         'appointment': {
             'date': data.date, 'time': data.time, 'mode': data.mode,
-            'info': (data.info or '').strip(), 'status': 'pending', **pricing
+            'info': (data.info or '').strip(), 'status': 'pending'
         }
     }
     await db.messages.insert_one(msg)
@@ -2450,7 +2427,6 @@ chat_media_bucket = AsyncIOMotorGridFSBucket(db, bucket_name='chat_media')
 
 @api_router.post("/chat-media")
 async def upload_chat_media(file: UploadFile = File(...), current_user: User = Depends(get_current_user)):
-    await ensure_subscribed(current_user)
     mime = file.content_type or ''
     if not (mime.startswith('video/') or mime.startswith('image/')):
         raise HTTPException(status_code=400, detail='Envie uma foto ou vídeo')
@@ -2591,7 +2567,6 @@ async def translate_texts(data: TranslateIn, request: Request):
     return {'translations': [cached.get(k, t) for k, t in zip(keys, texts)]}
 
 app.include_router(api_router)
-app.include_router(billing_router)
 
 # Health check na raiz para o Render
 @app.get("/")

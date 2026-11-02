@@ -8,8 +8,7 @@ import BottomNav from '../components/BottomNav';
 import AvatarUploader from '../components/AvatarUploader';
 import ProfilePhotos from '../components/ProfilePhotos';
 import LanguageSwitcher from '../components/LanguageSwitcher';
-import ServicePriceField from '../components/ServicePriceField';
-import { User, Mail, Globe, LogOut, Edit, Check, Heart, Crown } from 'lucide-react';
+import { User, Mail, Globe, LogOut, Edit, Check, Heart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -316,15 +315,6 @@ export default function ProfilePage() {
           )}
 
           <ProfilePhotos />
-
-          <ServicePriceField />
-
-          <div className="border-t border-gray-100 pt-6">
-            <h3 className="font-bold text-textPrimary mb-3">Assinatura</h3>
-            <Button onClick={() => navigate('/assinatura')} className="w-full rounded-full py-6" data-testid="profile-subscription-button">
-              <Crown size={18} className="mr-2" /> Minha assinatura (R$ 19,90/mês)
-            </Button>
-          </div>
 
           <div className="border-t border-gray-100 pt-6">
             <h3 className="font-bold text-textPrimary mb-3">Idioma do aplicativo</h3>

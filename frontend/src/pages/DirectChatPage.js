@@ -43,17 +43,12 @@ export default function DirectChatPage() {
   const [userPosts, setUserPosts] = useState([]);
   const [showUserInfo, setShowUserInfo] = useState(false);
   const [showAppointment, setShowAppointment] = useState(false);
-  const [subscribed, setSubscribed] = useState(true);
 
   useEffect(() => {
     void fetchOtherUser();
     void checkCanChat();
     void fetchMessages();
     void fetchUserPosts();
-    fetch(`${process.env.REACT_APP_BACKEND_URL}/api/subscription`, { headers: { 'Authorization': `Bearer ${token}` } })
-      .then(r => r.ok ? r.json() : null)
-      .then(d => d && setSubscribed(d.active || d.exempt))
-      .catch(() => {});
     const interval = setInterval(fetchMessages, 3000);
     return () => clearInterval(interval);
   }, [userId]);
@@ -154,9 +149,7 @@ export default function DirectChatPage() {
         setShowMediaOptions(false);
         void fetchMessages();
       } else {
-        if (response.status === 402) setSubscribed(false);
-        const err = await response.json().catch(() => ({}));
-        toast.error(err.detail || 'Erro ao enviar mensagem');
+        toast.error('Erro ao enviar mensagem');
       }
     } catch (error) {
       toast.error('Erro de conexão');
@@ -223,9 +216,9 @@ export default function DirectChatPage() {
 
   const getRoleLabel = (role) => {
     switch(role) {
-      case 'volunteer': return 'Profissional';
-      case 'migrant': return 'Cliente';
-      case 'helper': return 'Profissional';
+      case 'volunteer': return 'Voluntário';
+      case 'migrant': return 'Migrante';
+      case 'helper': return 'Ajudante';
       case 'admin': return 'Admin';
       default: return role;
     }
@@ -542,19 +535,7 @@ export default function DirectChatPage() {
       </div>
 
       {/* Área de input melhorada */}
-      {canChat && !subscribed && (
-        <div className="border-t bg-white p-4 shadow-lg" data-testid="chat-paywall">
-          <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-center gap-3 rounded-2xl bg-[#FFF8EE] border border-[#E8E2D9] p-4">
-            <p className="flex-1 text-sm text-[#2C221E] text-center sm:text-left">
-              Para conversar, enviar fotos/vídeos e agendar, assine o plano mensal de <strong>R$ 19,90</strong> via PIX.
-            </p>
-            <Button onClick={() => navigate('/assinatura')} className="rounded-full bg-[#A0703F] hover:bg-[#8a5f34]" data-testid="chat-paywall-subscribe-button">
-              Assinar agora
-            </Button>
-          </div>
-        </div>
-      )}
-      {canChat && subscribed && (
+      {canChat && (
         <div className="border-t bg-white p-3 shadow-lg">
           <div className="max-w-3xl mx-auto">
             {showMediaOptions && (

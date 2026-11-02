@@ -415,9 +415,9 @@ export default function AdminDashboard() {
   const getRoleLabel = (role) => {
     switch(role) {
       case 'admin': return 'Administrador';
-      case 'volunteer': return 'Profissional';
-      case 'migrant': return 'Cliente';
-      case 'helper': return 'Profissional';
+      case 'volunteer': return 'Voluntário';
+      case 'migrant': return 'Migrante';
+      case 'helper': return 'Ajudante';
       default: return role;
     }
   };
@@ -492,7 +492,7 @@ export default function AdminDashboard() {
                   <UserCheck size={20} className="text-green-600" />
                 </div>
                 <p className="text-2xl font-bold text-gray-800">{stats?.total_volunteers || 0}</p>
-                <p className="text-sm text-gray-500">Profissionais</p>
+                <p className="text-sm text-gray-500">Voluntários</p>
               </div>
 
               <div className="bg-white rounded-2xl p-4 shadow-sm border">
@@ -500,7 +500,7 @@ export default function AdminDashboard() {
                   <UserX size={20} className="text-purple-600" />
                 </div>
                 <p className="text-2xl font-bold text-gray-800">{stats?.total_migrants || 0}</p>
-                <p className="text-sm text-gray-500">Clientes</p>
+                <p className="text-sm text-gray-500">Migrantes</p>
               </div>
 
               <div className="bg-white rounded-2xl p-4 shadow-sm border">
@@ -649,8 +649,8 @@ export default function AdminDashboard() {
                 >
                   <option value="all">Todas as funções</option>
                   <option value="admin">Administradores</option>
-                  <option value="volunteer">Profissionais</option>
-                  <option value="migrant">Clientes</option>
+                  <option value="volunteer">Voluntários</option>
+                  <option value="migrant">Migrantes</option>
                   <option value="helper">Ajudantes</option>
                 </select>
                 <Button onClick={() => { void fetchUsers(); void fetchStats(); }} variant="outline" className="rounded-xl">
@@ -705,8 +705,8 @@ export default function AdminDashboard() {
                             className={`px-3 py-1 rounded-full text-sm font-medium border-0 ${getRoleColor(u.role)}`}
                             disabled={u.id === user?.id}
                           >
-                            <option value="migrant">Cliente</option>
-                            <option value="volunteer">Profissional</option>
+                            <option value="migrant">Migrante</option>
+                            <option value="volunteer">Voluntário</option>
                             <option value="helper">Ajudante</option>
                             <option value="admin">Administrador</option>
                           </select>
