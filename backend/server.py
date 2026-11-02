@@ -1,4 +1,5 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
+from zoneinfo import ZoneInfo
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -2613,6 +2614,45 @@ async def create_indexes():
     except Exception as e:
         logger.warning(f"Index creation skipped: {e}")
     await seed_admin()
+    asyncio.create_task(appointment_reminder_loop())
+
+
+REMINDER_TZ = ZoneInfo('America/Sao_Paulo')
+
+async def send_due_reminders():
+    now = datetime.now(REMINDER_TZ).replace(tzinfo=None)
+    cursor = db.messages.find(
+        {'appointment.status': 'accepted', 'appointment.reminder_sent': {'$ne': True}}, {'_id': 0})
+    async for msg in cursor:
+        appt = msg['appointment']
+        try:
+            when = datetime.fromisoformat(f"{appt['date']}T{appt['time']}")
+        except (KeyError, ValueError):
+            continue
+        if not (when - timedelta(hours=24) <= now < when):
+            continue
+        claimed = await db.messages.update_one(
+            {'id': msg['id'], 'appointment.reminder_sent': {'$ne': True}},
+            {'$set': {'appointment.reminder_sent': True}})
+        if claimed.modified_count == 0:
+            continue
+        await db.messages.insert_one({
+            'id': str(uuid.uuid4()),
+            'from_user_id': msg['from_user_id'],
+            'to_user_id': msg['to_user_id'],
+            'message': f"Lembrete: o encontro de vocês é amanhã, {when.strftime('%d/%m/%Y')} às {appt['time']} ({APPOINTMENT_MODES.get(appt.get('mode'), 'Outro')}).",
+            'created_at': datetime.now(timezone.utc).isoformat(),
+            'media': [],
+            'appointment_update': {'ref_id': msg['id'], 'status': 'reminder'},
+        })
+
+async def appointment_reminder_loop():
+    while True:
+        try:
+            await send_due_reminders()
+        except Exception as e:
+            logger.warning(f"Reminder loop error: {e}")
+        await asyncio.sleep(300)
 
 
 async def seed_admin():

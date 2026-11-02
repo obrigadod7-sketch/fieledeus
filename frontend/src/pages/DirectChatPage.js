@@ -450,8 +450,8 @@ export default function DirectChatPage() {
                     const isCurrentUser = msg.from_user_id === currentUser.id;
                     if (msg.appointment_update) {
                       return (
-                        <div key={msg.id || idx} className="flex justify-center my-3" data-testid="appointment-update-message">
-                          <span className="bg-[#E9F5F3] text-[#1F7A6F] text-xs px-4 py-1.5 rounded-full">{msg.message}</span>
+                        <div key={msg.id || idx} className="flex justify-center my-3" data-testid={msg.appointment_update.status === 'reminder' ? 'appointment-reminder-message' : 'appointment-update-message'}>
+                          <span className={`text-xs px-4 py-1.5 rounded-full ${msg.appointment_update.status === 'reminder' ? 'bg-[#FFF1D6] text-[#8A5A1F] font-semibold' : 'bg-[#E9F5F3] text-[#1F7A6F]'}`}>{msg.message}</span>
                         </div>
                       );
                     }
