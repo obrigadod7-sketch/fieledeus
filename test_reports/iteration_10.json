@@ -1,0 +1,19 @@
+{
+  "summary": "Light test of Versículo do Dia + Mensagem de motivação rotation (60s) and appointment reminder (24h before accepted appointment). All requested items pass in backend (pytest 3/3) and UI (Playwright).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "send_due_reminders (server.py ~2643)", "issue": "Reminder text always says 'é amanhã', but the 24h window also catches appointments accepted for later the same day (e.g. accepted 3h before), so it can say 'amanhã' when the meeting is today. Suggest choosing 'hoje'/'amanhã' by comparing when.date() with now.date()."}
+    ]
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": ["/app/backend/tests/test_appointment_reminders.py", "/app/test_reports/pytest/reminders.xml"],
+  "action_items": ["Optional: say 'hoje' vs 'amanhã' correctly in the reminder text"],
+  "critical_code_review_comments": ["Reminder loop only runs every 5 min, so a reminder can arrive up to 5 min after the 24h mark. That's fine.", "The 'Versículo do dia' changes every minute, as the user asked, even though the name suggests one verse per day."],
+  "updated_files": ["/app/backend/tests/test_appointment_reminders.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "Users test_rem_*@test.com / Test1234 (TEST_migrant, TEST_volunteer) with 3 appointments (23h accepted, 48h accepted, 22h pending)",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "test_appointment_reminders.py restarts the backend through supervisorctl to trigger the loop. Verified: exactly 1 reminder, only for the accepted appointment within 24h. Accepted at 48h and pending at 22h got none. No duplicate after a second restart. Normal chat message works. UI shows data-testid appointment-reminder-message in /direct-chat/<id>. Verse, reference and motivation text all changed after 61s on /home."
+}

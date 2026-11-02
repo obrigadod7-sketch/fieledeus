@@ -17,3 +17,7 @@ Repo commits on 2026-11-01 replaced backend/server.py with a ~300-line version (
 User asked to make app paid (R$19,90/mês subscription via PIX Mercado Pago + professionals charge per booking, 10% fee, texts volunteer->profissional, migrant->cliente).
 Implemented then reverted at user's request so they can save the free version to GitHub first.
 Full patch saved at /root/paid_version.patch (apply with `cd /app && git apply /root/paid_version.patch`). Needs MP_ACCESS_TOKEN, MP_WEBHOOK_SECRET.
+
+## 2026-06 additions
+- Feed card: Bible verse (12 verses) + motivational message, each rotating every 60s (MotivationTicker.js)
+- Appointment reminder: backend loop every 5 min posts a chat reminder within 24h before accepted appointments (America/Sao_Paulo time), once per appointment

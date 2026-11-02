@@ -2640,7 +2640,7 @@ async def send_due_reminders():
             'id': str(uuid.uuid4()),
             'from_user_id': msg['from_user_id'],
             'to_user_id': msg['to_user_id'],
-            'message': f"Lembrete: o encontro de vocês é amanhã, {when.strftime('%d/%m/%Y')} às {appt['time']} ({APPOINTMENT_MODES.get(appt.get('mode'), 'Outro')}).",
+            'message': f"Lembrete: o encontro de vocês é {'hoje' if when.date() == now.date() else 'amanhã'}, {when.strftime('%d/%m/%Y')} às {appt['time']} ({APPOINTMENT_MODES.get(appt.get('mode'), 'Outro')}).",
             'created_at': datetime.now(timezone.utc).isoformat(),
             'media': [],
             'appointment_update': {'ref_id': msg['id'], 'status': 'reminder'},
