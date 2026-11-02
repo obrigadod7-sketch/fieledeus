@@ -201,23 +201,34 @@ export default function AuthPage() {
             })
           };
 
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
+      const url = `${process.env.REACT_APP_BACKEND_URL}${endpoint}`;
+      const opts = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) };
+      let response = null;
+      for (let attempt = 0; attempt < 4; attempt++) {
+        try {
+          response = await fetch(url, opts);
+          if (response.status < 500) break;
+        } catch (err) {
+          response = null;
+        }
+        if (attempt === 0) toast.info('Conectando ao servidor, aguarde alguns segundos...');
+        await new Promise(r => setTimeout(r, 4000 * (attempt + 1)));
+      }
+      if (!response) throw new Error('network');
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
-      if (response.ok) {
+      if (response.ok && data.token) {
         login(data.token, data.user);
         toast.success(isLogin ? 'Login bem-sucedido!' : 'Conta criada com sucesso!');
         navigate('/home');
       } else {
-        toast.error(data.detail || 'Erro ao autenticar');
+        const detail = typeof data.detail === 'string' ? data.detail : null;
+        const msgs = { 'Invalid credentials': 'E-mail ou senha incorretos', 'Email already registered': 'Este e-mail já está cadastrado' };
+        toast.error(msgs[detail] || detail || (response.status >= 500 ? 'Servidor indisponível, tente novamente em instantes' : 'Verifique os dados e tente novamente'));
       }
     } catch (error) {
-      toast.error('Erro de conexão');
+      toast.error('Erro de conexão: verifique sua internet e tente novamente');
     } finally {
       setLoading(false);
     }
