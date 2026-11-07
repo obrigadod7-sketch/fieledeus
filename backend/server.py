@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.gzip import GZipMiddleware
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
-from typing import Optional
+from typing import Any, Optional
 import os
 import logging
 import uuid
@@ -48,6 +48,16 @@ class User(BaseModel):
     name: str
     role: str = 'user'
     language: str = 'pt'
+    display_name: Optional[str] = None
+    use_display_name: bool = False
+    help_categories: list[str] = Field(default_factory=list)
+    need_categories: list[str] = Field(default_factory=list)
+    location: Optional[dict[str, Any]] = None
+    show_location: bool = False
+    professional_area: Optional[str] = None
+    professional_specialties: list[str] = Field(default_factory=list)
+    availability: Optional[str] = None
+    experience: Optional[str] = None
 
 
 class UserRegister(BaseModel):
@@ -76,6 +86,31 @@ class AIMessage(BaseModel):
     language: str = 'pt'
 
 
+class MessageCreate(BaseModel):
+    to_user_id: str
+    message: Optional[str] = None
+    location: Optional[dict[str, Any]] = None
+    media: Optional[list[str]] = None
+    media_type: Optional[str] = None
+    appointment: Optional[dict[str, Any]] = None
+    appointment_update: Optional[dict[str, Any]] = None
+
+
+class UpdateProfile(BaseModel):
+    display_name: Optional[str] = None
+    use_display_name: Optional[bool] = None
+    help_categories: Optional[list[str]] = None
+    need_categories: Optional[list[str]] = None
+    language: Optional[str] = None
+    role: Optional[str] = None
+    location: Optional[dict[str, Any]] = None
+    show_location: Optional[bool] = None
+    professional_area: Optional[str] = None
+    professional_specialties: Optional[list[str]] = None
+    availability: Optional[str] = None
+    experience: Optional[str] = None
+
+
 async def get_db_user(email: str):
     email = (email or '').strip().lower()
     return await db.users.find_one({'email': email})
@@ -99,6 +134,62 @@ def create_token(user_id: str, email: str) -> str:
     return jwt.encode(payload, JWT_SECRET, algorithm='HS256')
 
 
+def serialize_user(user_doc: dict[str, Any], user_id: Optional[str] = None) -> dict[str, Any]:
+    doc_id = str(user_doc.get('_id') or user_id or '')
+    payload = {
+        'id': doc_id,
+        'email': user_doc.get('email', ''),
+        'name': user_doc.get('name', 'User'),
+        'role': user_doc.get('role', 'user'),
+        'language': user_doc.get('language', 'pt'),
+        'display_name': user_doc.get('display_name'),
+        'use_display_name': bool(user_doc.get('use_display_name')),
+        'help_categories': user_doc.get('help_categories') or [],
+        'need_categories': user_doc.get('need_categories') or [],
+        'location': user_doc.get('location'),
+        'show_location': bool(user_doc.get('show_location')),
+        'professional_area': user_doc.get('professional_area'),
+        'professional_specialties': user_doc.get('professional_specialties') or [],
+        'availability': user_doc.get('availability'),
+        'experience': user_doc.get('experience'),
+    }
+    if user_doc.get('avatar_version') is not None:
+        payload['avatar_version'] = user_doc.get('avatar_version')
+    return payload
+
+
+def serialize_message(doc: dict[str, Any]) -> dict[str, Any]:
+    message = {
+        'id': str(doc.get('id') or doc.get('_id')),
+        'from_user_id': doc.get('from_user_id'),
+        'to_user_id': doc.get('to_user_id'),
+        'message': doc.get('message') or '',
+        'created_at': doc.get('created_at') or datetime.now(timezone.utc).isoformat(),
+        'updated_at': doc.get('updated_at') or doc.get('created_at') or datetime.now(timezone.utc).isoformat(),
+        'location': doc.get('location'),
+        'media': doc.get('media') or [],
+        'media_type': doc.get('media_type'),
+        'appointment': doc.get('appointment'),
+        'appointment_update': doc.get('appointment_update'),
+        'is_auto_response': bool(doc.get('is_auto_response')),
+    }
+    if 'status' in doc:
+        message['status'] = doc.get('status')
+    return message
+
+
+async def get_user_by_id(user_id: str):
+    if not user_id:
+        return None
+    user = await db.users.find_one({'_id': str(user_id)})
+    if user:
+        return user
+    try:
+        return await db.users.find_one({'_id': ObjectId(str(user_id))})
+    except Exception:
+        return None
+
+
 async def get_current_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
 ) -> User:
@@ -117,18 +208,7 @@ async def get_current_user(
     if not user_id:
         raise HTTPException(status_code=401, detail='Invalid token')
 
-    user = None
-    try:
-        user = await db.users.find_one({'_id': str(user_id)})
-        if not user:
-            try:
-                user = await db.users.find_one({'_id': ObjectId(str(user_id))})
-            except Exception:
-                user = None
-    except Exception as exc:
-        logging.exception('Mongo lookup failed in get_current_user')
-        raise HTTPException(status_code=503, detail='Database unavailable') from exc
-
+    user = await get_user_by_id(str(user_id))
     if not user:
         raise HTTPException(status_code=401, detail='User not found')
 
@@ -138,6 +218,16 @@ async def get_current_user(
         name=user.get('name', 'User'),
         role=user.get('role', 'user'),
         language=user.get('language', 'pt'),
+        display_name=user.get('display_name'),
+        use_display_name=bool(user.get('use_display_name')),
+        help_categories=user.get('help_categories') or [],
+        need_categories=user.get('need_categories') or [],
+        location=user.get('location'),
+        show_location=bool(user.get('show_location')),
+        professional_area=user.get('professional_area'),
+        professional_specialties=user.get('professional_specialties') or [],
+        availability=user.get('availability'),
+        experience=user.get('experience'),
     )
 
 
@@ -199,6 +289,14 @@ async def register(user_data: UserRegister):
         name=user_data.name.strip(),
         role=user_data.role,
         language='pt',
+        help_categories=user_doc['help_categories'],
+        need_categories=user_doc['need_categories'],
+        location=user_doc.get('location'),
+        show_location=user_doc.get('show_location', False),
+        professional_area=user_doc.get('professional_area'),
+        professional_specialties=user_doc.get('professional_specialties') or [],
+        availability=user_doc.get('availability'),
+        experience=user_doc.get('experience'),
     )
 
     return {'token': token, 'user': user.model_dump()}
@@ -215,20 +313,171 @@ async def login(credentials: UserLogin):
         raise HTTPException(status_code=401, detail='Invalid credentials')
 
     token = create_token(str(user['_id']), email)
-    user_payload = User(
-        id=str(user['_id']),
-        email=email,
-        name=user.get('name', 'User'),
-        role=user.get('role', 'user'),
-        language=user.get('language', 'pt'),
-    )
-
-    return {'token': token, 'user': user_payload.model_dump()}
+    user_payload = serialize_user(user)
+    return {'token': token, 'user': user_payload}
 
 
 @api_router.get('/auth/me')
 async def get_me(current_user: User = Depends(get_current_user)):
     return {'user': current_user.model_dump()}
+
+
+@api_router.get('/profile')
+async def get_profile(current_user: User = Depends(get_current_user)):
+    user = await get_user_by_id(current_user.id)
+    if not user:
+        raise HTTPException(status_code=404, detail='User not found')
+    return serialize_user(user)
+
+
+@api_router.put('/profile')
+async def update_profile(payload: UpdateProfile, current_user: User = Depends(get_current_user)):
+    user = await get_user_by_id(current_user.id)
+    if not user:
+        raise HTTPException(status_code=404, detail='User not found')
+
+    changes = payload.model_dump(exclude_unset=True)
+    if not changes:
+        return serialize_user(user)
+
+    await db.users.update_one({'_id': str(current_user.id)}, {'$set': changes})
+    refreshed = await get_user_by_id(current_user.id)
+    return serialize_user(refreshed)
+
+
+@api_router.get('/users/{user_id}')
+async def get_user(user_id: str, current_user: User = Depends(get_current_user)):
+    user = await get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail='User not found')
+    payload = serialize_user(user)
+    # keep public profile fields, but do not expose password/email unless the user is the same person
+    if current_user.id != str(user.get('_id')):
+        payload.pop('email', None)
+    return payload
+
+
+@api_router.get('/can-chat/{user_id}')
+async def can_chat(user_id: str, current_user: User = Depends(get_current_user)):
+    if user_id == current_user.id:
+        return {'can_chat': True, 'reason': 'You can message yourself'}
+
+    other = await get_user_by_id(user_id)
+    if not other:
+        raise HTTPException(status_code=404, detail='User not found')
+
+    current_categories = set((current_user.help_categories or []) + (current_user.need_categories or []))
+    target_needs = set((other.get('need_categories') or []) + (other.get('help_categories') or []))
+
+    if not target_needs:
+        return {'can_chat': True, 'reason': 'No chat restriction'}
+
+    can_send = bool(current_categories & target_needs) or not current_categories
+    if can_send:
+        return {'can_chat': True, 'reason': 'Allowed'}
+
+    return {
+        'can_chat': False,
+        'reason': 'Você não se comprometeu a ajudar nas categorias desse usuário.',
+    }
+
+
+@api_router.get('/posts')
+async def get_posts(
+    user_id: Optional[str] = None,
+    type: Optional[str] = None,
+    category: Optional[str] = None,
+    limit: int = 10,
+    skip: int = 0,
+    current_user: User = Depends(get_current_user),
+):
+    query: dict[str, Any] = {}
+    if user_id:
+        query['user_id'] = user_id
+    if type:
+        query['type'] = type
+    if category:
+        query['$or'] = [{'category': category}, {'categories': category}]
+
+    limit = max(1, min(int(limit or 10), 50))
+    skip = max(0, int(skip or 0))
+
+    cursor = db.posts.find(query).sort('created_at', -1).skip(skip).limit(limit)
+    posts = []
+    async for doc in cursor:
+        item = {
+            'id': str(doc.get('id') or doc.get('_id')),
+            'user_id': doc.get('user_id'),
+            'type': doc.get('type'),
+            'category': doc.get('category'),
+            'categories': doc.get('categories') or [doc.get('category')] if doc.get('category') else [],
+            'title': doc.get('title'),
+            'description': doc.get('description'),
+            'created_at': doc.get('created_at'),
+            'image_urls': doc.get('image_urls') or [],
+            'comment_count': doc.get('comment_count') or 0,
+            'user': {
+                'id': doc.get('user_id'),
+                'name': doc.get('user_name') or 'User',
+                'role': doc.get('user_role') or 'user',
+            },
+        }
+        posts.append(item)
+
+    return {'posts': posts, 'has_more': len(posts) == limit, 'next_skip': skip + limit}
+
+
+@api_router.get('/messages/{user_id}')
+async def get_messages(user_id: str, current_user: User = Depends(get_current_user)):
+    other_user = await get_user_by_id(user_id)
+    if not other_user:
+        raise HTTPException(status_code=404, detail='User not found')
+
+    query = {
+        '$or': [
+            {'from_user_id': current_user.id, 'to_user_id': user_id},
+            {'from_user_id': user_id, 'to_user_id': current_user.id},
+        ]
+    }
+    cursor = db.messages.find(query).sort('created_at', 1)
+    messages = []
+    async for doc in cursor:
+        msg = serialize_message(doc)
+        messages.append(msg)
+    return messages
+
+
+@api_router.post('/messages')
+async def create_message(payload: MessageCreate, current_user: User = Depends(get_current_user)):
+    if not payload.to_user_id:
+        raise HTTPException(status_code=400, detail='Missing recipient')
+
+    if not payload.message and not payload.location and not (payload.media or []):
+        raise HTTPException(status_code=400, detail='Empty message')
+
+    other_user = await get_user_by_id(payload.to_user_id)
+    if not other_user:
+        raise HTTPException(status_code=404, detail='Recipient not found')
+
+    doc_id = str(uuid.uuid4())
+    created_at = datetime.now(timezone.utc).isoformat()
+    doc = {
+        'id': doc_id,
+        '_id': doc_id,
+        'from_user_id': current_user.id,
+        'to_user_id': payload.to_user_id,
+        'message': payload.message or '',
+        'created_at': created_at,
+        'updated_at': created_at,
+        'location': payload.location,
+        'media': payload.media or [],
+        'media_type': payload.media_type,
+        'appointment': payload.appointment,
+        'appointment_update': payload.appointment_update,
+        'is_auto_response': False,
+    }
+    await db.messages.insert_one(doc)
+    return serialize_message(doc)
 
 
 @api_router.post('/ai/chat')
